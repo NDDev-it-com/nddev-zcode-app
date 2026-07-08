@@ -1,0 +1,22 @@
+{
+  "_comment": "ZCode desktop preferences (v2/setting.json). recentProjects is templated per-OS at install time via ${HOME}. Edit preferences in ZCode Settings after install; re-running the installer overwrites this file.",
+  "locale": "en-US",
+  "localePreference": "system",
+  "terminalInheritSystemProfile": true,
+  "taskAutoArchiveEnabled": false,
+  "taskAutoArchiveOlderThanDays": 7,
+  "closeToTrayOnWindows": false,
+  "desktopChromiumHardwareAccelerationEnabled": true,
+  "messageStreamShowReasoning": true,
+  "messageStreamShowTodos": true,
+  "zcodeInteractionBehavior": "queue",
+  "optimizeAgentExperienceEnabled": false,
+  "enabledBuiltinAgentCliProviders": ["glm"],
+  "modelProviderFamilyModes": {
+    "zai": "oauth"
+  },
+  "providerFamilyDomain": "zai",
+  "recentProjects": [
+    "${HOME}/Desktop/github/github-device-sync"
+  ]
+}

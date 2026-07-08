@@ -1,0 +1,3 @@
+{
+  "_comment": "Reference list of hook definitions. The installer merges these into cli/config.json under the matching event key. ZCode supports exactly seven events: SessionStart, UserPromptSubmit, PreToolUse, PermissionRequest, PostToolUse, PostToolUseFailure, Stop. Each hook entry shape: { \"matcher\": \"<ToolName|.*>\", \"hooks\": [ { \"type\": \"command\", \"command\": \"<shell cmd>\" } ] }. Keep this file empty (no active hooks) until a hook is deliberately added."
+}

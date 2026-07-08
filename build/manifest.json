@@ -1,0 +1,40 @@
+{
+  "name": "nddev-zcode-app",
+  "build_version": "1.0.0",
+  "source_root": "zcode_tools/",
+  "installer": "cli-tools/scripts/install.sh",
+  "layout": {
+    "zcode_tools/": "source of a complete ~/.zcode (AGENTS.md, skills, commands, agents, marketplace.json, plugins, config templates)",
+    "cli-tools/": "installer for macOS (desktop) and Ubuntu (desktop/server)",
+    "build/": "build artifacts: version.json, manifest.json, system files, secrets templates",
+    "development/": "meta skills for developing this repo",
+    "docs/": "documentation",
+    "tests/": "test suite (currently empty)"
+  },
+  "backup_policy": {
+    "location": "~/.zcode-backups/",
+    "name_format": "<N>-<DD.MM.YYYY>-<VERSION>-old.zcode",
+    "rotation_slots": "1-9 (lowest free slot; oldest reused when full)",
+    "version_source": "~/.zcode/BUILD-VERSION"
+  },
+  "restore_policy": {
+    "always_restore": [
+      "v2/credentials.json",
+      "v2/certs/",
+      "cli/agents/",
+      "cli/db/",
+      "cli/artifacts/"
+    ],
+    "never_restore": [
+      "cli/log/",
+      "v2/logs/",
+      "v2/crash/",
+      "cli/plugins/cache/"
+    ]
+  },
+  "secrets": {
+    "template": "build/.env.example",
+    "real": "build/.env (gitignored)",
+    "injection": "${VAR} placeholders in zcode_tools/*.template.json rendered at install time"
+  }
+}

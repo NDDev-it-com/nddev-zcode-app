@@ -1,0 +1,52 @@
+name: security-static
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "30 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  security-static:
+    name: Static security checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Action pins (full SHA)
+        run: |
+          set -euo pipefail
+          echo "::group::Check GitHub Actions are pinned to full SHAs"
+          bad=0
+          while IFS= read -r line; do
+            uses=$(printf '%s' "$line" | sed -E 's/.*uses:\s*//; s/@.*//; s/#.*//')
+            ref=$(printf '%s' "$line" | sed -E 's/.*@//; s/\s.*//; s/#.*//')
+            if [ -n "$ref" ] && ! printf '%s' "$ref" | grep -Eq '^[0-9a-f]{40}$'; then
+              echo "::warning::$uses is pinned to '$ref' (not a full SHA)"
+              bad=1
+            fi
+          done < <(grep -rE 'uses:' .github/workflows/ 2>/dev/null || true)
+          if [ "$bad" -ne 0 ]; then
+            echo "::error::One or more actions are not pinned to a full commit SHA."
+            exit 1
+          fi
+          echo "ok: all actions pinned to full SHAs"
+          echo "::endgroup::"
+
+      - name: Scan for tracked secrets
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -E '(^|/)\.env$'; then
+            echo "::error::An .env file is tracked by git."
+            exit 1
+          fi
+          echo "ok: no .env tracked"

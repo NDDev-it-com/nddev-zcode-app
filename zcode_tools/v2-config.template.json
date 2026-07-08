@@ -1,0 +1,56 @@
+{
+  "_comment": "ZCode desktop provider definitions (v2/config.json). Rendered at install time. Provider API keys are injected from build/.env via ${VAR} placeholders. credentials.json (auth tokens) is restored from backup, NOT templated here.",
+  "provider": {
+    "builtin:zai-coding-plan": {
+      "name": "Z.ai - Coding Plan",
+      "kind": "anthropic",
+      "options": {
+        "apiKey": "${ZAI_API_KEY}",
+        "baseURL": "https://open.bigmodel.cn/api/anthropic"
+      },
+      "enabled": true,
+      "source": "builtin",
+      "models": {
+        "GLM-5.2": {
+          "limit": { "context": 1000000 },
+          "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+          }
+        }
+      }
+    },
+    "builtin:bigmodel-coding-plan": {
+      "name": "Bigmodel - Coding Plan",
+      "kind": "anthropic",
+      "options": {
+        "apiKey": "${BIGMODEL_API_KEY}",
+        "baseURL": "https://open.bigmodel.cn/api/anthropic"
+      },
+      "enabled": false,
+      "source": "custom",
+      "models": {
+        "GLM-5.2": {
+          "limit": { "context": 1000000 },
+          "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+          }
+        },
+        "GLM-5-Turbo": {
+          "name": "glm-5-turbo",
+          "reasoning": {
+            "enabled": true,
+            "variants": ["enabled", "off"],
+            "defaultVariant": "enabled"
+          },
+          "limit": { "context": 200000, "output": 64000 },
+          "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+          }
+        }
+      }
+    }
+  }
+}

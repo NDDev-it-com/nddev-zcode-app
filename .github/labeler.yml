@@ -1,0 +1,26 @@
+# Area labels based on changed paths.
+source:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "zcode_tools/**"
+
+installer:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "cli-tools/**"
+
+build:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "build/**"
+
+docs:
+  - changed-files:
+      - any-glob-to-any-file:
+          - "docs/**"
+          - "*.md"
+
+ci:
+  - changed-files:
+      - any-glob-to-any-file:
+          - ".github/**"

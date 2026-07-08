@@ -1,0 +1,9 @@
+{
+  "name": "nddev",
+  "owner": {
+    "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev",
+    "url": "https://github.com/rldyourmnd"
+  },
+  "description": "NDDev ZCode plugin marketplace. Built and installed from source by nddev-zcode-app.",
+  "plugins": []
+}

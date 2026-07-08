@@ -1,0 +1,27 @@
+name: Change request
+description: Propose a new feature or a change to the build/installer/source.
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What change do you want, and why?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - zcode_tools (source)
+        - cli-tools (installer)
+        - build (artifacts/secrets)
+        - docs
+        - ci
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered

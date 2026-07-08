@@ -1,0 +1,44 @@
+name: cross-platform
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be5715f8666d6bdc6d4c35d4e9fd87f586 # v6.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Validate JSON + installer plan
+        run: |
+          set -euo pipefail
+          for f in \
+            build/version.json \
+            build/manifest.json \
+            zcode_tools/marketplace.json \
+            zcode_tools/cli-config.template.json \
+            zcode_tools/v2-config.template.json \
+            zcode_tools/v2-setting.template.json; do
+            python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
+          done
+          PLATFORM=ubuntu
+          if [ "$(uname -s)" = "Darwin" ]; then PLATFORM=macos; fi
+          cli-tools/scripts/install.sh --platform "$PLATFORM" --plan

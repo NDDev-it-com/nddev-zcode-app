@@ -1,0 +1,6 @@
+{
+  "build_version": "1.0.0",
+  "zcode_runtime": "GLM-5.2",
+  "schema": 1,
+  "_comment": "build_version is the semantic version of this nddev-zcode-app build (read by cli-tools/scripts/lib/version.sh). zcode_runtime is the runtime model baseline. Bump build_version for every release."
+}

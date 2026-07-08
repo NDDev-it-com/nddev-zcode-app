@@ -1,0 +1,23 @@
+# Secrets — never commit. Real values live in build/.env.
+.env
+build/.env
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.coverage
+coverage.xml
+pytest.xml
+
+# Editor / IDE
+*.swp
+.idea/
+.vscode/
+
+# Build outputs
+dist/
