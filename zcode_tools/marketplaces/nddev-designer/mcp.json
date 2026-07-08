@@ -1,0 +1,4 @@
+{
+  "_comment": "Reference MCP server definitions for the nddev-designer setup. The installer merges these into cli/config.json under mcp.servers. Keep empty until a server is deliberately added.",
+  "mcpServers": {}
+}

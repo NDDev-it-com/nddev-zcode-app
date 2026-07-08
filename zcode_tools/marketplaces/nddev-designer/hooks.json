@@ -1,0 +1,3 @@
+{
+  "_comment": "Reference list of hook definitions for the nddev-designer setup. The installer merges these into cli/config.json under the matching event key. Keep empty until a hook is deliberately added."
+}

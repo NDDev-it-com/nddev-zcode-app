@@ -1,0 +1,19 @@
+{
+  "plugins": {
+    "enabled": true,
+    "enabledPlugins": {}
+  },
+  "hooks": {
+    "enabled": true,
+    "SessionStart": [],
+    "UserPromptSubmit": [],
+    "PreToolUse": [],
+    "PermissionRequest": [],
+    "PostToolUse": [],
+    "PostToolUseFailure": [],
+    "Stop": []
+  },
+  "mcp": {
+    "servers": {}
+  }
+}

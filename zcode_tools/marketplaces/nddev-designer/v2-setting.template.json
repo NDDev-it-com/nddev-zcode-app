@@ -1,0 +1,22 @@
+{
+  "_comment": "ZCode desktop preferences (v2/setting.json) for the nddev-designer setup. recentProjects templated per-OS via ${HOME}.",
+  "locale": "en-US",
+  "localePreference": "system",
+  "terminalInheritSystemProfile": true,
+  "taskAutoArchiveEnabled": false,
+  "taskAutoArchiveOlderThanDays": 7,
+  "closeToTrayOnWindows": false,
+  "desktopChromiumHardwareAccelerationEnabled": true,
+  "messageStreamShowReasoning": true,
+  "messageStreamShowTodos": true,
+  "zcodeInteractionBehavior": "queue",
+  "optimizeAgentExperienceEnabled": false,
+  "enabledBuiltinAgentCliProviders": ["glm"],
+  "modelProviderFamilyModes": {
+    "zai": "oauth"
+  },
+  "providerFamilyDomain": "zai",
+  "recentProjects": [
+    "${HOME}/Desktop/github/github-device-sync"
+  ]
+}

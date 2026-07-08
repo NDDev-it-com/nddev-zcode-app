@@ -1,0 +1,9 @@
+{
+  "name": "nddev-designer",
+  "owner": {
+    "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev",
+    "url": "https://github.com/rldyourmnd"
+  },
+  "description": "Designer-oriented ZCode setup (placeholder scaffold). To be filled with design-system, Figma-to-code, and design-validation plugins.",
+  "plugins": []
+}
