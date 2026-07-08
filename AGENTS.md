@@ -18,9 +18,15 @@ Author: Danil Silantyev (github:rldyourmnd), CEO NDDev. License: AGPL-3.0-or-lat
 - `cli-tools/scripts/lib/{common,version,build}.sh` — shared installer logic.
 - `cli-tools/scripts/{macos,ubuntu}/install.sh` — platform runners.
 - `cli-tools/scripts/restore.sh` — selective runtime-state restore.
+- `config/nddev-contract.json` — the product contract (native format, secrets
+  policy, backup/restore refs).
+- `references/zcode-baseline.json` — the verified ZCode runtime baseline.
 - `build/version.json` — the build version and ZCode runtime baseline.
 - `build/manifest.json` — source layout, backup policy, restore policy.
 - `build/.env.example` → `build/.env` (gitignored) — secrets injected at install.
+- `.serena/` — Serena project config and durable project memory (memories/).
+- `.agents/skills/repo-orientation/` — the repository map skill (read first).
+- `.claude/CLAUDE.md` — Claude Code bridge to `AGENTS.md`.
 
 ## Three layers
 

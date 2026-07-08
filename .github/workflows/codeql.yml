@@ -1,0 +1,18 @@
+name: codeql
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "20 7 * * 1"
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  codeql:
+    name: CodeQL
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-codeql.yml@1acba687361415b3f5942acceb40b228bb0387fd # 0.2.4

@@ -19,7 +19,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Ubuntu runners, and `restore.sh` for selective runtime-state restore.
 - `build/` — `version.json`, `manifest.json`, per-OS `system/` dirs, and
   `.env.example` (committed secret template; real `.env` gitignored).
+- `config/nddev-contract.json` — product contract: native format, secrets
+  policy, backup/restore references.
+- `references/zcode-baseline.json` — verified ZCode runtime baseline.
+- `.serena/` — Serena project config (`project.yml`), `.gitignore`, and
+  durable project memory (`memories/INDEX-01-OVERVIEW.md`).
+- `.agents/skills/repo-orientation/` — repository map skill (read first when
+  working in this repo), with `.claude/skills/` symlink and `.claude/CLAUDE.md`
+  bridge.
 - `development/` — meta-skills directory for workflows that develop this repo.
 - `docs/` — install, architecture, and secrets documentation.
 - OSS scaffolding: `LICENSE` (AGPL-3.0-or-later), `NOTICE`, `CONTRIBUTING.md`,
   `CODE_OF_CONDUCT.md`, `SECURITY.md`, `SUPPORT.md`, and minimal GitHub CI.
+- GitHub CI: `validate`, `security-static`, `cross-platform`, `labeler`,
+  `codeql`, `dependency-review`, `scorecard`, and tag-driven `release`;
+  `FUNDING.yml` and `branch-protection/main.json`.

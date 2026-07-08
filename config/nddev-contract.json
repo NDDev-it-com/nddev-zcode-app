@@ -1,0 +1,44 @@
+{
+  "contract_version": 1,
+  "product_name": "nddev-zcode-app",
+  "display_name": "NDDev ZCode App",
+  "description": "Build system + installer that recreates a complete, version-stamped ~/.zcode from source on macOS/Ubuntu.",
+  "github_repository": "NDDev-it-com/nddev-zcode-app",
+  "license": "AGPL-3.0-or-later",
+  "author": {
+    "github": "rldyourmnd",
+    "name": "Danil Silantyev",
+    "title": "CEO NDDev",
+    "url": "https://github.com/rldyourmnd"
+  },
+  "runtime_baseline_ref": "references/zcode-baseline.json",
+  "version_ref": "build/version.json",
+  "manifest_ref": "build/manifest.json",
+  "source_root": "zcode_tools/",
+  "installer_entry": "cli-tools/scripts/install.sh",
+  "native_format": {
+    "marketplace_root": "zcode_tools/marketplace.json",
+    "plugin_manifest": "plugins/<name>/.zcode-plugin/plugin.json",
+    "plugin_components_convention": true,
+    "mcp_key": "mcpServers",
+    "hooks_require_enabled_flag": true,
+    "supported_hook_events": [
+      "SessionStart",
+      "UserPromptSubmit",
+      "PreToolUse",
+      "PermissionRequest",
+      "PostToolUse",
+      "PostToolUseFailure",
+      "Stop"
+    ]
+  },
+  "secrets_policy": {
+    "template": "build/.env.example",
+    "real": "build/.env",
+    "real_gitignored": true,
+    "placeholder_syntax": "${VAR_NAME}",
+    "render_at": "install_time"
+  },
+  "backup_policy_ref": "build/manifest.json:backup_policy",
+  "restore_policy_ref": "build/manifest.json:restore_policy"
+}

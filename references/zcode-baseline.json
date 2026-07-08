@@ -1,0 +1,21 @@
+{
+  "baseline_version": 1,
+  "_comment": "ZCode runtime baseline for this build. Verified against the installed client. Update the verified_date and version when the runtime baseline changes.",
+  "zcode": {
+    "runtime_model": "GLM-5.2",
+    "provider_domain_default": "zai",
+    "provider_kind": "anthropic",
+    "marketplace_format": "root marketplace.json (name + owner + plugins[])",
+    "plugin_manifest_path": ".zcode-plugin/plugin.json",
+    "config_file": "~/.zcode/cli/config.json",
+    "instruction_file_user": "~/.zcode/AGENTS.md",
+    "instruction_file_workspace": "<repo>/AGENTS.md",
+    "hooks_key": "hooks",
+    "hooks_enabled_flag_required": true,
+    "mcp_config_key": "mcp.servers",
+    "mcp_plugin_file": ".mcp.json",
+    "mcp_plugin_key": "mcpServers"
+  },
+  "verified_date": "2026-07-09",
+  "verified_against": "NDDev-it-com/nddev-zcode-app @ 1.0.0"
+}

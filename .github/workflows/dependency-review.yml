@@ -1,0 +1,13 @@
+name: dependency-review
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-dependency-review.yml@1acba687361415b3f5942acceb40b228bb0387fd # 0.2.4

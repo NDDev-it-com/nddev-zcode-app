@@ -1,0 +1,24 @@
+# Serena project config for nddev-zcode-app.
+# Canonical project memory lives under .serena/memories/. Only project.yml,
+# memories/, and this .gitignore are tracked; cache/ and project.local.yml are
+# runtime artifacts and ignored.
+project_name: "nddev-zcode-app"
+
+# Language servers started by Serena. This repo is shell + JSON/YAML/TOML config
+# plus markdown docs. bash covers the installer scripts; the rest gives symbol
+# navigation for the config templates.
+languages:
+  - bash
+  - json
+  - yaml
+  - toml
+  - markdown
+
+encoding: "utf-8"
+
+ignore_all_files_in_gitignore: true
+
+# Keep Serena out of the rendered ~/.zcode target and the secrets file.
+ignored_paths:
+  - node_modules
+  - .venv
