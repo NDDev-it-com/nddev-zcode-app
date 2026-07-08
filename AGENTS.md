@@ -50,8 +50,9 @@ ZCode discovers plugin components **by convention**, not by manifest declaration
 - `plugins/<name>/.mcp.json` — MCP servers, shape `{"mcpServers": {...}}`.
 
 User-scope components live under `~/.zcode/{skills,commands,agents}/` (sourced
-from `zcode_tools/{skills,commands,agents}/`). Hooks and the MCP server registry
-live in `~/.zcode/cli/config.json` under `hooks` (`hooks.enabled: true`) and
+from the selected marketplace at `zcode_tools/marketplaces/<name>/{skills,commands,agents}/`).
+Hooks and the MCP server registry live in `~/.zcode/cli/config.json` under
+`hooks` (`hooks.enabled: true`) and
 `mcp.servers`.
 
 ## Rules

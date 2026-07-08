@@ -121,8 +121,8 @@ nddev::create_runtime_dirs() {
 }
 
 # Merge the seven hook events from hooks.json into the rendered cli/config.json.
+# Config-file hooks shape: events live under hooks.events.<Event> (NOT hooks.<Event>).
 # hooks.json shape (after _comment stripped): { "SessionStart": [...], ... }.
-# Each event array is appended to the matching event in cli/config.json.hooks.
 # Uses python3 for safe JSON manipulation. $1=cli/config.json path, $2=hooks.json path.
 nddev::merge_hooks() {
   local config_path=$1 hooks_path=$2
@@ -140,12 +140,16 @@ with open(hooks_path) as f:
     hooks_src = json.load(f)
 hooks_src.pop("_comment", None)
 
+# Config-file hooks go under hooks.events.<Event> (per the official
+# diagnosing-hooks skill: the configuration file uses hooks.events.<Event>).
 config.setdefault("hooks", {})
+config["hooks"].setdefault("enabled", True)
+config["hooks"].setdefault("events", {})
 for event, entries in hooks_src.items():
     if not isinstance(entries, list):
         continue
-    config["hooks"].setdefault(event, [])
-    config["hooks"][event].extend(entries)
+    config["hooks"]["events"].setdefault(event, [])
+    config["hooks"]["events"][event].extend(entries)
 
 with open(config_path, "w") as f:
     json.dump(config, f, indent=2, ensure_ascii=False)

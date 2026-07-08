@@ -170,7 +170,11 @@ if [ "$COMMAND" = "bootstrap" ]; then
     nddev::log "error" "Missing bootstrap script: $BOOTSTRAP"
     exit 2
   fi
-  exec "$BOOTSTRAP" ${PLATFORM:+--platform "$PLATFORM"} $([ "$APPLY" -eq 1 ] && echo '--apply' || echo '--plan')
+  # Build the arg array safely (no unquoted word-splitting).
+  bootstrap_args=()
+  [ -n "$PLATFORM" ] && bootstrap_args+=(--platform "$PLATFORM")
+  [ "$APPLY" -eq 1 ] && bootstrap_args+=(--apply) || bootstrap_args+=(--plan)
+  exec "$BOOTSTRAP" "${bootstrap_args[@]}"
 fi
 
 # ─── Handle 'remove' command ─────────────────────────────────────────────

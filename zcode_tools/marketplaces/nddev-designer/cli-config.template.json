@@ -1,17 +1,20 @@
 {
+  "_comment": "Config-file hooks shape: events live under hooks.events.<Event> (NOT hooks.<Event>). hooks.enabled must be true.",
   "plugins": {
     "enabled": true,
     "enabledPlugins": {}
   },
   "hooks": {
     "enabled": true,
-    "SessionStart": [],
-    "UserPromptSubmit": [],
-    "PreToolUse": [],
-    "PermissionRequest": [],
-    "PostToolUse": [],
-    "PostToolUseFailure": [],
-    "Stop": []
+    "events": {
+      "SessionStart": [],
+      "UserPromptSubmit": [],
+      "PreToolUse": [],
+      "PermissionRequest": [],
+      "PostToolUse": [],
+      "PostToolUseFailure": [],
+      "Stop": []
+    }
   },
   "mcp": {
     "servers": {}

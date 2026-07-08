@@ -57,6 +57,8 @@ do not mix their fields (mixing → hook silently dropped):
 - `command` — a shell string. Runs via the shell.
 - `timeout` — **SECONDS** (e.g. `30` = 30 seconds). ⚠️ Not milliseconds!
 - `timeoutMs` — **MILLISECONDS** (takes precedence over `timeout` if both set).
+- `shell` — optional; override the shell path (default: `/bin/sh` on POSIX).
+- `statusMessage` — optional; text shown while the hook runs.
 - `async` — has NO runtime effect (ignored).
 
 ### type: "process" (no shell, most portable)

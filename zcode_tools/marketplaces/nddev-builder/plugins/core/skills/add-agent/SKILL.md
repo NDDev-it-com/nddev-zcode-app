@@ -57,7 +57,7 @@ The body IS the subagent's system prompt. Write it as a complete role definition
 2. Pick the agent name (lowercase, hyphens). The filename must match the
    `name` field.
 3. Create `agents/<name>.md`.
-4. Write frontmatter: `name` (matches filename), `model: GLM-2.5`, `description`.
+4. Write frontmatter: `name` (matches filename), `model: GLM-5.2`, `description`.
 5. Write the body as a complete role definition (role → checklist → constraints
    → output format).
 6. Confirm the frontmatter parses as valid YAML.

@@ -103,7 +103,7 @@ if [ "$running_app" != "$APP_VERSION" ]; then
     macos)
       artifact="ZCode-${APP_VERSION}-mac-${arch}.dmg"
       url="${CDN_BASE}/${APP_VERSION}/${artifact}"
-      tmp_dmg="/tmp/${artifact}"
+      tmp_dmg="$(mktemp -t nddev-zcode.XXXXXX).dmg"
 
       nddev::section "Download ZCode.app ($artifact)"
       nddev::log "info" "url: $url"
@@ -124,9 +124,9 @@ if [ "$running_app" != "$APP_VERSION" ]; then
         hdiutil attach "$tmp_dmg" -nobrowse -mountpoint "$mount_point" >/dev/null 2>&1
         cp -R "${mount_point}/ZCode.app" /Applications/
         hdiutil detach "$mount_point" >/dev/null 2>&1
-        rm -f "$tmp_dmg"
         nddev::log "ok" "installed ZCode.app to /Applications/"
       fi
+      rm -f "$tmp_dmg"
       app_entry="/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs"
       ;;
 
@@ -134,7 +134,7 @@ if [ "$running_app" != "$APP_VERSION" ]; then
       # Prefer .deb (cleaner uninstall); fall back to AppImage.
       artifact="ZCode-${APP_VERSION}-linux-${arch}.deb"
       url="${CDN_BASE}/${APP_VERSION}/${artifact}"
-      tmp_deb="/tmp/${artifact}"
+      tmp_deb="$(mktemp -t nddev-zcode.XXXXXX).deb"
 
       nddev::section "Download ZCode ($artifact)"
       nddev::log "info" "url: $url"
@@ -149,9 +149,9 @@ if [ "$running_app" != "$APP_VERSION" ]; then
         else
           dpkg -i "$tmp_deb" || apt-get install -f -y
         fi
-        rm -f "$tmp_deb"
         nddev::log "ok" "installed ZCode via dpkg"
       fi
+      rm -f "$tmp_deb"
       app_entry="/opt/ZCode/resources/glm/zcode.cjs"
       ;;
   esac

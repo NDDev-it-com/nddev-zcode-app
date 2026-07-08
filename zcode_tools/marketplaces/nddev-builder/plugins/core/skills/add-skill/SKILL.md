@@ -65,8 +65,10 @@ Do NOT invent `version`, `tags`, or `allowed-tools` — they are not recognized 
 
 ZCode scans in this order; the first same-named skill wins:
 
-1. User `~/.zcode/skills` → 2. `~/.agents/skills` → 3. workspace `.zcode/skills`
-   → 4. workspace `.agents/skills` → 5. enabled **plugin** roots.
+1. Explicitly configured roots (if any) →
+2. User `~/.zcode/skills` → 3. `~/.agents/skills` →
+4. workspace `.zcode/skills` (deeper cwd location wins) →
+5. workspace `.agents/skills` → 6. enabled **plugin** roots.
 
 So a user-scope skill shadows a plugin skill of the same name. Pick unique names.
 

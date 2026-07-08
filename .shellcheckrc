@@ -1,0 +1,12 @@
+# ShellCheck configuration for nddev-zcode-app.
+# https://github.com/koalaman/shellcheck/wiki/Directives
+
+# Sourced library files (install.sh sources these; SC1090/SC1091 expected).
+disable=SC1090,SC1091
+
+# Variables set in other sourced files (libs set vars used by callers; SC2154 expected).
+disable=SC2154
+
+# The exec boundary in install.sh intentionally builds args dynamically;
+# array expansion now handles this, but SC2086 may still flag optional args.
+disable=SC2086
