@@ -15,8 +15,8 @@ Follow the `add-mcp-server` skill exactly. First, help the user decide the path:
    - Validate the JSON.
 
 3. **Path B (CLI + skill):**
-   - Create the script(s) under `zcode_tools/marketplaces/<marketplace>/scripts/<name>/`.
+   - Create the tool(s) under `zcode_tools/marketplaces/<marketplace>/plugins/<plugin>/tools/<name>/`.
    - Write a README or SKILL.md documenting the available commands, when to use each, and output format. Keep it token-thin.
    - Make scripts executable.
 
-4. Remind to run `install --apply` to propagate (MCP) or note the script paths (CLI).
+4. Remind to run `install --apply` to propagate (MCP servers and ~/.zcode/.env).

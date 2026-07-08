@@ -173,11 +173,12 @@ This README is ~225 tokens vs 13–18k for an MCP server covering the same surfa
    default to CLI+skill for local-dev; MCP for cross-agent standardized tools.
 2. **Path A (MCP):** add the server entry to `mcp.json`, add the secret key to
    `build/.env.example`, validate the JSON.
-3. **Path B (CLI+skill):** create the script(s) under `scripts/<name>/`, write a
-   README or SKILL.md documenting the commands, make scripts executable.
-4. **Secrets:** never commit real values. Use `${VAR}` (MCP) or env vars read by
-   the script (CLI). Add the key to `build/.env.example`.
-5. Remind to run `install --apply` to propagate (MCP) or note the script paths (CLI).
+3. **Path B (CLI+skill):** create the tool(s) under `plugins/<plugin>/tools/<name>/`,
+   write a README or SKILL.md documenting the commands, make scripts executable.
+4. **Secrets:** never commit real values. Use `${VAR}` (MCP) or `~/.zcode/.env`
+   (CLI — the installer renders `build/.env` there at install time). Add the key
+   to `build/.env.example`.
+5. Remind to run `install --apply` to propagate (MCP servers and ~/.zcode/.env).
 
 ## Rules
 

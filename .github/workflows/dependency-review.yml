@@ -8,8 +8,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: dependency-review-${github.ref}
-  cancel-in-progress: ${github.event_name == "pull_request"}
+  group: dependency-review-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   dependency-review:

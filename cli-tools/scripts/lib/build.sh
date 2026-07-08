@@ -83,7 +83,7 @@ nddev::backup_current() {
   # Remove any existing backup in this slot (version may differ, so the name
   # may differ — match by slot prefix, not exact name).
   local existing
-  existing="$(find "$BACKUPS_DIR" -maxdepth 1 -name "${slot}-*-old.zcode" -print -quit 2>/dev/null)"
+  existing="$(find "$BACKUPS_DIR" -maxdepth 1 -name "${slot}-*-old.zcode" -print -quit 2>/dev/null || true)"
   if [ -n "$existing" ] && [ "$existing" != "$target" ]; then
     nddev::log "warn" "slot ${slot} occupied by different backup; removing: $(basename "$existing")"
     if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
