@@ -7,6 +7,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **`bootstrap` command — install ZCode from zero.** Downloads and installs the
+  ZCode desktop app + CLI at the pinned version (macOS `.dmg` → `/Applications/`,
+  Ubuntu `.deb` → `dpkg`), then wires the `zcode` CLI launcher into `~/.local/bin`.
+  Uses the official CDN (`cdn-zcode.z.ai`) with per-platform/per-arch artifacts
+  recorded in `build/version.json`. Skips the download if the pinned version is
+  already installed. Full from-zero flow: `bootstrap` → `install`.
 - **ZCode runtime version pinning.** `build/version.json` now pins the exact
   ZCode desktop app (`3.3.3`) and CLI (`0.15.0`) versions this build was verified
   against. The installer detects the running ZCode and warns if it differs from

@@ -1,16 +1,42 @@
 # Install
 
-`nddev-zcode-app` recreates a complete, version-stamped `~/.zcode` from source on
-macOS (desktop) or Ubuntu (desktop/server). It backs up the current `~/.zcode`,
-lays down a clean build, writes a version stamp, and selectively restores
-runtime state (credentials, sessions, db, certs) from the backup.
+`nddev-zcode-app` can install ZCode **from zero** and then configure it. Two phases:
+
+1. **`bootstrap`** — downloads and installs the ZCode desktop app + CLI (macOS `.dmg`,
+   Ubuntu `.deb`) at the pinned version, and wires the `zcode` CLI launcher.
+2. **`install`** — builds a clean `~/.zcode` from a marketplace (config, plugins,
+   skills). Backs up the current one first.
+
+Both work on macOS (desktop) and Ubuntu (desktop/server).
 
 ## Prerequisites
 
-- Git
-- Python 3 (`python3`) — used by the installer for JSON rendering/validation
-- The ZCode client (so the rendered config is immediately useful)
-- `build/.env` populated from `build/.env.example` (see [secrets.md](secrets.md))
+- Git, Python 3 (`python3`), `curl`, and `node` (the CLI launcher runs the app's
+  `zcode.cjs` through node).
+- `build/.env` populated from `build/.env.example` (see [secrets.md](secrets.md)).
+- If ZCode is already installed, `bootstrap` skips the download and only wires
+  the CLI launcher.
+
+## From zero (fresh machine)
+
+```bash
+# 1. Clone the repo (or tools/sync.sh clone nddev-zcode-app in the estate).
+# 2. Populate secrets:
+cp build/.env.example build/.env
+$EDITOR build/.env
+
+# 3. Install the ZCode app + CLI (downloads ~150MB from the official CDN):
+cli-tools/scripts/install.sh bootstrap --plan     # dry-run first
+cli-tools/scripts/install.sh bootstrap --apply
+
+# 4. Configure ~/.zcode from a marketplace:
+cli-tools/scripts/install.sh list
+cli-tools/scripts/install.sh install --marketplace nddev-developer --plan
+cli-tools/scripts/install.sh install --marketplace nddev-developer --apply
+```
+
+After step 3, ZCode is installed and the `zcode` command is on PATH. After step 4,
+`~/.zcode` is configured and ready to use.
 
 ## Usage
 

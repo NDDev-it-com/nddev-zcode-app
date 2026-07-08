@@ -22,22 +22,27 @@ build/         ← ARTIFACTS: version, manifest, system files, secrets templates
 
 See [docs/architecture.md](docs/architecture.md) for the full design.
 
-## Quick start
+## Quick start (from zero)
 
 ```bash
 # 1. Populate secrets (gitignored, never committed):
 cp build/.env.example build/.env
 $EDITOR build/.env
 
-# 2. List available setups:
+# 2. Install the ZCode app + CLI (downloads from the official CDN, pinned version):
+cli-tools/scripts/install.sh bootstrap --apply
+
+# 3. List available setups:
 cli-tools/scripts/install.sh list
 
-# 3. Plan (dry-run — prints every action without touching disk):
+# 4. Configure ~/.zcode from a marketplace (plan first, then apply):
 cli-tools/scripts/install.sh install --marketplace nddev-developer --plan
-
-# 4. Apply (back up ~/.zcode, build clean, restore runtime state):
 cli-tools/scripts/install.sh install --marketplace nddev-developer --apply
 ```
+
+If ZCode is already installed, `bootstrap` skips the download and only wires the
+`zcode` CLI launcher. See [docs/install.md](docs/install.md) for the full lifecycle
+(install / update / switch / remove) and custom target directories.
 
 ## Backup convention
 

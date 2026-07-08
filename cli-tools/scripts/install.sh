@@ -38,12 +38,17 @@ TARGET_OVERRIDE=""
 
 usage() {
   cat <<'EOF'
-Usage: cli-tools/scripts/install.sh [install|remove|list] [options]
+Usage: cli-tools/scripts/install.sh [bootstrap|install|remove|list] [options]
 
 Commands:
-  install (default)   Build ~/.zcode from a marketplace.
-  remove              Back up and delete the installed ~/.zcode.
-  list                List available marketplaces.
+  bootstrap             Download and install the ZCode desktop app + CLI (from zero).
+  install (default)     Build ~/.zcode from a marketplace.
+  remove                Back up and delete the installed ~/.zcode.
+  list                  List available marketplaces.
+
+Options (bootstrap):
+  --platform macos|ubuntu   Target platform (default: auto-detect from uname).
+  --apply                   Execute the download + install (default is --plan).
 
 Options (install):
   --marketplace <name>      Which marketplace/setup to build from (required for install).
@@ -57,7 +62,7 @@ Options (remove):
   --apply                   Actually delete (default is --plan).
   --keep-backup <dir>       Move the target here instead of the default backups dir.
 
-Target resolution:
+Target resolution (install/remove):
   --target flag > ZCODE_TARGET (build/.env) > ~/.zcode
 
 Backup convention:
@@ -86,7 +91,7 @@ list_marketplaces() {
 # ─── Parse command (first positional, if present) ────────────────────────
 if [ "$#" -gt 0 ]; then
   case "$1" in
-    install|remove|list)
+    bootstrap|install|remove|list)
       COMMAND="$1"
       shift
       ;;
@@ -156,6 +161,16 @@ fi
 if [ "$COMMAND" = "list" ]; then
   list_marketplaces
   exit 0
+fi
+
+# ─── Handle 'bootstrap' command ──────────────────────────────────────────
+if [ "$COMMAND" = "bootstrap" ]; then
+  BOOTSTRAP="$SCRIPT_DIR/bootstrap.sh"
+  if [ ! -x "$BOOTSTRAP" ]; then
+    nddev::log "error" "Missing bootstrap script: $BOOTSTRAP"
+    exit 2
+  fi
+  exec "$BOOTSTRAP" ${PLATFORM:+--platform "$PLATFORM"} $([ "$APPLY" -eq 1 ] && echo '--apply' || echo '--plan')
 fi
 
 # ─── Handle 'remove' command ─────────────────────────────────────────────

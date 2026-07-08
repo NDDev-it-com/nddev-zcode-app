@@ -3,6 +3,20 @@
   "zcode_app_version": "3.3.3",
   "zcode_cli_version": "0.15.0",
   "zcode_runtime": "GLM-5.2",
+  "zcode_cdn_base": "https://cdn-zcode.z.ai/zcode/electron/releases",
+  "zcode_download_artifacts": {
+    "macos-arm64": "ZCode-3.3.3-mac-arm64.dmg",
+    "macos-x64": "ZCode-3.3.3-mac-x64.dmg",
+    "linux-x64-appimage": "ZCode-3.3.3-linux-x64.AppImage",
+    "linux-x64-deb": "ZCode-3.3.3-linux-x64.deb",
+    "linux-arm64-appimage": "ZCode-3.3.3-linux-arm64.AppImage",
+    "linux-arm64-deb": "ZCode-3.3.3-linux-arm64.deb"
+  },
+  "zcode_cli_launcher": {
+    "macos_entry": "/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs",
+    "linux_entry": "/opt/ZCode/resources/glm/zcode.cjs",
+    "wrapper_target": "${HOME}/.local/bin/zcode"
+  },
   "schema": 1,
-  "_comment": "build_version is the semantic version of this nddev-zcode-app build. zcode_app_version and zcode_cli_version pin the exact ZCode desktop app and CLI versions this build was verified against — the installer warns if the running ZCode differs. zcode_runtime is the runtime model baseline. Bump build_version for every release."
+  "_comment": "build_version is the semantic version of this nddev-zcode-app build. zcode_app_version and zcode_cli_version pin the exact ZCode desktop app and CLI versions this build was verified against — the installer warns if the running ZCode differs. zcode_cdn_base + zcode_download_artifacts are used by the bootstrap command to download and install the ZCode app. The CLI is the zcode.cjs inside the app bundle, launched via node through a wrapper script."
 }
