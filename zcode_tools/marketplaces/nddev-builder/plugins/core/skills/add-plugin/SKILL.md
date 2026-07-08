@@ -62,7 +62,15 @@ zcode_tools/marketplaces/<marketplace>/
    }
    ```
    Add `dependencies` **only** if the plugin requires another plugin to be enabled first
-   (e.g. an MCP-dependent plugin lists the MCP transport plugin).
+   (e.g. an MCP-dependent plugin lists the MCP transport plugin). Dependencies are
+   `name@marketplace` strings; cross-marketplace deps require the target marketplace
+   listed in the marketplace's `allowCrossMarketplaceDependenciesOn`.
+
+   **Component path rule (critical):** if you DO declare component paths in the
+   manifest (e.g. `"skills": ["./skills"]`), they MUST be **relative and inside
+   the plugin root**. An absolute path or one that escapes the plugin root
+   (`../something`) is **rejected** and the component is silently dropped. By
+   default, leave components undeclared — convention discovery handles them.
 
 5. **Add a README.md** at the plugin root: one-line purpose, what it provides (N skills,
    M commands, K agents), and the install note (enable via ZCode Plugin Management).

@@ -45,14 +45,16 @@ time.
 
 ### Entry shapes
 
-stdio server:
+stdio server (`command` is a **string**, NOT an array — OpenCode-style arrays crash):
 ```json
 {
   "mcpServers": {
     "<name>": {
       "command": "uvx",
       "args": ["some-mcp-server@1.2.3"],
-      "env": { "API_KEY": "${API_KEY}" }
+      "env": { "API_KEY": "${API_KEY}" },
+      "cwd": "/path/to/dir",
+      "timeoutMs": 60000
     }
   }
 }
@@ -62,16 +64,38 @@ http server:
 ```json
 {
   "mcpServers": {
-    "<name>": { "type": "http", "url": "https://..." }
+    "<name>": { "url": "https://...", "headers": {}, "timeoutMs": 30000 }
   }
 }
 ```
 
-### Secrets
+### Strict schema rules (violations silently drop the server)
 
-Secrets use `${VAR}` placeholders. Add the matching `VAR=` key (empty) to
-`build/.env.example` (committed template) and `build/.env` (gitignored real
-value). The installer substitutes at render time.
+- **`command` MUST be a string** (not an array). `command: ["npx", "..."]` crashes
+  Settings with `command.trim is not a function`.
+- Field names: `env` (not `environment`), `headers` (not `http_headers`),
+  `enabled` (not `enable`). Wrong names → zero tools registered.
+- **Unknown top-level keys are NOT tolerated** — the schema is strict. An extra
+  key drops the entire server.
+- `type` is optional — inferred from `command` (→ stdio) or `url` (→ http).
+- Default timeout: **30000 ms**. Use `timeoutMs` to override.
+
+### Secrets and `${VAR}` expansion — important limitation
+
+**Template `${...}` expansion is PLUGIN-ONLY.** Our installer merges `mcp.json`
+into `cli/config.json` (a configuration file), where `${...}` is **NOT expanded**
+by ZCode — it reaches the process literally. This is why **our installer does the
+substitution at render time** (it reads `build/.env` and replaces `${VAR}` before
+writing `cli/config.json`). So `${VAR}` placeholders work in our setup because
+the installer resolves them, not ZCode.
+
+For reference (if editing `cli/config.json` directly, bypassing the installer):
+config-file servers do NOT expand `${...}` — use absolute values or env vars
+read by the server process itself. Plugin `.mcp.json` servers (inside a plugin
+directory) DO expand `${CLAUDE_PLUGIN_ROOT}`, `${ZCODE_PROJECT_DIR}`, etc.
+
+Add the matching `VAR=` key (empty) to `build/.env.example` (committed) and
+`build/.env` (gitignored real value).
 
 ## Path B: CLI + skill (the lean alternative)
 

@@ -45,10 +45,15 @@ For EVERY marketplace under `zcode_tools/marketplaces/`:
   `category`, `tags`, `license`. The `name` matches the directory name.
 - **plugin.json** (each plugin) — metadata-only: NO `commands`, `skills`,
   `hooks`, `mcpServers`, or `agents` arrays. `name` matches
-  `^[a-z0-9][a-z0-9._-]{0,127}$`.
+  `^[a-z0-9][a-z0-9._-]{0,127}$`. Any declared component paths are **relative
+  and inside the plugin root** (no absolute/escaping paths).
 - **SKILL.md** (each) — frontmatter `name` matches the directory name.
-  Frontmatter delimited by `---`.
-- **commands/*.md** — frontmatter has `description`.
+  Frontmatter delimited by `---`. **`description` is ≤ 1024 characters** (over
+  = silently dropped). Recognized keys: `name`, `description`, `when_to_use`,
+  `license`, `metadata` (any other key is silently ignored).
+- **commands/*.md** — filename matches `^[a-z0-9][a-z0-9_:-]{0,63}$`. Frontmatter
+  has `description` (or a non-empty body). Keys are **hyphenated**
+  (`allowed-tools`, not `allowed_tools`). No multi-line arrays (flat parser).
 - **agents/*.md** — frontmatter has `name` and `model`.
 - **cli-config.template.json** — `hooks.enabled: true`, all 7 events present,
   uses `mcp.servers` (NOT top-level `mcpServers`).

@@ -42,11 +42,24 @@ description: <English prose. Explain WHEN to use it. Include trigger verbs.>
 
 ## Frontmatter rules
 
-- `name` (required) — must match the directory name. Lowercase, hyphens.
-- `description` (required) — **English only** for this repo. State what the skill does
-  and **when** an agent should load it. This field is what triggers auto-discovery, so be
-  specific about the situations it handles.
-- No other fields are required. Do not invent `version`, `tags`, or `allowed-tools`.
+Recognized frontmatter keys (anything else is silently ignored):
+- `name` (required) — must match the directory name. Lowercase kebab-case.
+- `description` (required) — **English only** for this repo. State what the skill
+  does and **when** an agent should load it. **Hard limit: 1024 characters — a
+  description longer than 1024 chars causes the skill to be DROPPED entirely**
+  (not truncated). However, only the first **~250 characters** are shown to the
+  model for triggering, so front-load the trigger wording there. Be "pushy" —
+  describe contexts where the skill applies even if the user doesn't say the
+  exact keyword.
+- `when_to_use` (optional) — additional trigger context, also shown to the model.
+- `license`, `metadata` (optional, reserved) — rarely needed.
+
+Do NOT invent `version`, `tags`, or `allowed-tools` — they are not recognized keys.
+
+**Critical pitfalls:**
+- Description > 1024 chars → skill silently dropped.
+- Indented frontmatter keys are silently ignored — keep keys at column 0.
+- Multi-line values need `>` or `|` block scalars (flat parser, no flow YAML).
 
 ## Discovery order (why location matters)
 

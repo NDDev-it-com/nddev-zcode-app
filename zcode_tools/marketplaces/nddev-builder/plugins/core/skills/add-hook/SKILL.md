@@ -34,26 +34,74 @@ The installer merges these into `~/.zcode/cli/config.json` under the `hooks` key
 
 ## Hook entry shape
 
-Each event key holds an array of hook entries. A hook entry is:
+Each event key holds an array of hook entries. There are **two hook types** —
+do not mix their fields (mixing → hook silently dropped):
+
+### type: "command" (shell)
 
 ```json
 {
-  "matcher": "<ToolName|.*>",
+  "matcher": "<regex>",
   "hooks": [
     {
       "type": "command",
-      "command": "<shell command>"
+      "command": "<shell command>",
+      "timeout": 30,
+      "timeoutMs": 30000,
+      "statusMessage": "Running check..."
     }
   ]
 }
 ```
 
-- `matcher` — for `PreToolUse`/`PostToolUse`/`PostToolUseFailure`/`PermissionRequest`,
-  a tool name to match (e.g. `"Bash"`, `"Edit"`). Use `".*"` or omit to match all tools.
-  Ignored for `SessionStart`/`UserPromptSubmit`/`Stop`.
-- `command` — a shell command. It receives event context via stdin (JSON) and its
-  exit code / stdout feed back into the session (exit 2 blocks the action for
-  PreToolUse; stdout is shown to the model).
+- `command` — a shell string. Runs via the shell.
+- `timeout` — **SECONDS** (e.g. `30` = 30 seconds). ⚠️ Not milliseconds!
+- `timeoutMs` — **MILLISECONDS** (takes precedence over `timeout` if both set).
+- `async` — has NO runtime effect (ignored).
+
+### type: "process" (no shell, most portable)
+
+```json
+{
+  "matcher": "<regex>",
+  "hooks": [
+    {
+      "type": "process",
+      "command": "/usr/bin/python3",
+      "args": ["-c", "print('ok')"],
+      "timeoutMs": 5000
+    }
+  ]
+}
+```
+
+- `command` — an executable path (not a shell string).
+- `args` — array of string arguments.
+- `timeoutMs` — **MILLISECONDS** (e.g. `5000` = 5 seconds). ⚠️ Not seconds!
+- Accepts ONLY `command`, `args`, `timeoutMs` — no other fields.
+
+**⚠️ Critical timeout asymmetry:** `command.timeout` is in SECONDS, but
+`process.timeoutMs` is in MILLISECONDS. A value of `500` means 500 seconds for
+a command hook but 500ms (half a second) for a process hook. Default is 60000ms
+(60 seconds) if neither is set.
+
+### matcher (case-sensitive REGEX)
+
+`matcher` is a **case-sensitive regular expression** tested against the match value:
+- Tool events (`PreToolUse`/`PostToolUse`/`PostToolUseFailure`/`PermissionRequest`):
+  matched against the tool name (`Bash`, `Read`, `Write`, `Edit`, `Agent`).
+  Aliases: `Task`↔`Agent`, `Write`/`Edit`↔`ApplyPatch`. `"bash"` will NOT match `Bash`.
+- `SessionStart`: matched against `startup`/`resume`/`clear`/`compact`.
+- `UserPromptSubmit`: matched against the prompt text.
+- `Stop`: matched against the response preview.
+- Omitted matcher = match all. Invalid regex = never matches (silently).
+
+### Output and exit codes
+
+- **stdout** is parsed as **strict JSON** — any extra/unknown key fails validation.
+  Use the documented keys only (e.g. `{"decision": "block", "reason": "..."}`).
+- **exit codes**: `0` = pass, `2` = block (deny for PreToolUse/PermissionRequest),
+  any other non-zero = error. Non-JSON stdout is shown to the model as context.
 
 ## Procedure
 
