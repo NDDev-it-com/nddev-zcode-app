@@ -1,0 +1,22 @@
+{
+  "name": "nddev-developer",
+  "version": "1.0.0",
+  "description": "Developer toolkit for the nddev-zcode-app estate: skills, slash commands, and subagents for building plugins, managing MCP servers, authoring skills, and cutting releases. The companion to the build system + installer.",
+  "author": {
+    "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev",
+    "url": "https://github.com/rldyourmnd"
+  },
+  "license": "AGPL-3.0-or-later",
+  "homepage": "https://github.com/NDDev-it-com/nddev-zcode-app/tree/main/zcode_tools/plugins/nddev-developer",
+  "repository": "https://github.com/NDDev-it-com/nddev-zcode-app",
+  "keywords": [
+    "developer",
+    "toolkit",
+    "sdlc",
+    "plugins",
+    "mcp",
+    "skills",
+    "release",
+    "nddev"
+  ]
+}

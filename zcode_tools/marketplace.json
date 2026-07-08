@@ -5,5 +5,27 @@
     "url": "https://github.com/rldyourmnd"
   },
   "description": "NDDev ZCode plugin marketplace. Built and installed from source by nddev-zcode-app.",
-  "plugins": []
+  "plugins": [
+    {
+      "name": "nddev-developer",
+      "source": "./plugins/nddev-developer",
+      "description": "Developer toolkit for the nddev-zcode-app estate: skills, slash commands, and subagents for building plugins, managing MCP servers, authoring skills, and cutting releases.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev"
+      },
+      "category": "development",
+      "tags": [
+        "developer",
+        "toolkit",
+        "sdlc",
+        "plugins",
+        "mcp",
+        "skills",
+        "release",
+        "nddev"
+      ],
+      "license": "AGPL-3.0-or-later"
+    }
+  ]
 }
