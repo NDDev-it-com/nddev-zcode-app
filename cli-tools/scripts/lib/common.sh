@@ -137,23 +137,20 @@ nddev::today() {
   date +%d.%m.%Y
 }
 
-# Compute the next backup slot: a directory named <N>-old.zcode where N is 1-9.
-# The name is slot-only (no date/version in the filename) so that reusing a slot
-# truly overwrites the old backup — the total never exceeds 9 directories.
-# The date and version are recorded inside the backup's BUILD-VERSION stamp.
-#
-# Selection: the lowest free slot (1..9). If all 9 are taken, reuse the OLDEST
+# Compute the next backup slot: 0-9 (ten slots).
+# Selection: the lowest free slot (0..9). If all 10 are taken, reuse the OLDEST
 # slot (lowest mtime) — its old backup is removed before the new one is moved in.
+# The pool never exceeds 10 directories, regardless of version differences.
 #
 # Reads NDDEV_BACKUPS_DIR if set (testing), otherwise ~/.zcode-backups.
 nddev::backup_slot() {
   local backups_dir="${NDDEV_BACKUPS_DIR:-$HOME/.zcode-backups}"
   local slot i
 
-  # Find the lowest free slot 1..9 (a dir named exactly "<i>-old.zcode").
+  # Find the lowest free slot 0..9.
   slot=""
-  for i in $(seq 1 9); do
-    if [ ! -e "$backups_dir/${i}-old.zcode" ]; then
+  for i in $(seq 0 9); do
+    if ! find "$backups_dir" -maxdepth 1 -name "${i}-*-old.zcode" -print -quit 2>/dev/null | grep -q .; then
       slot=$i
       break
     fi
@@ -174,16 +171,18 @@ nddev::backup_slot() {
         ;;
     esac
     slot="${oldest_name%%-*}"
-    [ -z "$slot" ] && slot=1
+    [ -z "$slot" ] && slot=0
   fi
 
   printf '%s\n' "$slot"
 }
 
-# Backward-compatible alias: returns the slot directory name (N-old.zcode).
-# Kept because build.sh calls nddev::backup_name historically.
+# Compute the backup directory name: <N>-<VERSION>-old.zcode
+# The slot (0-9) is reused when full, overwriting regardless of version.
+# $1 = the version string being backed up.
 nddev::backup_name() {
-  printf '%s-old.zcode\n' "$(nddev::backup_slot)"
+  local version=$1
+  printf '%s-%s-old.zcode\n' "$(nddev::backup_slot)" "$version"
 }
 
 # Render a JSON template by substituting ${VAR} placeholders from the environment

@@ -46,14 +46,14 @@ If ZCode is already installed, `bootstrap` skips the download and only wires the
 
 ## Backup convention
 
-On `--apply`, the current `~/.zcode` is moved to a rotating pool of **exactly 9 slots**:
+On `--apply`, the current `~/.zcode` is moved to a rotating pool of **10 slots**:
 
 ```
-~/.zcode-backups/<N>-old.zcode      (N = 1-9)
+~/.zcode-backups/<N>-<VERSION>-old.zcode      (N = 0-9)
 ```
 
-- `N` — a 1–9 rotation slot (lowest free slot; the **oldest is overwritten** when all 9 are full).
-- The date and version are recorded inside each backup's `BUILD-VERSION`, not in the filename — so the pool never grows beyond 9 directories.
+- `N` — a 0–9 rotation slot (lowest free slot; the **oldest is overwritten** when all 10 are full, regardless of version).
+- `VERSION` — the build version that was installed.
 
 **Always restored** from the backup: `v2/credentials.json`, `v2/certs/`,
 `cli/agents/`, `cli/db/`, `cli/artifacts/`.

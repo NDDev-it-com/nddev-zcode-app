@@ -58,31 +58,44 @@ nddev::select_marketplace() {
 
 # --- Backup --------------------------------------------------------------
 
-# Back up the current ~/.zcode into ~/.zcode-backups/<N>-old.zcode (N = 1-9 slot).
-# Slot-only naming guarantees at most 9 backups: reusing a slot overwrites the
-# old one. Safe to call when ~/.zcode does not exist (no-op log).
+# Back up the current ~/.zcode into ~/.zcode-backups/<N>-<VERSION>-old.zcode.
+# Ten slots (0-9); reusing a slot overwrites the old backup regardless of its
+# version, so the pool never exceeds 10 directories. Safe to call when ~/.zcode
+# does not exist (no-op log).
 nddev::backup_current() {
   if [ ! -d "$ZCODE_HOME" ]; then
     nddev::log "info" "no existing ~/.zcode to back up (fresh install)"
     return 0
   fi
 
-  local current_version backup_name target
+  local current_version backup_name target slot
   current_version="$(nddev::current_version)"
-  backup_name="$(nddev::backup_name "$current_version")"
+  slot="$(nddev::backup_slot)"
+  backup_name="${slot}-${current_version}-old.zcode"
   target="$BACKUPS_DIR/$backup_name"
 
   nddev::section "Backup current ~/.zcode"
   nddev::log "info" "current build version: $current_version"
-  nddev::log "info" "backup slot: $target"
+  nddev::log "info" "backup target: $target"
 
   nddev::ensure_dir "$BACKUPS_DIR"
-  if [ -e "$target" ]; then
-    nddev::log "warn" "slot occupied; overwriting: $target"
+
+  # Remove any existing backup in this slot (version may differ, so the name
+  # may differ — match by slot prefix, not exact name).
+  local existing
+  existing="$(find "$BACKUPS_DIR" -maxdepth 1 -name "${slot}-*-old.zcode" -print -quit 2>/dev/null)"
+  if [ -n "$existing" ] && [ "$existing" != "$target" ]; then
+    nddev::log "warn" "slot ${slot} occupied by different backup; removing: $(basename "$existing")"
+    if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
+      rm -rf "$existing"
+    fi
+  elif [ -e "$target" ]; then
+    nddev::log "warn" "overwriting same-version backup: $target"
     if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
       rm -rf "$target"
     fi
   fi
+
   nddev::move "$ZCODE_HOME" "$target"
   nddev::log "ok" "backup complete"
 }

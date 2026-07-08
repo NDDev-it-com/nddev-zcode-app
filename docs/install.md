@@ -80,25 +80,24 @@ The install/remove target is resolved in this order:
 ### Lifecycle: install → update → switch → remove
 
 Every transition backs up the current install first into a rotating pool of
-**exactly 9 slots** (`1-old.zcode` … `9-old.zcode`), so the total never grows
-beyond 9 directories:
+**10 slots** (`0-<VERSION>-old.zcode` … `9-<VERSION>-old.zcode`), so the total
+never grows beyond 10 directories:
 
 - **Install** — fresh build from a marketplace.
 - **Update** — re-run `install` with the same marketplace (source changed).
 - **Switch** — `install` with a different `--marketplace`.
 - **Remove** — `remove` backs up and deletes.
 
-Slot selection: the lowest free slot (1–9). When all 9 are full, the **oldest**
-slot (by modification time) is overwritten — its old backup is removed first.
-The date and version are recorded inside each backup's `BUILD-VERSION` stamp,
-not in the filename, so a slot is always exactly one backup.
+Slot selection: the lowest free slot (0–9). When all 10 are full, the **oldest**
+slot (by modification time) is overwritten — its old backup is removed first,
+regardless of version. The version is in the filename; the timestamp is inside
+each backup's `BUILD-VERSION` stamp.
 
 ## What happens on `install --apply`
 
-1. **Backup** — the current target is moved to `<backups>/<N>-old.zcode`, where
-   `N` is a 1–9 rotation slot (lowest free slot; the oldest is overwritten when
-   all nine are full). The build version and timestamp are recorded inside the
-   backup's `BUILD-VERSION`. The pool never exceeds 9 backups.
+1. **Backup** — the current target is moved to `<backups>/<N>-<VERSION>-old.zcode`,
+   where `N` is a 0–9 rotation slot (lowest free slot; the oldest is overwritten
+   when all ten are full, regardless of version). The pool never exceeds 10 backups.
 2. **Build** — a clean target is rendered from the selected marketplace:
    - `AGENTS.md`, `skills/`, `commands/`, `agents/`, `plugins/` are copied as-is.
    - `cli/config.json`, `v2/config.json`, `v2/setting.json` are rendered from
@@ -125,5 +124,5 @@ To revert to a backup, move it back:
 
 ```bash
 mv ~/.zcode ~/.zcode-backups/revert-$(date +%s)
-mv ~/.zcode-backups/<N>-old.zcode ~/.zcode
+mv ~/.zcode-backups/<N>-<VERSION>-old.zcode ~/.zcode
 ```

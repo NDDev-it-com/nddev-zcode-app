@@ -66,7 +66,7 @@ Target resolution (install/remove):
   --target flag > ZCODE_TARGET (build/.env) > ~/.zcode
 
 Backup convention:
-  ~/.zcode → <backups>/<N>-old.zcode  (slot-only, max 9; oldest overwritten when full)
+  ~/.zcode → <backups>/<N>-<VERSION>-old.zcode  (10 slots 0-9; oldest overwritten when full)
 EOF
 }
 
