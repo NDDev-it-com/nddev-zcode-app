@@ -89,9 +89,11 @@ nddev::detect_platform() {
   esac
 }
 
-# Read the current installed build version from ~/.zcode/BUILD-VERSION, or "unknown".
+# Read the current installed build version from BUILD-VERSION, or "unknown".
+# Reads from NDDEV_TARGET if set (testing), otherwise the real ~/.zcode.
 nddev::current_version() {
-  local stamp="$HOME/.zcode/BUILD-VERSION"
+  local zcode_home="${NDDEV_TARGET:-$HOME/.zcode}"
+  local stamp="$zcode_home/BUILD-VERSION"
   if [ -f "$stamp" ]; then
     python3 -c "import json,sys; print(json.load(open('$stamp')).get('build_version','unknown'))" 2>/dev/null \
       || printf 'unknown'
@@ -108,9 +110,10 @@ nddev::today() {
 # Compute the next backup directory name: <N>-<DD.MM.YYYY>-<VERSION>-old.zcode
 # N is a 1-9 rotation index: the lowest free slot (1..9). If all 1..9 are taken,
 # reuse the oldest existing backup's slot (overwrite).
+# Reads NDDEV_BACKUPS_DIR if set (testing), otherwise ~/.zcode-backups.
 nddev::backup_name() {
   local version=$1
-  local backups_dir="$HOME/.zcode-backups"
+  local backups_dir="${NDDEV_BACKUPS_DIR:-$HOME/.zcode-backups}"
   local today slot i existing
 
   today="$(nddev::today)"
