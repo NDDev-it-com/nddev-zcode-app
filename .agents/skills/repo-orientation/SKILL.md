@@ -1,53 +1,82 @@
 ---
 name: repo-orientation
-description: Map of the nddev-zcode-app repository — read it FIRST when working anywhere inside this repo. Explains the three-layer build model (zcode_tools source → cli-tools installer → build artifacts), where each kind of file lives, the backup/restore contract, and the secrets policy. Use when unsure what a directory is for, where to add a skill/plugin/MCP server, or how the installer flows. RU triggers — карта репозитория, где лежит, структура репо, как устроен, что куда добавлять, installer, бекап, восстановление, zcode, сборка.
+description: Map of the nddev-zcode-app repository — read it FIRST when working anywhere inside this repo. Explains the self-contained marketplace model (each marketplace = a complete ~/.zcode setup), the installer --marketplace selection, where each kind of file lives, the backup/restore contract, and the secrets policy. Use when unsure what a directory is for, where to add a skill/plugin/MCP server, or how to switch setups. RU triggers — карта репозитория, где лежит, структура репо, как устроен, что куда добавлять, маркетплейс, installer, бекап, восстановление, zcode, сборка, переключить сетап.
 ---
 
 # nddev-zcode-app — repository map
 
 `nddev-zcode-app` is **not** a runtime. It is a build system + installer that
-recreates a complete, version-stamped `~/.zcode` from source on macOS (desktop)
-and Ubuntu (desktop/server). Read `AGENTS.md` for rules; this skill is the map.
+recreates a complete, version-stamped `~/.zcode` from **one selected marketplace**
+on macOS (desktop) and Ubuntu (desktop/server). Read `AGENTS.md` for rules; this
+skill is the map.
+
+## The core idea: each marketplace IS a complete setup
+
+A marketplace is not just a plugin catalog — it is a **self-contained `~/.zcode`
+build**: its own AGENTS.md, config templates, MCP/hooks, user-scope
+skills/commands/agents, and plugins. The installer selects ONE marketplace and
+builds a clean `~/.zcode` entirely from it. Switching setups = rebuild from a
+different marketplace (the old `~/.zcode` is backed up first).
+
+```
+zcode_tools/marketplaces/<name>/        ← ONE complete setup
+  AGENTS.md                             → ~/.zcode/AGENTS.md
+  marketplace.json                      → ~/.zcode/marketplaces/<name>/marketplace.json
+  cli-config.template.json              → ~/.zcode/cli/config.json       (rendered)
+  v2-config.template.json               → ~/.zcode/v2/config.json        (rendered)
+  v2-setting.template.json              → ~/.zcode/v2/setting.json       (rendered)
+  mcp.json                              → reference (merged into cli/config.json)
+  hooks.json                            → reference (merged into cli/config.json)
+  skills/  commands/  agents/           → ~/.zcode/{skills,commands,agents}/
+  plugins/<plugin>/                     → plugin bundles (convention-discovered)
+```
 
 ## The three layers
 
-| Layer | Dir | What it is | Git nature |
-|---|---|---|---|
-| **Source** | `zcode_tools/` | the complete desired `~/.zcode` as editable files | tracked source |
-| **Installer** | `cli-tools/` | renders `zcode_tools/` into `~/.zcode` (macOS + Ubuntu) | tracked source |
-| **Artifacts** | `build/` | version, manifest, system files, secrets templates | tracked + gitignored `.env` |
-
-Everything else (`docs/`, `development/`, `tests/`, `.github/`) supports these three.
+| Layer | Dir | What it is |
+|---|---|---|
+| **Source** | `zcode_tools/marketplaces/<name>/` | one or more self-contained `~/.zcode` setups |
+| **Installer** | `cli-tools/` | selects a marketplace, renders it into `~/.zcode` |
+| **Artifacts** | `build/` | version, manifest, secrets templates (shared across setups) |
 
 ## Where things live
 
-| You want to add… | Put it here |
+| You want to add… | Put it here (inside the marketplace) |
 |---|---|
-| A user-scope skill | `zcode_tools/skills/<name>/SKILL.md` |
-| A slash command | `zcode_tools/commands/<name>.md` |
-| A subagent | `zcode_tools/agents/<name>.md` |
-| A marketplace | `zcode_tools/marketplaces/<marketplace>/marketplace.json` (one dir per marketplace) |
-| A plugin (inside a marketplace) | `zcode_tools/marketplaces/<marketplace>/plugins/<name>/.zcode-plugin/plugin.json` + `skills/`, `commands/`, `agents/` |
-| An MCP server | `zcode_tools/mcp.json` (`{"mcpServers":{}}`) + the secret in `build/.env.example` |
-| A lifecycle hook | `zcode_tools/hooks.json` (merged into `cli/config.json` under `hooks`) |
-| Provider definitions | `zcode_tools/v2-config.template.json` |
-| Desktop preferences | `zcode_tools/v2-setting.template.json` |
-| A secret | `build/.env.example` (template) → `build/.env` (gitignored real value) |
+| System instructions | `marketplaces/<name>/AGENTS.md` |
+| Provider definitions | `marketplaces/<name>/v2-config.template.json` |
+| Desktop preferences | `marketplaces/<name>/v2-setting.template.json` |
+| MCP servers | `marketplaces/<name>/mcp.json` + the secret in `build/.env.example` |
+| Lifecycle hooks | `marketplaces/<name>/hooks.json` |
+| A user-scope skill | `marketplaces/<name>/skills/<skill>/SKILL.md` |
+| A slash command | `marketplaces/<name>/commands/<cmd>.md` |
+| A subagent | `marketplaces/<name>/agents/<agent>.md` |
+| A plugin | `marketplaces/<name>/plugins/<plugin>/.zcode-plugin/plugin.json` + `skills/`, `commands/`, `agents/` |
+| A whole new setup | a new directory under `zcode_tools/marketplaces/<new-name>/` |
+| A secret | `build/.env.example` (template, shared) → `build/.env` (gitignored real value) |
 | A meta-skill (to develop THIS repo) | `development/skills/<name>/SKILL.md` |
 
 ## The installer flow
 
-```
-cli-tools/scripts/install.sh --platform macos|ubuntu [--apply|--plan]
+```bash
+# List available setups:
+cli-tools/scripts/install.sh --list
+
+# Plan (dry-run) a specific setup:
+cli-tools/scripts/install.sh --marketplace <name> --plan
+
+# Apply (back up, build clean, restore):
+cli-tools/scripts/install.sh --marketplace <name> --apply
 ```
 
-1. **Backup** — `~/.zcode` → `~/.zcode-backups/<N>-<DD.MM.YYYY>-<VERSION>-old.zcode`
-   (N = 1–9 rotation slot; VERSION = the build being backed up).
-2. **Build** — render `zcode_tools/` into a clean `~/.zcode` (secrets from `build/.env`).
-3. **Stamp** — write `~/.zcode/BUILD-VERSION` (version + platform + timestamp).
-4. **Restore** — selective: always restore credentials, certs, sessions, db, artifacts;
-   never restore logs, crash, plugin cache (ZCode regenerates those).
-5. **Verify** — JSON valid, `BUILD-VERSION` present, `AGENTS.md` present.
+1. **Select** — `--marketplace <name>` picks the self-contained setup.
+2. **Backup** — `~/.zcode` → `~/.zcode-backups/<N>-<DD.MM.YYYY>-<VERSION>-old.zcode`.
+3. **Build** — render the marketplace's config templates (secrets from `build/.env`),
+   copy AGENTS.md, skills/commands/agents, and the marketplace dir itself.
+4. **Stamp** — write `~/.zcode/BUILD-VERSION` (version + platform + timestamp).
+5. **Restore** — selective: always restore credentials, certs, sessions, db, artifacts;
+   never restore logs, crash, plugin cache.
+6. **Verify** — JSON valid, `BUILD-VERSION` present, `AGENTS.md` present.
 
 `--plan` (default) prints every action without touching disk. `--apply` is irreversible
 (wipes `~/.zcode`, keeps the versioned backup).
@@ -55,11 +84,14 @@ cli-tools/scripts/install.sh --platform macos|ubuntu [--apply|--plan]
 ## Orienting yourself
 
 ```bash
-# What build version is installed?
+# What build version / setup is installed?
 cat ~/.zcode/BUILD-VERSION
 
-# Dry-run the installer against the current ~/.zcode:
-cli-tools/scripts/install.sh --plan
+# List available setups:
+cli-tools/scripts/install.sh --list
+
+# Dry-run a specific setup:
+cli-tools/scripts/install.sh --marketplace nddev-developer --plan
 
 # Read the source-of-truth contract:
 cat config/nddev-contract.json
@@ -67,21 +99,20 @@ cat config/nddev-contract.json
 
 ## Where rules live
 
-- `AGENTS.md` — workspace rules for editing this repo (the source of truth for agents).
+- `AGENTS.md` (repo root) — workspace rules for editing this repo.
+- `marketplaces/<name>/AGENTS.md` — the system instructions installed into `~/.zcode`.
 - `.claude/CLAUDE.md` — Claude Code bridge (points at `AGENTS.md`).
-- `build/manifest.json` — machine-readable source layout, backup policy, restore policy.
-- `build/version.json` — the build version and ZCode runtime baseline.
+- `build/manifest.json` — machine-readable source layout, backup/restore policy.
 - `docs/` — install, architecture, and secrets documentation.
 
 ## ZCode native format reminders
 
-- **Multiple marketplaces are supported.** Each lives in its own directory under
-  `zcode_tools/marketplaces/<name>/` with a root `marketplace.json` and a `plugins/` subdir.
-  The installer copies all of them into `~/.zcode/marketplaces/`.
+- **Each marketplace is self-contained.** AGENTS.md and config templates live *inside*
+  the marketplace, not at the `zcode_tools/` root.
 - Plugin components are **convention-discovered**: `skills/<n>/SKILL.md`,
   `commands/<n>.md`, `agents/<n>.md`. The manifest is metadata-only.
 - MCP servers use `{"mcpServers":{}}` in `plugins/<mcps>/.mcp.json` or the `mcp.servers`
   key in `cli/config.json`.
 - Hooks need `hooks.enabled: true` in `cli/config.json`; exactly seven events are supported.
 - Secrets are **never** committed — only `${VAR}` placeholders in templates, rendered from
-  the gitignored `build/.env` at install time.
+  the gitignored `build/.env` at install time. Secrets are shared across setups (one `.env`).

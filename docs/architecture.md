@@ -11,18 +11,19 @@ cli-tools/     ← INSTALLER: renders zcode_tools/ into ~/.zcode (macOS + Ubuntu
 build/         ← ARTIFACTS: version, manifest, system files, secrets templates
 ```
 
-### zcode_tools/ — the source
+### zcode_tools/marketplaces/<name>/ — the source
 
-This directory *is* the desired `~/.zcode`, expressed as source. The installer
-copies most of it verbatim and renders the templated config files.
+Each marketplace directory **is** a complete, self-contained `~/.zcode` setup,
+expressed as source. The installer selects ONE marketplace (`--marketplace <name>`)
+and builds `~/.zcode` entirely from it.
 
-| Source file | Target | Rendered? |
+| Source file (inside the marketplace) | Target | Rendered? |
 |---|---|---|
 | `AGENTS.md` | `~/.zcode/AGENTS.md` | copy |
 | `skills/` | `~/.zcode/skills/` | copy |
 | `commands/` | `~/.zcode/commands/` | copy |
 | `agents/` | `~/.zcode/agents/` | copy |
-| `marketplaces/` | `~/.zcode/marketplaces/` | copy (one dir per marketplace) |
+| `<marketplace dir>` | `~/.zcode/marketplaces/<name>/` | copy (ZCode discovers it) |
 | `cli-config.template.json` | `~/.zcode/cli/config.json` | **render** (`${VAR}`) |
 | `v2-config.template.json` | `~/.zcode/v2/config.json` | **render** (`${API_KEY}`) |
 | `v2-setting.template.json` | `~/.zcode/v2/setting.json` | **render** (`${HOME}`) |

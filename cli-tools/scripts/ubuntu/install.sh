@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
 #
 # Ubuntu runner for the nddev-zcode-app installer.
-# Sources the shared build library and runs the full install sequence.
-# Ubuntu supports --profile server (headless) or desktop; the ZCode config itself
-# is identical — the profile only affects auxiliary tooling installed elsewhere.
+# Sources the shared build library, selects the marketplace passed from
+# install.sh, and runs the full install sequence. Supports desktop or server.
 #
 set -euo pipefail
 
@@ -16,6 +15,9 @@ LIB_DIR="$(cd "$SCRIPT_DIR/../lib" && pwd)"
 . "$LIB_DIR/version.sh"
 # shellcheck source=lib/build.sh
 . "$LIB_DIR/build.sh"
+
+# Re-select the marketplace (install.sh validated it, but this is a fresh process).
+nddev::select_marketplace "${NDDEV_MARKETPLACE:?NDDEV_MARKETPLACE must be set by install.sh}"
 
 # On a headless server there is no desktop app; the ~/.zcode config still applies
 # to the CLI and any agent sessions run there.
@@ -34,6 +36,7 @@ fi
 nddev::install_sequence "ubuntu"
 
 nddev::section "Install complete"
+nddev::log "ok" "marketplace: ${NDDEV_MARKETPLACE}"
 nddev::log "ok" "build version: $(nddev::build_version)"
 nddev::log "ok" "platform: ubuntu ($PROFILE)"
 if [ -n "$NDDEV_BACKUP_PATH" ]; then

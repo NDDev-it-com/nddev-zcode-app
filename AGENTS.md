@@ -12,9 +12,10 @@ Author: Danil Silantyev (github:rldyourmnd), CEO NDDev. License: AGPL-3.0-or-lat
 
 ## Source of truth
 
-- `zcode_tools/` — the source of the complete `~/.zcode`. Edit here; the
-  installer renders it into `~/.zcode`.
-- `cli-tools/scripts/install.sh` — the installer entry point.
+- `zcode_tools/marketplaces/<name>/` — each marketplace is a **self-contained
+  setup** (its own AGENTS.md, config templates, mcp/hooks, skills/commands/agents,
+  plugins). The installer selects ONE and builds `~/.zcode` from it.
+- `cli-tools/scripts/install.sh` — the installer entry point (`--marketplace <name>`).
 - `cli-tools/scripts/lib/{common,version,build}.sh` — shared installer logic.
 - `cli-tools/scripts/{macos,ubuntu}/install.sh` — platform runners.
 - `cli-tools/scripts/restore.sh` — selective runtime-state restore.
@@ -23,7 +24,8 @@ Author: Danil Silantyev (github:rldyourmnd), CEO NDDev. License: AGPL-3.0-or-lat
 - `references/zcode-baseline.json` — the verified ZCode runtime baseline.
 - `build/version.json` — the build version and ZCode runtime baseline.
 - `build/manifest.json` — source layout, backup policy, restore policy.
-- `build/.env.example` → `build/.env` (gitignored) — secrets injected at install.
+- `build/.env.example` → `build/.env` (gitignored) — secrets injected at install
+  (shared across all marketplaces).
 - `.serena/` — Serena project config and durable project memory (memories/).
 - `.agents/skills/repo-orientation/` — the repository map skill (read first).
 - `.claude/CLAUDE.md` — Claude Code bridge to `AGENTS.md`.
@@ -31,9 +33,9 @@ Author: Danil Silantyev (github:rldyourmnd), CEO NDDev. License: AGPL-3.0-or-lat
 ## Three layers
 
 ```
-zcode_tools/   ← SOURCE: the complete desired ~/.zcode as editable files
-cli-tools/     ← INSTALLER: renders zcode_tools/ into ~/.zcode (macOS + Ubuntu)
-build/         ← ARTIFACTS: version, manifest, system files, secrets templates
+zcode_tools/marketplaces/<name>/   ← SOURCE: one self-contained ~/.zcode setup each
+cli-tools/                         ← INSTALLER: --marketplace <name> → ~/.zcode
+build/                             ← ARTIFACTS: version, manifest, secrets (shared)
 ```
 
 ## ZCode native format (when adding components)

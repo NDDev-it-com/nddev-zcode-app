@@ -34,17 +34,17 @@ jobs:
             build/version.json \
             build/manifest.json \
             config/nddev-contract.json \
-            references/zcode-baseline.json \
-            zcode_tools/cli-config.template.json \
-            zcode_tools/v2-config.template.json \
-            zcode_tools/v2-setting.template.json; do
+            references/zcode-baseline.json; do
             python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
           done
           for f in \
             zcode_tools/marketplaces/*/marketplace.json \
+            zcode_tools/marketplaces/*/cli-config.template.json \
+            zcode_tools/marketplaces/*/v2-config.template.json \
+            zcode_tools/marketplaces/*/v2-setting.template.json \
             zcode_tools/marketplaces/*/plugins/*/.zcode-plugin/plugin.json; do
             [ -f "$f" ] && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
           done
           PLATFORM=ubuntu
           if [ "$(uname -s)" = "Darwin" ]; then PLATFORM=macos; fi
-          cli-tools/scripts/install.sh --platform "$PLATFORM" --plan
+          cli-tools/scripts/install.sh --marketplace "$(ls zcode_tools/marketplaces | head -1)" --platform "$PLATFORM" --plan

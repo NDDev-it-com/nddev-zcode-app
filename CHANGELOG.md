@@ -7,18 +7,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Changed
-- Restructured `zcode_tools/` to support **multiple marketplaces**: each lives in
-  its own directory under `zcode_tools/marketplaces/<name>/` (root `marketplace.json`
-  + `plugins/`), instead of a single root `marketplace.json` + flat `plugins/`.
-- Renamed the marketplace from `nddev` to **`nddev-developer`** (it is its own
-  marketplace, not a plugin inside `nddev`). The developer toolkit is now the
-  `core` plugin inside the `nddev-developer` marketplace.
-- Installer (`cli-tools/scripts/lib/build.sh`) now copies the whole `marketplaces/`
-  tree into `~/.zcode/marketplaces/` and validates every marketplace manifest.
-- CI workflows (`validate.yml`, `cross-platform.yml`) now glob all marketplace and
-  plugin manifests dynamically instead of a hardcoded `marketplace.json` path.
-- Updated `repo-orientation` skill, `architecture.md`, `manifest.json`, and the
-  `zcode-native-format.md` reference to the multi-marketplace layout.
+- **Each marketplace is now a self-contained `~/.zcode` setup.** AGENTS.md, config
+  templates (cli-config/v2-config/v2-setting), mcp/hooks, and user-scope
+  skills/commands/agents moved *inside* each marketplace directory
+  (`zcode_tools/marketplaces/<name>/`). The `zcode_tools/` root no longer holds
+  shared system files.
+- Installer refactored: `--marketplace <name>` (required) selects ONE setup and
+  builds a clean `~/.zcode` entirely from it. `--list` shows available setups.
+  Switching setups = rebuild from a different marketplace (old `~/.zcode` backed up).
+- The selected marketplace is installed both as the source of `~/.zcode/AGENTS.md`
+  and config, AND as `~/.zcode/marketplaces/<name>/` so ZCode Plugin Management
+  can discover its plugins.
+- Updated `repo-orientation` skill, `AGENTS.md`, `architecture.md`, `install.md`,
+  `manifest.json`, and CI workflows to the self-contained marketplace model.
+- Renamed the marketplace from `nddev` to `nddev-developer`; the developer toolkit
+  is the `core` plugin inside it.
 
 ## [1.0.0] - 2026-07-09
 

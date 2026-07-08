@@ -1,15 +1,19 @@
 #!/usr/bin/env bash
 #
 # nddev-zcode-app installer — recreates a complete, version-stamped ~/.zcode
-# from source on macOS (desktop) or Ubuntu (desktop/server).
+# from ONE selected marketplace on macOS (desktop) or Ubuntu (desktop/server).
+#
+# Each marketplace is a self-contained setup (its own AGENTS.md, config
+# templates, skills/commands/agents, and plugins). The installer selects one
+# and builds a clean ~/.zcode entirely from it.
 #
 # Usage:
-#   cli-tools/scripts/install.sh [--platform macos|ubuntu] [--apply|--plan] [--help]
+#   cli-tools/scripts/install.sh --marketplace <name> [--platform macos|ubuntu] [--apply|--plan]
 #
 # Default mode is --plan (dry-run): it prints every action without touching disk.
 # Use --apply to execute: it backs up the current ~/.zcode, lays down the clean
-# build, writes a version stamp, and selectively restores runtime state
-# (credentials, sessions, db, certs) from the backup.
+# build from the selected marketplace, writes a version stamp, and selectively
+# restores runtime state (credentials, sessions, db, certs) from the backup.
 #
 set -euo pipefail
 
@@ -23,17 +27,23 @@ LIB_DIR="$SCRIPT_DIR/lib"
 
 APPLY=0
 PLATFORM="auto"
+MARKETPLACE=""
 
 usage() {
   cat <<'EOF'
-Usage: cli-tools/scripts/install.sh [--platform macos|ubuntu] [--apply|--plan] [--help]
+Usage: cli-tools/scripts/install.sh --marketplace <name> [options]
 
-Recreates a complete, version-stamped ~/.zcode from source.
+Recreates a complete, version-stamped ~/.zcode from ONE marketplace source.
+
+Required:
+  --marketplace <name>      Which marketplace/setup to build from
+                            (a directory under zcode_tools/marketplaces/).
 
 Options:
   --platform macos|ubuntu   Target platform (default: auto-detect from uname).
   --apply                   Execute the install (default is --plan / dry-run).
   --plan | --dry-run        Print actions without writing (default).
+  -l, --list                List available marketplaces and exit.
   -h, --help                Show this help.
 
 Backup convention:
@@ -46,8 +56,30 @@ Restore policy (from backup):
 EOF
 }
 
+list_marketplaces() {
+  local root
+  root="$(nddev::repo_root)/zcode_tools/marketplaces"
+  nddev::section "Available marketplaces"
+  if [ ! -d "$root" ]; then
+    nddev::log "info" "no marketplaces directory: $root"
+    return
+  fi
+  local d
+  for d in "$root"/*/; do
+    [ -d "$d" ] || continue
+    local name desc
+    name="$(basename "$d")"
+    desc="$(python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('description',''))" "${d}marketplace.json" 2>/dev/null || echo '')"
+    printf '  %-24s %s\n' "$name" "$desc"
+  done
+}
+
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --marketplace)
+      MARKETPLACE="${2:?--marketplace requires a name (see --list)}"
+      shift 2
+      ;;
     --platform)
       PLATFORM="${2:?--platform requires one of macos|ubuntu}"
       shift 2
@@ -59,6 +91,10 @@ while [ "$#" -gt 0 ]; do
     --plan | --dry-run)
       APPLY=0
       shift
+      ;;
+    -l | --list)
+      list_marketplaces
+      exit 0
       ;;
     -h | --help)
       usage
@@ -73,6 +109,12 @@ while [ "$#" -gt 0 ]; do
 done
 
 export NDDEV_DRY_RUN=$((1 - APPLY))
+
+# Marketplace is required.
+if [ -z "$MARKETPLACE" ]; then
+  nddev::log "error" "--marketplace <name> is required (use --list to see options)"
+  exit 2
+fi
 
 # Resolve platform.
 if [ "$PLATFORM" = "auto" ]; then
@@ -91,6 +133,10 @@ if [ ! -x "$RUNNER" ]; then
   exit 2
 fi
 
+# Load the build library (defines nddev::select_marketplace etc.).
+# shellcheck source=lib/build.sh
+. "$LIB_DIR/build.sh"
+
 nddev::section "nddev-zcode-app installer"
 nddev::log "info" "mode: $([ "$APPLY" -eq 1 ] && echo 'APPLY' || echo 'PLAN (dry-run)')"
 nddev::log "info" "platform: $PLATFORM"
@@ -100,5 +146,12 @@ nddev::log "info" "repo root: $ROOT"
 nddev::require_cmd git required || exit 1
 nddev::require_cmd python3 required || exit 1
 
-# Hand off to the platform runner. common.sh and version.sh stay sourced.
+# Select and validate the marketplace (sets SOURCE_DIR).
+nddev::select_marketplace "$MARKETPLACE" || exit 1
+
+# Export the selection so the runner (a fresh process via exec) can re-select.
+export NDDEV_MARKETPLACE="$MARKETPLACE"
+
+# Hand off to the platform runner. It re-sources the libs and re-selects the
+# marketplace, then runs the full install sequence.
 exec "$RUNNER"

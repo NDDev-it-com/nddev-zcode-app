@@ -1,13 +1,58 @@
 #!/usr/bin/env bash
 # Shared build/backup/restore logic. Sourced by the macos and ubuntu runners
-# after common.sh and version.sh. The platform differences (overlay templates)
-# are passed via NDDEV_PLATFORM, set by the runner.
+# after common.sh and version.sh.
+#
+# Each marketplace is a SELF-CONTAINED setup: it owns its AGENTS.md, config
+# templates, mcp/hooks, user-scope skills/commands/agents, and plugins. The
+# installer selects ONE marketplace (--marketplace <name>) and builds a clean
+# ~/.zcode entirely from that marketplace's directory.
 
-# Path constants.
+# Path constants. SOURCE_DIR is resolved by nddev::select_marketplace() below.
 ZCODE_HOME="$HOME/.zcode"
 BACKUPS_DIR="$HOME/.zcode-backups"
-SOURCE_DIR="$(nddev::repo_root)/zcode_tools"
+MARKETPLACES_ROOT="$(nddev::repo_root)/zcode_tools/marketplaces"
+SOURCE_DIR=""
 RESTORE_SCRIPT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/restore.sh"
+
+# --- Marketplace selection ------------------------------------------------
+
+# Validate that a marketplace directory exists and is self-contained. Exits on failure.
+nddev::validate_marketplace() {
+  local mp_dir=$1
+  local required=(
+    "AGENTS.md"
+    "marketplace.json"
+    "cli-config.template.json"
+    "v2-config.template.json"
+    "v2-setting.template.json"
+  )
+  local f
+  for f in "${required[@]}"; do
+    if [ ! -f "$mp_dir/$f" ]; then
+      nddev::log "error" "marketplace '$(basename "$mp_dir")' is not self-contained: missing $f"
+      return 1
+    fi
+  done
+  return 0
+}
+
+# Resolve SOURCE_DIR to the selected marketplace directory. $1 = marketplace name.
+nddev::select_marketplace() {
+  local mp_name=$1
+  local mp_dir="$MARKETPLACES_ROOT/$mp_name"
+  if [ ! -d "$mp_dir" ]; then
+    nddev::log "error" "marketplace not found: $mp_name (looked in $mp_dir)"
+    nddev::log "info" "available marketplaces:"
+    local d
+    for d in "$MARKETPLACES_ROOT"/*/; do
+      [ -d "$d" ] && nddev::log "info" "  - $(basename "$d")"
+    done
+    return 1
+  fi
+  nddev::validate_marketplace "$mp_dir" || return 1
+  SOURCE_DIR="$mp_dir"
+  nddev::log "info" "selected marketplace: $mp_name ($mp_dir)"
+}
 
 # --- Backup --------------------------------------------------------------
 
@@ -39,7 +84,7 @@ nddev::backup_current() {
   nddev::log "ok" "backup complete"
 }
 
-# --- Build (lay down clean ~/.zcode from source) -------------------------
+# --- Build (lay down clean ~/.zcode from the selected marketplace) --------
 
 # Create the empty runtime directories ZCode expects to find under ~/.zcode.
 nddev::create_runtime_dirs() {
@@ -50,8 +95,6 @@ nddev::create_runtime_dirs() {
     "$target/cli/log"
     "$target/cli/plugins/cache"
     "$target/cli/plugins/data"
-    "$target/cli/plugins/marketplaces"
-    "$target/marketplaces"
     "$target/v2/logs"
     "$target/v2/crash"
   )
@@ -76,30 +119,34 @@ nddev::render_configs() {
   nddev::render_template "$SOURCE_DIR/v2-setting.template.json" "$target/v2/setting.json"
 }
 
-# Copy the static source tree (AGENTS.md, skills, commands, agents, marketplaces).
+# Copy the static source tree from the selected marketplace into ~/.zcode.
+# The marketplace IS the setup: AGENTS.md, config files, skills/commands/agents,
+# and its own plugins (installed as a marketplace ZCode can discover).
 nddev::copy_source_tree() {
   local target=$1
-  nddev::section "Copy source tree"
+  local mp_name
+  mp_name="$(basename "$SOURCE_DIR")"
+  nddev::section "Copy source tree (marketplace: $mp_name)"
 
-  # AGENTS.md -> ~/.zcode/AGENTS.md
+  # AGENTS.md -> ~/.zcode/AGENTS.md  (the system instruction file)
   nddev::copy "$SOURCE_DIR/AGENTS.md" "$target/AGENTS.md"
 
-  # skills/, commands/, agents/ -> ~/.zcode/{skills,commands,agents}/
+  # The marketplace directory itself -> ~/.zcode/marketplaces/<name>/
+  # (so ZCode's Plugin Management can discover it by local directory).
+  nddev::ensure_dir "$target/marketplaces"
+  nddev::copy "$SOURCE_DIR" "$target/marketplaces/$mp_name"
+
+  # User-scope skills/, commands/, agents/ -> ~/.zcode/{skills,commands,agents}/
+  # (copied OUT of the marketplace into the top-level user-scope dirs ZCode scans).
   local d
   for d in skills commands agents; do
     if [ -d "$SOURCE_DIR/$d" ]; then
       nddev::copy "$SOURCE_DIR/$d/." "$target/$d/"
     fi
   done
-
-  # marketplaces/ -> ~/.zcode/marketplaces/  (each subdir is one marketplace:
-  # <name>/marketplace.json + <name>/plugins/<bundle>/).
-  if [ -d "$SOURCE_DIR/marketplaces" ]; then
-    nddev::copy "$SOURCE_DIR/marketplaces/." "$target/marketplaces/"
-  fi
 }
 
-# Build a clean ~/.zcode from source: create dirs, render configs, copy source.
+# Build a clean ~/.zcode from the selected marketplace source.
 nddev::build_clean() {
   local target=$1
   nddev::section "Build clean ~/.zcode"
@@ -131,6 +178,8 @@ nddev::restore_runtime() {
 # Validate the freshly built ~/.zcode.
 nddev::verify_build() {
   local target=$1
+  local mp_name
+  mp_name="$(basename "$SOURCE_DIR")"
   nddev::section "Verify build"
   local errors=0
 
@@ -152,19 +201,15 @@ nddev::verify_build() {
       nddev::log "missing" "v2/setting.json is not valid JSON"
       errors=$((errors + 1))
     fi
-    # Validate every marketplace manifest under marketplaces/<name>/marketplace.json.
-    local mp_dir mp_json
-    for mp_dir in "$target"/marketplaces/*/; do
-      [ -d "$mp_dir" ] || continue
-      mp_json="${mp_dir}marketplace.json"
-      if [ ! -f "$mp_json" ]; then
-        nddev::log "missing" "marketplace.json missing in $(basename "$mp_dir")"
-        errors=$((errors + 1))
-      elif ! nddev::validate_json "$mp_json" 2>/dev/null; then
-        nddev::log "missing" "$(basename "$mp_dir")/marketplace.json is not valid JSON"
-        errors=$((errors + 1))
-      fi
-    done
+    # Validate the selected marketplace manifest.
+    local mp_json="$target/marketplaces/$mp_name/marketplace.json"
+    if [ ! -f "$mp_json" ]; then
+      nddev::log "missing" "$mp_name/marketplace.json not installed"
+      errors=$((errors + 1))
+    elif ! nddev::validate_json "$mp_json" 2>/dev/null; then
+      nddev::log "missing" "$mp_name/marketplace.json is not valid JSON"
+      errors=$((errors + 1))
+    fi
   fi
 
   if [ "$errors" -gt 0 ]; then
@@ -176,9 +221,9 @@ nddev::verify_build() {
 
 # --- Orchestration -------------------------------------------------------
 
-# Full install sequence. Called by the platform runners after they apply any
-# platform-specific overlay. Sets the global NDDEV_BACKUP_PATH to the backup
-# directory (empty on a fresh install with no prior ~/.zcode).
+# Full install sequence. Called by the platform runners after they select a
+# marketplace. Sets NDDEV_BACKUP_PATH to the backup directory (empty on a fresh
+# install with no prior ~/.zcode).
 NDDEV_BACKUP_PATH=""
 nddev::install_sequence() {
   local platform=$1

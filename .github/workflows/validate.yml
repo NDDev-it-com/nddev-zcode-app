@@ -32,25 +32,25 @@ jobs:
         run: |
           set -euo pipefail
           echo "::group::Validate JSON"
-          # Static config files.
+          # Repo-level static config files.
           for f in \
             build/version.json \
             build/manifest.json \
             config/nddev-contract.json \
-            references/zcode-baseline.json \
-            zcode_tools/cli-config.template.json \
-            zcode_tools/v2-config.template.json \
-            zcode_tools/v2-setting.template.json \
-            zcode_tools/hooks.json \
-            zcode_tools/mcp.json; do
+            references/zcode-baseline.json; do
             if [ -f "$f" ]; then
               python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
               echo "ok: $f"
             fi
           done
-          # All marketplace manifests + plugin manifests (dynamic, multiple marketplaces).
+          # All marketplace-scoped JSON (config templates, marketplace manifests, plugins).
           for f in \
             zcode_tools/marketplaces/*/marketplace.json \
+            zcode_tools/marketplaces/*/cli-config.template.json \
+            zcode_tools/marketplaces/*/v2-config.template.json \
+            zcode_tools/marketplaces/*/v2-setting.template.json \
+            zcode_tools/marketplaces/*/hooks.json \
+            zcode_tools/marketplaces/*/mcp.json \
             zcode_tools/marketplaces/*/plugins/*/.zcode-plugin/plugin.json; do
             if [ -f "$f" ]; then
               python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
@@ -76,4 +76,4 @@ jobs:
 
       - name: Installer plan (dry-run)
         run: |
-          cli-tools/scripts/install.sh --platform ubuntu --plan
+          cli-tools/scripts/install.sh --marketplace "$(ls zcode_tools/marketplaces | head -1)" --platform ubuntu --plan

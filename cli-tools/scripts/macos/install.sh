@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 #
 # macOS runner for the nddev-zcode-app installer.
-# Sources the shared build library and runs the full install sequence.
-# macOS is always a desktop profile.
+# Sources the shared build library, selects the marketplace passed from
+# install.sh, and runs the full install sequence. macOS is always desktop.
 #
 set -euo pipefail
 
@@ -16,10 +16,12 @@ LIB_DIR="$(cd "$SCRIPT_DIR/../lib" && pwd)"
 # shellcheck source=lib/build.sh
 . "$LIB_DIR/build.sh"
 
+# Re-select the marketplace (install.sh validated it, but this is a fresh process).
+nddev::select_marketplace "${NDDEV_MARKETPLACE:?NDDEV_MARKETPLACE must be set by install.sh}"
+
 nddev::log "info" "profile: desktop (macOS)"
 
 # macOS-specific overlay: apply templates from cli-tools/templates/macos/ if present.
-# (Reserved for future per-OS config overlays — currently empty.)
 OVERLAY_DIR="$(nddev::repo_root)/cli-tools/templates/macos"
 if [ -d "$OVERLAY_DIR" ] && [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
   nddev::log "info" "macOS overlay dir present: $OVERLAY_DIR (reserved)"
@@ -28,6 +30,7 @@ fi
 nddev::install_sequence "macos"
 
 nddev::section "Install complete"
+nddev::log "ok" "marketplace: ${NDDEV_MARKETPLACE}"
 nddev::log "ok" "build version: $(nddev::build_version)"
 nddev::log "ok" "platform: macos (desktop)"
 if [ -n "$NDDEV_BACKUP_PATH" ]; then

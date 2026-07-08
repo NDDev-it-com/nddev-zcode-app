@@ -15,16 +15,24 @@ runtime state (credentials, sessions, db, certs) from the backup.
 ## Usage
 
 ```bash
-# Plan (dry-run, default) — prints every action without touching disk:
-cli-tools/scripts/install.sh
+# List available setups (marketplaces):
+cli-tools/scripts/install.sh --list
+
+# Plan (dry-run) — prints every action without touching disk:
+cli-tools/scripts/install.sh --marketplace nddev-developer --plan
 
 # Apply — back up, build, restore, verify:
-cli-tools/scripts/install.sh --apply
+cli-tools/scripts/install.sh --marketplace nddev-developer --apply
 
 # Force a platform (otherwise auto-detected from uname):
-cli-tools/scripts/install.sh --platform macos --apply
-cli-tools/scripts/install.sh --platform ubuntu --apply
+cli-tools/scripts/install.sh --marketplace nddev-developer --platform macos --apply
+cli-tools/scripts/install.sh --marketplace nddev-developer --platform ubuntu --apply
 ```
+
+A **marketplace is a complete, self-contained setup** — its own AGENTS.md, config
+templates, skills/commands/agents, and plugins. The installer selects ONE and builds
+a clean `~/.zcode` from it. To switch setups, run `--apply` with a different
+`--marketplace`; the current `~/.zcode` is backed up first.
 
 ## What happens on `--apply`
 

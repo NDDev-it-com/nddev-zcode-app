@@ -1,12 +1,12 @@
 {
   "name": "nddev-zcode-app",
   "build_version": "1.0.0",
-  "source_root": "zcode_tools/",
-  "installer": "cli-tools/scripts/install.sh",
+  "source_root": "zcode_tools/marketplaces/",
+  "installer": "cli-tools/scripts/install.sh --marketplace <name>",
   "layout": {
-    "zcode_tools/": "source of a complete ~/.zcode (AGENTS.md, skills, commands, agents, marketplaces/, config templates)",
-    "cli-tools/": "installer for macOS (desktop) and Ubuntu (desktop/server)",
-    "build/": "build artifacts: version.json, manifest.json, system files, secrets templates",
+    "zcode_tools/marketplaces/<name>/": "each marketplace is a self-contained ~/.zcode setup (AGENTS.md, config templates, mcp/hooks, skills/commands/agents, plugins)",
+    "cli-tools/": "installer: --marketplace <name> selects one setup and builds ~/.zcode from it (macOS + Ubuntu)",
+    "build/": "build artifacts: version.json, manifest.json, system files, secrets templates (shared across setups)",
     "development/": "meta skills for developing this repo",
     "docs/": "documentation",
     "tests/": "test suite (currently empty)"
