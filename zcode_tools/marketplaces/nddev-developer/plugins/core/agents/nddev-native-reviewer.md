@@ -26,7 +26,7 @@ verdict with specific, file:line findings.
 - Flat `.md` files, one per component.
 - Frontmatter present (commands: `description`; agents: `name`, `model`).
 
-**Marketplace (`zcode_tools/marketplace.json`)**
+**Marketplace (`zcode_tools/marketplaces/<marketplace>/marketplace.json`)**
 - The plugin is registered in the `plugins` array with `source: "./plugins/<name>"`.
 - The marketplace `version` matches the manifest `version`.
 

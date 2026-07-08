@@ -43,9 +43,12 @@ a tag that does not match `VERSION`.
    ```bash
    python3 -c "import json; print(json.load(open('build/version.json'))['build_version'])"
    cat VERSION
-   cli-tools/scripts/install.sh --platform macos --plan
-   cli-tools/scripts/install.sh --platform ubuntu --plan
-   python3 -c "import json; json.load(open('zcode_tools/marketplace.json'))"
+   cli-tools/scripts/install.sh install --marketplace <name> --platform macos --plan
+   cli-tools/scripts/install.sh install --marketplace <name> --platform ubuntu --plan
+   # Validate every marketplace manifest:
+   for f in zcode_tools/marketplaces/*/marketplace.json; do
+     python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
+   done
    ```
    All version numbers must agree; both `--plan` runs must finish `[ok] all checks passed`.
 

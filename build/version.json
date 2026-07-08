@@ -1,6 +1,8 @@
 {
   "build_version": "1.0.0",
+  "zcode_app_version": "3.3.3",
+  "zcode_cli_version": "0.15.0",
   "zcode_runtime": "GLM-5.2",
   "schema": 1,
-  "_comment": "build_version is the semantic version of this nddev-zcode-app build (read by cli-tools/scripts/lib/version.sh). zcode_runtime is the runtime model baseline. Bump build_version for every release."
+  "_comment": "build_version is the semantic version of this nddev-zcode-app build. zcode_app_version and zcode_cli_version pin the exact ZCode desktop app and CLI versions this build was verified against — the installer warns if the running ZCode differs. zcode_runtime is the runtime model baseline. Bump build_version for every release."
 }

@@ -24,9 +24,12 @@ $EDITOR build/.env   # fill in real values
 
 ## Which templates use secrets
 
-- `zcode_tools/v2-config.template.json` — provider API keys:
+Templates live inside each marketplace directory:
+`zcode_tools/marketplaces/<name>/`.
+
+- `v2-config.template.json` — provider API keys:
   `${ZAI_API_KEY}`, `${BIGMODEL_API_KEY}`.
-- `zcode_tools/mcp.json` / `cli-config.template.json` — MCP server secrets:
+- `mcp.json` / `cli-config.template.json` — MCP server secrets:
   `${GITHUB_PERSONAL_ACCESS_TOKEN}`, `${CONTEXT7_API_KEY}`, etc.
 
 ## credentials.json is NOT a secret in this sense

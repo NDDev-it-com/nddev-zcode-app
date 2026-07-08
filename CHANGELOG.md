@@ -7,6 +7,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## [Unreleased]
 
 ### Added
+- **ZCode runtime version pinning.** `build/version.json` now pins the exact
+  ZCode desktop app (`3.3.3`) and CLI (`0.15.0`) versions this build was verified
+  against. The installer detects the running ZCode and warns if it differs from
+  the pin (advisory, non-blocking). `BUILD-VERSION` stamps both versions.
+- **hooks.json / mcp.json are now functional.** The installer merges per-event
+  hook arrays from `hooks.json` into `cli/config.json.hooks`, and MCP servers
+  from `mcp.json` into `cli/config.json.mcp.servers`. Previously these files
+  were documented as merged but never read.
 - **Full installer lifecycle: install, update, switch, remove.** New `remove`
   command backs up then deletes the target (refuses directories without
   `BUILD-VERSION` as a safety check). Re-running `install` with the same

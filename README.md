@@ -29,11 +29,14 @@ See [docs/architecture.md](docs/architecture.md) for the full design.
 cp build/.env.example build/.env
 $EDITOR build/.env
 
-# 2. Plan (dry-run — prints every action without touching disk):
-cli-tools/scripts/install.sh
+# 2. List available setups:
+cli-tools/scripts/install.sh list
 
-# 3. Apply (back up ~/.zcode, build clean, restore runtime state):
-cli-tools/scripts/install.sh --apply
+# 3. Plan (dry-run — prints every action without touching disk):
+cli-tools/scripts/install.sh install --marketplace nddev-developer --plan
+
+# 4. Apply (back up ~/.zcode, build clean, restore runtime state):
+cli-tools/scripts/install.sh install --marketplace nddev-developer --apply
 ```
 
 ## Backup convention

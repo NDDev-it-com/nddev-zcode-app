@@ -35,6 +35,6 @@
   "secrets": {
     "template": "build/.env.example",
     "real": "build/.env (gitignored)",
-    "injection": "${VAR} placeholders in zcode_tools/*.template.json rendered at install time"
+    "injection": "${VAR} placeholders in zcode_tools/marketplaces/<name>/*.template.json rendered at install time"
   }
 }

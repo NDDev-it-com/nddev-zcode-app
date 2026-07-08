@@ -106,13 +106,87 @@ nddev::create_runtime_dirs() {
   done
 }
 
-# Render the templated config files (secrets from build/.env, ${HOME} expanded).
+# Merge the seven hook events from hooks.json into the rendered cli/config.json.
+# hooks.json shape (after _comment stripped): { "SessionStart": [...], ... }.
+# Each event array is appended to the matching event in cli/config.json.hooks.
+# Uses python3 for safe JSON manipulation. $1=cli/config.json path, $2=hooks.json path.
+nddev::merge_hooks() {
+  local config_path=$1 hooks_path=$2
+  if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
+    printf '[DRY-RUN] merge hooks %q -> %q\n' "$hooks_path" "$config_path"
+    return 0
+  fi
+  python3 - "$config_path" "$hooks_path" <<'PY'
+import json, sys
+
+config_path, hooks_path = sys.argv[1], sys.argv[2]
+with open(config_path) as f:
+    config = json.load(f)
+with open(hooks_path) as f:
+    hooks_src = json.load(f)
+hooks_src.pop("_comment", None)
+
+config.setdefault("hooks", {})
+for event, entries in hooks_src.items():
+    if not isinstance(entries, list):
+        continue
+    config["hooks"].setdefault(event, [])
+    config["hooks"][event].extend(entries)
+
+with open(config_path, "w") as f:
+    json.dump(config, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+PY
+}
+
+# Merge MCP servers from mcp.json into the rendered cli/config.json under mcp.servers.
+# mcp.json shape (after _comment stripped): { "mcpServers": { "<name>": {...} } }.
+# $1=cli/config.json path, $2=mcp.json path.
+nddev::merge_mcp() {
+  local config_path=$1 mcp_path=$2
+  if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
+    printf '[DRY-RUN] merge mcp %q -> %q\n' "$mcp_path" "$config_path"
+    return 0
+  fi
+  python3 - "$config_path" "$mcp_path" <<'PY'
+import json, sys
+
+config_path, mcp_path = sys.argv[1], sys.argv[2]
+with open(config_path) as f:
+    config = json.load(f)
+with open(mcp_path) as f:
+    mcp_src = json.load(f)
+mcp_src.pop("_comment", None)
+
+servers = mcp_src.get("mcpServers", {})
+config.setdefault("mcp", {})
+config["mcp"].setdefault("servers", {})
+config["mcp"]["servers"].update(servers)
+
+with open(config_path, "w") as f:
+    json.dump(config, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+PY
+}
+
+# Render the templated config files (secrets from build/.env, ${HOME} expanded),
+# then merge hooks.json and mcp.json into cli/config.json.
 nddev::render_configs() {
   local target=$1
   nddev::section "Render config templates"
 
   # cli/config.json — plugins, hooks, mcp servers.
   nddev::render_template "$SOURCE_DIR/cli-config.template.json" "$target/cli/config.json"
+
+  # Merge hooks.json (per-event arrays) into cli/config.json.hooks.
+  if [ -f "$SOURCE_DIR/hooks.json" ]; then
+    nddev::merge_hooks "$target/cli/config.json" "$SOURCE_DIR/hooks.json"
+  fi
+
+  # Merge mcp.json (mcpServers) into cli/config.json.mcp.servers.
+  if [ -f "$SOURCE_DIR/mcp.json" ]; then
+    nddev::merge_mcp "$target/cli/config.json" "$SOURCE_DIR/mcp.json"
+  fi
 
   # v2/config.json — provider definitions with ${API_KEY} placeholders.
   nddev::render_template "$SOURCE_DIR/v2-config.template.json" "$target/v2/config.json"
@@ -242,6 +316,7 @@ nddev::install_sequence() {
   fi
 
   nddev::backup_current
+  nddev::check_runtime_version
   nddev::build_clean "$ZCODE_HOME"
   nddev::write_version_stamp "$ZCODE_HOME"
 
