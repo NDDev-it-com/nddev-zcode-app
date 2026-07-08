@@ -137,46 +137,53 @@ nddev::today() {
   date +%d.%m.%Y
 }
 
-# Compute the next backup directory name: <N>-<DD.MM.YYYY>-<VERSION>-old.zcode
-# N is a 1-9 rotation index: the lowest free slot (1..9). If all 1..9 are taken,
-# reuse the oldest existing backup's slot (overwrite).
+# Compute the next backup slot: a directory named <N>-old.zcode where N is 1-9.
+# The name is slot-only (no date/version in the filename) so that reusing a slot
+# truly overwrites the old backup — the total never exceeds 9 directories.
+# The date and version are recorded inside the backup's BUILD-VERSION stamp.
+#
+# Selection: the lowest free slot (1..9). If all 9 are taken, reuse the OLDEST
+# slot (lowest mtime) — its old backup is removed before the new one is moved in.
+#
 # Reads NDDEV_BACKUPS_DIR if set (testing), otherwise ~/.zcode-backups.
-nddev::backup_name() {
-  local version=$1
+nddev::backup_slot() {
   local backups_dir="${NDDEV_BACKUPS_DIR:-$HOME/.zcode-backups}"
-  local today slot i existing
+  local slot i
 
-  today="$(nddev::today)"
-
-  # Find the lowest free slot 1..9.
+  # Find the lowest free slot 1..9 (a dir named exactly "<i>-old.zcode").
   slot=""
   for i in $(seq 1 9); do
-    existing="$(find "$backups_dir" -maxdepth 1 -name "${i}-*-old.zcode" 2>/dev/null | head -1)"
-    if [ -z "$existing" ]; then
+    if [ ! -e "$backups_dir/${i}-old.zcode" ]; then
       slot=$i
       break
     fi
   done
 
-  # If no free slot, reuse the oldest (lowest mtime) — its slot number is reused.
-  # Portable: use 'stat -f' on macOS (BSD) and 'find -printf' on Linux (GNU).
+  # If no free slot, reuse the oldest (lowest mtime).
+  # Portable: BSD stat -f on Darwin, GNU find -printf on Linux.
   if [ -z "$slot" ]; then
-    local oldest
+    local oldest_name
     case "$(uname -s)" in
       Darwin)
-        oldest="$(find "$backups_dir" -maxdepth 1 -name "*-old.zcode" -print0 2>/dev/null \
-          | xargs -0 stat -f '%m %N' 2>/dev/null | sort -n | head -1 | sed 's/.*\///')"
+        oldest_name="$(find "$backups_dir" -maxdepth 1 -name "*-old.zcode" -print0 2>/dev/null \
+          | xargs -0 stat -f '%m %N' 2>/dev/null | sort -n | head -1 | sed 's#.*/##')"
         ;;
       *)
-        oldest="$(find "$backups_dir" -maxdepth 1 -name "*-old.zcode" -printf '%T@ %f\n' 2>/dev/null \
+        oldest_name="$(find "$backups_dir" -maxdepth 1 -name "*-old.zcode" -printf '%T@ %f\n' 2>/dev/null \
           | sort -n | head -1 | sed 's/.* //')"
         ;;
     esac
-    slot="${oldest%%-*}"
+    slot="${oldest_name%%-*}"
     [ -z "$slot" ] && slot=1
   fi
 
-  printf '%s-%s-%s-old.zcode\n' "$slot" "$today" "$version"
+  printf '%s\n' "$slot"
+}
+
+# Backward-compatible alias: returns the slot directory name (N-old.zcode).
+# Kept because build.sh calls nddev::backup_name historically.
+nddev::backup_name() {
+  printf '%s-old.zcode\n' "$(nddev::backup_slot)"
 }
 
 # Render a JSON template by substituting ${VAR} placeholders from the environment

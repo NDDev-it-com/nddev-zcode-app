@@ -77,7 +77,7 @@ Commands: `install` (default), `remove`, `list`. The target directory resolves a
 `--target` flag > `ZCODE_TARGET` (build/.env) > `~/.zcode`.
 
 1. **Select** — `--marketplace <name>` picks the self-contained setup.
-2. **Backup** — the target → `<backups>/<N>-<DD.MM.YYYY>-<VERSION>-old.zcode`.
+2. **Backup** — the target → `<backups>/<N>-old.zcode` (slot-only; max 9).
 3. **Build** — render the marketplace's config templates (secrets from `build/.env`),
    copy AGENTS.md, skills/commands/agents, and the marketplace dir itself.
 4. **Stamp** — write `BUILD-VERSION` (version + platform + timestamp).

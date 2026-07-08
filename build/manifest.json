@@ -13,8 +13,9 @@
   },
   "backup_policy": {
     "location": "~/.zcode-backups/",
-    "name_format": "<N>-<DD.MM.YYYY>-<VERSION>-old.zcode",
-    "rotation_slots": "1-9 (lowest free slot; oldest reused when full)",
+    "name_format": "<N>-old.zcode (slot-only; date+version inside BUILD-VERSION)",
+    "max_backups": 9,
+    "rotation": "lowest free slot 1-9; oldest (by mtime) overwritten when full",
     "version_source": "~/.zcode/BUILD-VERSION"
   },
   "restore_policy": {

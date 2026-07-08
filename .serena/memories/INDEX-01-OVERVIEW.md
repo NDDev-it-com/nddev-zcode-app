@@ -18,7 +18,7 @@ version-stamped `~/.zcode` from source on macOS (desktop) and Ubuntu
 ## Key facts
 
 - Build version source: `build/version.json` → written to `~/.zcode/BUILD-VERSION`.
-- Backup convention: `~/.zcode-backups/<N>-<DD.MM.YYYY>-<VERSION>-old.zcode` (N=1-9).
+- Backup convention: `~/.zcode-backups/<N>-old.zcode` (slot-only, max 9; oldest overwritten when full).
 - Secrets: `build/.env.example` (committed) → `build/.env` (gitignored); `${VAR}`
   placeholders rendered at install time.
 - ZCode plugin components are convention-discovered (skills/commands/agents);

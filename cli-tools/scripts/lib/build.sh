@@ -58,8 +58,9 @@ nddev::select_marketplace() {
 
 # --- Backup --------------------------------------------------------------
 
-# Back up the current ~/.zcode into ~/.zcode-backups/<N>-<DD.MM.YYYY>-<VERSION>-old.zcode.
-# Safe to call when ~/.zcode does not exist (no-op log).
+# Back up the current ~/.zcode into ~/.zcode-backups/<N>-old.zcode (N = 1-9 slot).
+# Slot-only naming guarantees at most 9 backups: reusing a slot overwrites the
+# old one. Safe to call when ~/.zcode does not exist (no-op log).
 nddev::backup_current() {
   if [ ! -d "$ZCODE_HOME" ]; then
     nddev::log "info" "no existing ~/.zcode to back up (fresh install)"
@@ -73,11 +74,11 @@ nddev::backup_current() {
 
   nddev::section "Backup current ~/.zcode"
   nddev::log "info" "current build version: $current_version"
-  nddev::log "info" "backup target: $target"
+  nddev::log "info" "backup slot: $target"
 
   nddev::ensure_dir "$BACKUPS_DIR"
   if [ -e "$target" ]; then
-    nddev::log "warn" "backup slot already occupied; removing stale: $target"
+    nddev::log "warn" "slot occupied; overwriting: $target"
     if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
       rm -rf "$target"
     fi
