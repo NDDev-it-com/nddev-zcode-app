@@ -99,7 +99,7 @@ cat ~/.zcode/BUILD-VERSION
 cli-tools/scripts/install.sh --list
 
 # Dry-run a specific setup:
-cli-tools/scripts/install.sh --marketplace nddev-developer --plan
+cli-tools/scripts/install.sh --marketplace nddev-builder --plan
 
 # Read the source-of-truth contract:
 cat config/nddev-contract.json

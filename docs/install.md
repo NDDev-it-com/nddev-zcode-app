@@ -31,8 +31,8 @@ cli-tools/scripts/install.sh bootstrap --apply
 
 # 4. Configure ~/.zcode from a marketplace:
 cli-tools/scripts/install.sh list
-cli-tools/scripts/install.sh install --marketplace nddev-developer --plan
-cli-tools/scripts/install.sh install --marketplace nddev-developer --apply
+cli-tools/scripts/install.sh install --marketplace nddev-builder --plan
+cli-tools/scripts/install.sh install --marketplace nddev-builder --apply
 ```
 
 After step 3, ZCode is installed and the `zcode` command is on PATH. After step 4,
@@ -45,8 +45,8 @@ After step 3, ZCode is installed and the `zcode` command is on PATH. After step 
 cli-tools/scripts/install.sh list
 
 # Install — plan (dry-run) first, then apply:
-cli-tools/scripts/install.sh install --marketplace nddev-developer --plan
-cli-tools/scripts/install.sh install --marketplace nddev-developer --apply
+cli-tools/scripts/install.sh install --marketplace nddev-builder --plan
+cli-tools/scripts/install.sh install --marketplace nddev-builder --apply
 
 # Update — re-run install with the same marketplace (old ~/.zcode is backed up).
 # Switch — run install with a different --marketplace (old is backed up, new is built).
@@ -54,11 +54,11 @@ cli-tools/scripts/install.sh install --marketplace nddev-developer --apply
 cli-tools/scripts/install.sh remove --apply
 
 # Custom install directory (default is ~/.zcode):
-cli-tools/scripts/install.sh install --marketplace nddev-developer --target /opt/my-zcode --apply
+cli-tools/scripts/install.sh install --marketplace nddev-builder --target /opt/my-zcode --apply
 # ...or set it once in build/.env (ZCODE_TARGET=...) and skip --target.
 
 # Force a platform (otherwise auto-detected from uname):
-cli-tools/scripts/install.sh install --marketplace nddev-developer --platform macos --apply
+cli-tools/scripts/install.sh install --marketplace nddev-builder --platform macos --apply
 ```
 
 ### Commands

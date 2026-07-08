@@ -36,8 +36,8 @@ cli-tools/scripts/install.sh bootstrap --apply
 cli-tools/scripts/install.sh list
 
 # 4. Configure ~/.zcode from a marketplace (plan first, then apply):
-cli-tools/scripts/install.sh install --marketplace nddev-developer --plan
-cli-tools/scripts/install.sh install --marketplace nddev-developer --apply
+cli-tools/scripts/install.sh install --marketplace nddev-builder --plan
+cli-tools/scripts/install.sh install --marketplace nddev-builder --apply
 ```
 
 If ZCode is already installed, `bootstrap` skips the download and only wires the

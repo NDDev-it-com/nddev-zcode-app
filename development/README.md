@@ -9,8 +9,8 @@ They are NOT shipped into `~/.zcode` by the installer — they live only here, f
 editing this repo.
 
 > **Note:** the equivalent functional skills already ship inside the
-> `nddev-developer` marketplace `core` plugin
-> (`zcode_tools/marketplaces/nddev-developer/plugins/core/skills/`). The skills
+> `nddev-builder` marketplace `core` plugin
+> (`zcode_tools/marketplaces/nddev-builder/plugins/core/skills/`). The skills
 > below are a planned superset for this workspace. Only `add-plugin`, `add-skill`,
 > and `release-build` exist today (in the plugin); the rest are placeholders.
 

@@ -1,6 +1,6 @@
-# core (nddev-developer marketplace)
+# core (nddev-builder marketplace)
 
-The `core` plugin of the **nddev-developer** marketplace. Developer toolkit for the
+The `core` plugin of the **nddev-builder** marketplace. Developer toolkit for the
 `nddev-zcode-app` estate: skills, slash commands, and a reviewer subagent for building
 plugins, authoring skills, managing MCP servers, and cutting releases of the `~/.zcode`
 build.
@@ -20,9 +20,9 @@ build.
 
 ## Install
 
-Enable via **ZCode → Settings → Plugin Management** after adding the `nddev-developer`
-marketplace (the local `zcode_tools/marketplaces/nddev-developer/` directory), or let the
-installer lay it down into `~/.zcode/marketplaces/nddev-developer/plugins/core/`.
+Enable via **ZCode → Settings → Plugin Management** after adding the `nddev-builder`
+marketplace (the local `zcode_tools/marketplaces/nddev-builder/` directory), or let the
+installer lay it down into `~/.zcode/marketplaces/nddev-builder/plugins/core/`.
 
 ## Rules
 

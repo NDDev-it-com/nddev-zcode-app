@@ -25,8 +25,8 @@ Required tools: Git, Python 3.13, and the ZCode client.
 
 ```bash
 cp build/.env.example build/.env   # then fill in real values
-cli-tools/scripts/install.sh install --marketplace nddev-developer --plan   # dry-run
-cli-tools/scripts/install.sh install --marketplace nddev-developer --apply  # back up, build, restore
+cli-tools/scripts/install.sh install --marketplace nddev-builder --plan   # dry-run
+cli-tools/scripts/install.sh install --marketplace nddev-builder --apply  # back up, build, restore
 ```
 
 ## Branches
