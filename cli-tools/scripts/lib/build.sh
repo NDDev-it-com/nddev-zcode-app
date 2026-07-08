@@ -213,6 +213,26 @@ nddev::render_configs() {
   nddev::render_template "$SOURCE_DIR/v2-setting.template.json" "$target/v2/setting.json"
 }
 
+# Render ~/.zcode/.env from build/.env (for CLI tools that read secrets at runtime).
+# This file is gitignored and contains real secret values — it lets CLI tool
+# scripts source secrets without needing system-level env setup.
+nddev::render_env() {
+  local target=$1
+  local src_env
+  src_env="$(nddev::repo_root)/build/.env"
+  if [ ! -f "$src_env" ]; then
+    nddev::log "info" "no build/.env — skipping ~/.zcode/.env (CLI tools will need env vars set externally)"
+    return 0
+  fi
+  if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
+    printf '[DRY-RUN] cp %q -> %q\n' "$src_env" "$target/.env"
+    return 0
+  fi
+  cp "$src_env" "$target/.env"
+  chmod 600 "$target/.env"
+  nddev::log "ok" "wrote $target/.env (600) for CLI tool secrets"
+}
+
 # Copy the static source tree from the selected marketplace into ~/.zcode.
 # The marketplace IS the setup: AGENTS.md, config files, skills/commands/agents,
 # and its own plugins (installed as a marketplace ZCode can discover).
@@ -250,6 +270,7 @@ nddev::build_clean() {
   nddev::create_runtime_dirs "$target"
   nddev::copy_source_tree "$target"
   nddev::render_configs "$target"
+  nddev::render_env "$target"
 }
 
 # --- Restore (selective, from backup) ------------------------------------

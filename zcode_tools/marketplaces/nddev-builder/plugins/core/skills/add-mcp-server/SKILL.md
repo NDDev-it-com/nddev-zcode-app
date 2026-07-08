@@ -10,9 +10,10 @@ Registers a tool integration. **Two paths exist** — choose based on the trade-
 ## Path A (classic MCP) vs Path B (CLI + skill) — the decision
 
 MCP servers load their full tool schema into the agent's context **permanently**
-(every session). Research and practice show this costs **4–32× more tokens** than
-CLI tools for the same task. MCP schemas are also hard to extend and not
-composable (results must pass through the context window).
+(every session). 2026 benchmarks show this costs **up to 10–35× more tokens**
+than CLI tools for the same task (Arize eval: ~6× costlier; Scalekit: 10-32×;
+Firecrawl: 4-32×). MCP schemas are also hard to extend and not composable
+(results must pass through the context window).
 
 CLI tools + a skill (or README) cost **zero tokens until invoked**. The agent
 writes loops, pipes, and scripts — composable, cheap, easy to modify. The
@@ -105,12 +106,33 @@ the tool by reading the skill on demand — zero context cost until used.
 
 ### Layout
 
+CLI tools live **inside the plugin** in a `tools/` directory. The installer
+copies the whole marketplace (including plugins) into `~/.zcode/marketplaces/`,
+so tools arrive automatically. At runtime, the agent references them via
+`${CLAUDE_PLUGIN_ROOT}/tools/<name>/<script>` (expanded by ZCode for plugin
+context) or by their absolute installed path.
+
 ```
-zcode_tools/marketplaces/<marketplace>/
-  scripts/<name>/             ← the CLI tool(s)
-    README.md                 ← how to call them (the agent reads this)
+zcode_tools/marketplaces/<marketplace>/plugins/<plugin>/
+  tools/<name>/                   ← the CLI tool(s)
+    README.md                     ← how to call them (the agent reads this)
     <tool>.sh | <tool>.js
-  plugins/<plugin>/skills/<name>/SKILL.md   ← optional: auto-triggering skill
+  skills/<skill>/SKILL.md         ← skill that triggers and documents the tool
+```
+
+### Secrets at runtime
+
+The installer renders `build/.env` into `~/.zcode/.env` (gitignored) at install
+time. CLI tools read secrets from there:
+
+```bash
+# In a CLI tool script:
+set -a; . "${HOME}/.zcode/.env"; set +a
+# Now $GITHUB_TOKEN etc. are available
+```
+
+Or use system environment variables (exported in `.zshrc`/`.bashrc`) — either
+works. The `~/.zcode/.env` approach is self-contained (no shell config needed).
 ```
 
 ### What the skill/README must contain

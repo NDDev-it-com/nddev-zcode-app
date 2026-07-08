@@ -1,6 +1,6 @@
 ---
 name: repo-orientation
-description: Map of the nddev-zcode-app repository — read it FIRST when working anywhere inside this repo. Explains the self-contained marketplace model (each marketplace = a complete ~/.zcode setup), the installer --marketplace selection, where each kind of file lives, the backup/restore contract, and the secrets policy. Use when unsure what a directory is for, where to add a skill/plugin/MCP server, or how to switch setups. RU triggers — карта репозитория, где лежит, структура репо, как устроен, что куда добавлять, маркетплейс, installer, бекап, восстановление, zcode, сборка, переключить сетап.
+description: Map of the nddev-zcode-app repository — read it FIRST when working anywhere inside this repo. Explains the self-contained marketplace model (each marketplace = a complete ~/.zcode setup), the installer --marketplace selection, where each kind of file lives, the backup/restore contract, and the secrets policy. Use when unsure what a directory is for, where to add a skill/plugin/MCP server, or how to switch setups.
 ---
 
 # nddev-zcode-app — repository map
