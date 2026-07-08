@@ -22,8 +22,7 @@ copies most of it verbatim and renders the templated config files.
 | `skills/` | `~/.zcode/skills/` | copy |
 | `commands/` | `~/.zcode/commands/` | copy |
 | `agents/` | `~/.zcode/agents/` | copy |
-| `marketplace.json` | `~/.zcode/marketplace.json` | copy |
-| `plugins/` | `~/.zcode/plugins/` | copy (self-contained bundles) |
+| `marketplaces/` | `~/.zcode/marketplaces/` | copy (one dir per marketplace) |
 | `cli-config.template.json` | `~/.zcode/cli/config.json` | **render** (`${VAR}`) |
 | `v2-config.template.json` | `~/.zcode/v2/config.json` | **render** (`${API_KEY}`) |
 | `v2-setting.template.json` | `~/.zcode/v2/setting.json` | **render** (`${HOME}`) |
@@ -58,14 +57,15 @@ the freshly built `~/.zcode`, and never touches the never-restore paths.
 ## ZCode native format
 
 ZCode discovers plugin components **by convention**, not by declaration in the
-manifest:
+manifest. The repo supports **multiple marketplaces**, each in its own directory:
 
-- `plugins/<name>/.zcode-plugin/plugin.json` — metadata only
+- `marketplaces/<marketplace>/marketplace.json` — the marketplace root manifest.
+- `marketplaces/<marketplace>/plugins/<name>/.zcode-plugin/plugin.json` — metadata only
   (`name`, `version`, `author`, `license`, `keywords`, `dependencies[]`).
-- `plugins/<name>/skills/<skill>/SKILL.md` — a skill.
-- `plugins/<name>/commands/<name>.md` — a slash command.
-- `plugins/<name>/agents/<name>.md` — a subagent.
-- `plugins/<name>/.mcp.json` — MCP servers, shape `{"mcpServers": {...}}`.
+- `marketplaces/<marketplace>/plugins/<name>/skills/<skill>/SKILL.md` — a skill.
+- `marketplaces/<marketplace>/plugins/<name>/commands/<name>.md` — a slash command.
+- `marketplaces/<marketplace>/plugins/<name>/agents/<name>.md` — a subagent.
+- `marketplaces/<marketplace>/plugins/<name>/.mcp.json` — MCP servers, shape `{"mcpServers": {...}}`.
 
 User-scope components live directly under `~/.zcode/{skills,commands,agents}/`.
 Hooks and the MCP server registry live in `~/.zcode/cli/config.json` under `hooks`

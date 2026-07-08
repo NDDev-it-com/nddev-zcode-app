@@ -26,7 +26,8 @@ Everything else (`docs/`, `development/`, `tests/`, `.github/`) supports these t
 | A user-scope skill | `zcode_tools/skills/<name>/SKILL.md` |
 | A slash command | `zcode_tools/commands/<name>.md` |
 | A subagent | `zcode_tools/agents/<name>.md` |
-| A plugin (self-contained bundle) | `zcode_tools/plugins/<name>/.zcode-plugin/plugin.json` + `skills/`, `commands/`, `agents/` |
+| A marketplace | `zcode_tools/marketplaces/<marketplace>/marketplace.json` (one dir per marketplace) |
+| A plugin (inside a marketplace) | `zcode_tools/marketplaces/<marketplace>/plugins/<name>/.zcode-plugin/plugin.json` + `skills/`, `commands/`, `agents/` |
 | An MCP server | `zcode_tools/mcp.json` (`{"mcpServers":{}}`) + the secret in `build/.env.example` |
 | A lifecycle hook | `zcode_tools/hooks.json` (merged into `cli/config.json` under `hooks`) |
 | Provider definitions | `zcode_tools/v2-config.template.json` |
@@ -74,6 +75,9 @@ cat config/nddev-contract.json
 
 ## ZCode native format reminders
 
+- **Multiple marketplaces are supported.** Each lives in its own directory under
+  `zcode_tools/marketplaces/<name>/` with a root `marketplace.json` and a `plugins/` subdir.
+  The installer copies all of them into `~/.zcode/marketplaces/`.
 - Plugin components are **convention-discovered**: `skills/<n>/SKILL.md`,
   `commands/<n>.md`, `agents/<n>.md`. The manifest is metadata-only.
 - MCP servers use `{"mcpServers":{}}` in `plugins/<mcps>/.mcp.json` or the `mcp.servers`

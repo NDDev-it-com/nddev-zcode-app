@@ -33,11 +33,17 @@ jobs:
           for f in \
             build/version.json \
             build/manifest.json \
-            zcode_tools/marketplace.json \
+            config/nddev-contract.json \
+            references/zcode-baseline.json \
             zcode_tools/cli-config.template.json \
             zcode_tools/v2-config.template.json \
             zcode_tools/v2-setting.template.json; do
             python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
+          done
+          for f in \
+            zcode_tools/marketplaces/*/marketplace.json \
+            zcode_tools/marketplaces/*/plugins/*/.zcode-plugin/plugin.json; do
+            [ -f "$f" ] && python3 -c "import json,sys; json.load(open(sys.argv[1]))" "$f"
           done
           PLATFORM=ubuntu
           if [ "$(uname -s)" = "Darwin" ]; then PLATFORM=macos; fi

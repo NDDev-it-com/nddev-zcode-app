@@ -51,6 +51,7 @@ nddev::create_runtime_dirs() {
     "$target/cli/plugins/cache"
     "$target/cli/plugins/data"
     "$target/cli/plugins/marketplaces"
+    "$target/marketplaces"
     "$target/v2/logs"
     "$target/v2/crash"
   )
@@ -75,7 +76,7 @@ nddev::render_configs() {
   nddev::render_template "$SOURCE_DIR/v2-setting.template.json" "$target/v2/setting.json"
 }
 
-# Copy the static source tree (AGENTS.md, skills, commands, agents, marketplace, plugins).
+# Copy the static source tree (AGENTS.md, skills, commands, agents, marketplaces).
 nddev::copy_source_tree() {
   local target=$1
   nddev::section "Copy source tree"
@@ -91,12 +92,10 @@ nddev::copy_source_tree() {
     fi
   done
 
-  # marketplace.json -> ~/.zcode/marketplace.json
-  nddev::copy "$SOURCE_DIR/marketplace.json" "$target/marketplace.json"
-
-  # plugins/ -> ~/.zcode/plugins/ (self-contained plugin bundles)
-  if [ -d "$SOURCE_DIR/plugins" ]; then
-    nddev::copy "$SOURCE_DIR/plugins/." "$target/plugins/"
+  # marketplaces/ -> ~/.zcode/marketplaces/  (each subdir is one marketplace:
+  # <name>/marketplace.json + <name>/plugins/<bundle>/).
+  if [ -d "$SOURCE_DIR/marketplaces" ]; then
+    nddev::copy "$SOURCE_DIR/marketplaces/." "$target/marketplaces/"
   fi
 }
 
@@ -153,10 +152,19 @@ nddev::verify_build() {
       nddev::log "missing" "v2/setting.json is not valid JSON"
       errors=$((errors + 1))
     fi
-    if ! nddev::validate_json "$target/marketplace.json" 2>/dev/null; then
-      nddev::log "missing" "marketplace.json is not valid JSON"
-      errors=$((errors + 1))
-    fi
+    # Validate every marketplace manifest under marketplaces/<name>/marketplace.json.
+    local mp_dir mp_json
+    for mp_dir in "$target"/marketplaces/*/; do
+      [ -d "$mp_dir" ] || continue
+      mp_json="${mp_dir}marketplace.json"
+      if [ ! -f "$mp_json" ]; then
+        nddev::log "missing" "marketplace.json missing in $(basename "$mp_dir")"
+        errors=$((errors + 1))
+      elif ! nddev::validate_json "$mp_json" 2>/dev/null; then
+        nddev::log "missing" "$(basename "$mp_dir")/marketplace.json is not valid JSON"
+        errors=$((errors + 1))
+      fi
+    done
   fi
 
   if [ "$errors" -gt 0 ]; then

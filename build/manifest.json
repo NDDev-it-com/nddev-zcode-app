@@ -4,7 +4,7 @@
   "source_root": "zcode_tools/",
   "installer": "cli-tools/scripts/install.sh",
   "layout": {
-    "zcode_tools/": "source of a complete ~/.zcode (AGENTS.md, skills, commands, agents, marketplace.json, plugins, config templates)",
+    "zcode_tools/": "source of a complete ~/.zcode (AGENTS.md, skills, commands, agents, marketplaces/, config templates)",
     "cli-tools/": "installer for macOS (desktop) and Ubuntu (desktop/server)",
     "build/": "build artifacts: version.json, manifest.json, system files, secrets templates",
     "development/": "meta skills for developing this repo",

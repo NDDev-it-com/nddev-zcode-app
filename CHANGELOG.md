@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+- Restructured `zcode_tools/` to support **multiple marketplaces**: each lives in
+  its own directory under `zcode_tools/marketplaces/<name>/` (root `marketplace.json`
+  + `plugins/`), instead of a single root `marketplace.json` + flat `plugins/`.
+- Renamed the marketplace from `nddev` to **`nddev-developer`** (it is its own
+  marketplace, not a plugin inside `nddev`). The developer toolkit is now the
+  `core` plugin inside the `nddev-developer` marketplace.
+- Installer (`cli-tools/scripts/lib/build.sh`) now copies the whole `marketplaces/`
+  tree into `~/.zcode/marketplaces/` and validates every marketplace manifest.
+- CI workflows (`validate.yml`, `cross-platform.yml`) now glob all marketplace and
+  plugin manifests dynamically instead of a hardcoded `marketplace.json` path.
+- Updated `repo-orientation` skill, `architecture.md`, `manifest.json`, and the
+  `zcode-native-format.md` reference to the multi-marketplace layout.
+
 ## [1.0.0] - 2026-07-09
 
 ### Added

@@ -4,19 +4,24 @@ A condensed reference for the rules every component in this repository must foll
 Authoritative source: the `repo-orientation` skill and the `zcode-configuration-guide`
 skill (official ZCode docs).
 
-## Plugin bundles
+## Marketplaces and plugin bundles
 
-A plugin is a self-contained directory. The manifest is **metadata-only**.
+The repo supports **multiple marketplaces**. Each is a directory under
+`zcode_tools/marketplaces/<marketplace>/` with its own root `marketplace.json` and a
+`plugins/` subdir holding self-contained plugin bundles.
 
 ```
-plugins/<name>/
-  .zcode-plugin/plugin.json     ← metadata only
-  skills/<skill>/SKILL.md
-  commands/<cmd>.md
-  agents/<agent>.md
-  .mcp.json                     ← only on the MCP transport plugin
-  references/
-  README.md
+marketplaces/<marketplace>/
+  marketplace.json               ← the marketplace root manifest
+  plugins/
+    <name>/
+      .zcode-plugin/plugin.json  ← metadata only
+      skills/<skill>/SKILL.md
+      commands/<cmd>.md
+      agents/<agent>.md
+      .mcp.json                  ← only on the MCP transport plugin
+      references/
+      README.md
 ```
 
 ### Manifest fields (`plugin.json`)
@@ -62,8 +67,9 @@ Frontmatter: `name`, `model` (e.g. `GLM-5.2`).
 
 ## MCP servers
 
-Centralized in ONE file: `plugins/<mcps>/.mcp.json`, shape `{"mcpServers": {}}`. Each
-entry is either:
+Centralized in ONE file per MCP transport plugin:
+`marketplaces/<marketplace>/plugins/<mcps>/.mcp.json`, shape `{"mcpServers": {}}`.
+Each entry is either:
 
 - stdio: `{"command": "...", "args": [...], "env": {...}}`
 - http: `{"type": "http", "url": "..."}`
@@ -78,6 +84,7 @@ seven supported events: `SessionStart`, `UserPromptSubmit`, `PreToolUse`,
 
 ## Marketplace
 
-`zcode_tools/marketplace.json` — root manifest with `name`, `owner`, `description`, and a
+`zcode_tools/marketplaces/<name>/marketplace.json` — one root manifest per marketplace,
+with `name`, `owner`, `description`, and a
 `plugins[]` array. Each entry: `name`, `source` (relative `./plugins/<name>`),
 `description`, `version`, `author`, `category`, `tags`, `license`.

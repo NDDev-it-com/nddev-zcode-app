@@ -1,15 +1,15 @@
 {
-  "name": "nddev",
+  "name": "nddev-developer",
   "owner": {
     "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev",
     "url": "https://github.com/rldyourmnd"
   },
-  "description": "NDDev ZCode plugin marketplace. Built and installed from source by nddev-zcode-app.",
+  "description": "Developer marketplace for building and releasing the nddev-zcode-app estate: plugin scaffolding, skill authoring, MCP management, and release tooling.",
   "plugins": [
     {
-      "name": "nddev-developer",
-      "source": "./plugins/nddev-developer",
-      "description": "Developer toolkit for the nddev-zcode-app estate: skills, slash commands, and subagents for building plugins, managing MCP servers, authoring skills, and cutting releases.",
+      "name": "core",
+      "source": "./plugins/core",
+      "description": "Developer toolkit: skills, slash commands, and a reviewer subagent for building plugins, authoring skills, and cutting releases of the ~/.zcode build.",
       "version": "1.0.0",
       "author": {
         "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev"
