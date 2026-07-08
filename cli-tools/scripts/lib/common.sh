@@ -125,7 +125,7 @@ nddev::current_version() {
   local zcode_home="${NDDEV_TARGET:-$HOME/.zcode}"
   local stamp="$zcode_home/BUILD-VERSION"
   if [ -f "$stamp" ]; then
-    python3 -c "import json,sys; print(json.load(open('$stamp')).get('build_version','unknown'))" 2>/dev/null \
+    python3 -c "import json,sys; print(json.load(open(sys.argv[1])).get('build_version','unknown'))" "$stamp" 2>/dev/null \
       || printf 'unknown'
   else
     printf 'unknown'
@@ -159,10 +159,19 @@ nddev::backup_name() {
   done
 
   # If no free slot, reuse the oldest (lowest mtime) — its slot number is reused.
+  # Portable: use 'stat -f' on macOS (BSD) and 'find -printf' on Linux (GNU).
   if [ -z "$slot" ]; then
     local oldest
-    oldest="$(find "$backups_dir" -maxdepth 1 -name "*-old.zcode" -print0 2>/dev/null \
-      | xargs -0 stat -f '%m %N' 2>/dev/null | sort -n | head -1 | sed 's/.*\///')"
+    case "$(uname -s)" in
+      Darwin)
+        oldest="$(find "$backups_dir" -maxdepth 1 -name "*-old.zcode" -print0 2>/dev/null \
+          | xargs -0 stat -f '%m %N' 2>/dev/null | sort -n | head -1 | sed 's/.*\///')"
+        ;;
+      *)
+        oldest="$(find "$backups_dir" -maxdepth 1 -name "*-old.zcode" -printf '%T@ %f\n' 2>/dev/null \
+          | sort -n | head -1 | sed 's/.* //')"
+        ;;
+    esac
     slot="${oldest%%-*}"
     [ -z "$slot" ] && slot=1
   fi
@@ -179,19 +188,22 @@ nddev::render_template() {
     printf '[DRY-RUN] render %q -> %q (substitute ${VAR} from env)\n' "$template" "$dest"
     return 0
   fi
-  python3 - "$template" "$dest" <<'PY'
+  local env_file
+  env_file="$(nddev::repo_root)/build/.env"
+  python3 - "$template" "$dest" "$env_file" <<'PY'
 import json
 import os
 import re
 import sys
 
-template_path, dest_path = sys.argv[1], sys.argv[2]
+template_path, dest_path, env_file = sys.argv[1], sys.argv[2], sys.argv[3]
 
 with open(template_path, "r", encoding="utf-8") as f:
     raw = f.read()
 
 # Read build/.env if present and export into os.environ for substitution.
-env_file = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(template_path))), "build", ".env")
+# (load_env in common.sh already did this for the shell process; this is a
+# belt-and-suspenders so render_template works even if called directly.)
 if os.path.isfile(env_file):
     with open(env_file, "r", encoding="utf-8") as f:
         for line in f:

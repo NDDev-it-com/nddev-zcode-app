@@ -11,8 +11,8 @@ Authors a new ZCode skill in the correct place.
 
 | Scope | Location (source) | Installed to |
 |---|---|---|
-| Plugin-scoped | `zcode_tools/plugins/<plugin>/skills/<skill>/SKILL.md` | `~/.zcode/plugins/<plugin>/skills/<skill>/` |
-| User-scoped | `zcode_tools/skills/<skill>/SKILL.md` | `~/.zcode/skills/<skill>/` |
+| Plugin-scoped | `zcode_tools/marketplaces/<marketplace>/plugins/<plugin>/skills/<skill>/SKILL.md` | `~/.zcode/marketplaces/<marketplace>/plugins/<plugin>/skills/<skill>/` |
+| User-scoped | `zcode_tools/marketplaces/<marketplace>/skills/<skill>/SKILL.md` | `~/.zcode/skills/<skill>/` |
 
 Prefer **plugin-scoped** for anything tied to a plugin's domain; user-scoped only for
 personal cross-project skills.

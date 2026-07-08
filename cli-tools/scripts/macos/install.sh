@@ -16,6 +16,10 @@ LIB_DIR="$(cd "$SCRIPT_DIR/../lib" && pwd)"
 # shellcheck source=lib/build.sh
 . "$LIB_DIR/build.sh"
 
+# Load build/.env (idempotent — env vars already set win, so this is safe even
+# when install.sh already loaded them before exec).
+nddev::load_env
+
 # Re-select the marketplace (install.sh validated it, but this is a fresh process).
 nddev::select_marketplace "${NDDEV_MARKETPLACE:?NDDEV_MARKETPLACE must be set by install.sh}"
 
