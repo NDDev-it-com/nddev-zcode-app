@@ -16,40 +16,66 @@ runtime state (credentials, sessions, db, certs) from the backup.
 
 ```bash
 # List available setups (marketplaces):
-cli-tools/scripts/install.sh --list
+cli-tools/scripts/install.sh list
 
-# Plan (dry-run) — prints every action without touching disk:
-cli-tools/scripts/install.sh --marketplace nddev-developer --plan
+# Install — plan (dry-run) first, then apply:
+cli-tools/scripts/install.sh install --marketplace nddev-developer --plan
+cli-tools/scripts/install.sh install --marketplace nddev-developer --apply
 
-# Apply — back up, build, restore, verify:
-cli-tools/scripts/install.sh --marketplace nddev-developer --apply
+# Update — re-run install with the same marketplace (old ~/.zcode is backed up).
+# Switch — run install with a different --marketplace (old is backed up, new is built).
+# Remove — back up and delete the install:
+cli-tools/scripts/install.sh remove --apply
+
+# Custom install directory (default is ~/.zcode):
+cli-tools/scripts/install.sh install --marketplace nddev-developer --target /opt/my-zcode --apply
+# ...or set it once in build/.env (ZCODE_TARGET=...) and skip --target.
 
 # Force a platform (otherwise auto-detected from uname):
-cli-tools/scripts/install.sh --marketplace nddev-developer --platform macos --apply
-cli-tools/scripts/install.sh --marketplace nddev-developer --platform ubuntu --apply
+cli-tools/scripts/install.sh install --marketplace nddev-developer --platform macos --apply
 ```
 
-A **marketplace is a complete, self-contained setup** — its own AGENTS.md, config
-templates, skills/commands/agents, and plugins. The installer selects ONE and builds
-a clean `~/.zcode` from it. To switch setups, run `--apply` with a different
-`--marketplace`; the current `~/.zcode` is backed up first.
+### Commands
 
-## What happens on `--apply`
+| Command | What it does |
+|---|---|
+| `install` (default) | Back up the target, build a clean `~/.zcode` from a marketplace, restore runtime state. |
+| `remove` | Back up the target, then delete it. Refuses to delete a directory without `BUILD-VERSION` (safety). |
+| `list` | Show available marketplaces. |
 
-1. **Backup** — the current `~/.zcode` is moved to
-   `~/.zcode-backups/<N>-<DD.MM.YYYY>-<VERSION>-old.zcode`, where:
+### Target directory resolution
+
+The install/remove target is resolved in this order:
+
+1. `--target <dir>` flag (highest precedence)
+2. `ZCODE_TARGET` in `build/.env`
+3. `~/.zcode` (the standard ZCode location, default)
+
+### Lifecycle: install → update → switch → remove
+
+Every transition backs up the current install first (rotation slots 1–9), so nothing
+is ever lost:
+
+- **Install** — fresh build from a marketplace.
+- **Update** — re-run `install` with the same marketplace (source changed).
+- **Switch** — `install` with a different `--marketplace`.
+- **Remove** — `remove` backs up and deletes.
+
+## What happens on `install --apply`
+
+1. **Backup** — the current target is moved to
+   `<backups>/<N>-<DD.MM.YYYY>-<VERSION>-old.zcode`, where:
    - `N` is a 1–9 rotation slot (lowest free slot; the oldest backup is reused
      when all nine are taken).
    - `DD.MM.YYYY` is today's date.
    - `VERSION` is the build version that was installed (read from
-     `~/.zcode/BUILD-VERSION`, or `unknown` on a first run).
-2. **Build** — a clean `~/.zcode` is rendered from `zcode_tools/`:
-   - `AGENTS.md`, `skills/`, `commands/`, `agents/`, `marketplace.json`,
-     `plugins/` are copied as-is.
+     `BUILD-VERSION`, or `unknown` on a first run).
+2. **Build** — a clean target is rendered from the selected marketplace:
+   - `AGENTS.md`, `skills/`, `commands/`, `agents/`, `plugins/` are copied as-is.
    - `cli/config.json`, `v2/config.json`, `v2/setting.json` are rendered from
      their `*.template.json`, with `${VAR}` secrets injected from `build/.env`.
    - Empty runtime directories ZCode expects are created.
-3. **Version stamp** — `~/.zcode/BUILD-VERSION` records the build version, ZCode
+3. **Version stamp** — `BUILD-VERSION` records the build version, ZCode
    runtime baseline, platform, and timestamp.
 4. **Restore** — runtime state is selectively restored from the backup:
    - **Always restored**: `v2/credentials.json`, `v2/certs/`, `cli/agents/`

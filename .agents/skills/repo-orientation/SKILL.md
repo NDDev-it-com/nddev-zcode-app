@@ -60,26 +60,34 @@ zcode_tools/marketplaces/<name>/        ← ONE complete setup
 
 ```bash
 # List available setups:
-cli-tools/scripts/install.sh --list
+cli-tools/scripts/install.sh list
 
-# Plan (dry-run) a specific setup:
-cli-tools/scripts/install.sh --marketplace <name> --plan
+# Install (plan first, then apply):
+cli-tools/scripts/install.sh install --marketplace <name> --plan
+cli-tools/scripts/install.sh install --marketplace <name> --apply
 
-# Apply (back up, build clean, restore):
-cli-tools/scripts/install.sh --marketplace <name> --apply
+# Remove (back up + delete):
+cli-tools/scripts/install.sh remove --apply
+
+# Custom target directory:
+cli-tools/scripts/install.sh install --marketplace <name> --target /opt/zcode --apply
 ```
 
+Commands: `install` (default), `remove`, `list`. The target directory resolves as:
+`--target` flag > `ZCODE_TARGET` (build/.env) > `~/.zcode`.
+
 1. **Select** — `--marketplace <name>` picks the self-contained setup.
-2. **Backup** — `~/.zcode` → `~/.zcode-backups/<N>-<DD.MM.YYYY>-<VERSION>-old.zcode`.
+2. **Backup** — the target → `<backups>/<N>-<DD.MM.YYYY>-<VERSION>-old.zcode`.
 3. **Build** — render the marketplace's config templates (secrets from `build/.env`),
    copy AGENTS.md, skills/commands/agents, and the marketplace dir itself.
-4. **Stamp** — write `~/.zcode/BUILD-VERSION` (version + platform + timestamp).
+4. **Stamp** — write `BUILD-VERSION` (version + platform + timestamp).
 5. **Restore** — selective: always restore credentials, certs, sessions, db, artifacts;
    never restore logs, crash, plugin cache.
 6. **Verify** — JSON valid, `BUILD-VERSION` present, `AGENTS.md` present.
 
 `--plan` (default) prints every action without touching disk. `--apply` is irreversible
-(wipes `~/.zcode`, keeps the versioned backup).
+(wipes the target, keeps the versioned backup). `remove` refuses to delete a directory
+without `BUILD-VERSION` (safety).
 
 ## Orienting yourself
 

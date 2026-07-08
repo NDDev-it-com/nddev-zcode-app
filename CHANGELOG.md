@@ -6,6 +6,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+- **Full installer lifecycle: install, update, switch, remove.** New `remove`
+  command backs up then deletes the target (refuses directories without
+  `BUILD-VERSION` as a safety check). Re-running `install` with the same
+  marketplace = update; with a different one = switch.
+- **Custom install directory.** `--target <dir>` flag and `ZCODE_TARGET` /
+  `ZCODE_BACKUPS_DIR` in `build/.env` let you install anywhere, not just `~/.zcode`.
+  Resolution: `--target` > `ZCODE_TARGET` (.env) > `~/.zcode`.
+- **`build/.env` now loaded by the installer** (`nddev::load_env`) for both the
+  target directory and secrets — one file configures everything.
+- **Free OSS CI suite** from `nddev-ci-workflows@0.3.0`: `codeql`,
+  `dependency-review`, `secret-scan`, `scorecard`, and `cross-platform-smoke`,
+  all pinned by full SHA. Repo flipped to PUBLIC to enable the free tier.
+
 ### Changed
 - **Each marketplace is now a self-contained `~/.zcode` setup.** AGENTS.md, config
   templates (cli-config/v2-config/v2-setting), mcp/hooks, and user-scope

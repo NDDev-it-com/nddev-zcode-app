@@ -76,4 +76,4 @@ jobs:
 
       - name: Installer plan (dry-run)
         run: |
-          cli-tools/scripts/install.sh --marketplace "$(ls zcode_tools/marketplaces | head -1)" --platform ubuntu --plan
+          cli-tools/scripts/install.sh install --marketplace "$(ls zcode_tools/marketplaces | head -1)" --platform ubuntu --plan

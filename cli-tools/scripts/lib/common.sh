@@ -12,6 +12,36 @@ nddev::repo_root() {
   printf '%s\n' "$(cd "$script_dir/../../.." && pwd)"
 }
 
+# Load build/.env if present. Exports every KEY=VALUE so the installer (target
+# dir, backup dir) and the template renderer (secrets) both see them.
+# Comments and blank lines are skipped; values may be quoted. Does NOT override
+# a variable already set in the environment (env wins over .env).
+nddev::load_env() {
+  local env_file
+  env_file="$(nddev::repo_root)/build/.env"
+  [ -f "$env_file" ] || return 0
+  local line key val
+  while IFS= read -r line || [ -n "$line" ]; do
+    # Strip leading/trailing whitespace.
+    line="${line#"${line%%[![:space:]]*}"}"
+    line="${line%"${line##*[![:space:]]}"}"
+    # Skip blank lines and comments.
+    [ -z "$line" ] && continue
+    case "$line" in \#*) continue ;; esac
+    # Must be KEY=VALUE.
+    [[ "$line" == *=* ]] || continue
+    key="${line%%=*}"
+    val="${line#*=}"
+    # Strip surrounding quotes from the value.
+    val="${val#\"}" ; val="${val%\"}"
+    val="${val#\'}" ; val="${val%\'}"
+    # Export only if not already set (environment takes precedence).
+    if [ -z "${!key+x}" ]; then
+      export "$key=$val"
+    fi
+  done < "$env_file"
+}
+
 nddev::log() {
   local level=$1
   shift

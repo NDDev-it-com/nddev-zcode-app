@@ -8,10 +8,10 @@
 # ~/.zcode entirely from that marketplace's directory.
 
 # Path constants. SOURCE_DIR is resolved by nddev::select_marketplace() below.
-# ZCODE_HOME is overridable via NDDEV_TARGET for testing (e.g. /tmp/zcode-test)
-# without touching the real ~/.zcode.
-ZCODE_HOME="${NDDEV_TARGET:-$HOME/.zcode}"
-BACKUPS_DIR="${NDDEV_BACKUPS_DIR:-$HOME/.zcode-backups}"
+# Resolution order for the install target: CLI flag --target > ZCODE_TARGET
+# (from build/.env) > NDDEV_TARGET (legacy test override) > ~/.zcode (standard).
+ZCODE_HOME="${NDDEV_TARGET:-${ZCODE_TARGET:-$HOME/.zcode}}"
+BACKUPS_DIR="${NDDEV_BACKUPS_DIR:-${ZCODE_BACKUPS_DIR:-$HOME/.zcode-backups}}"
 MARKETPLACES_ROOT="$(nddev::repo_root)/zcode_tools/marketplaces"
 SOURCE_DIR=""
 RESTORE_SCRIPT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)/restore.sh"
