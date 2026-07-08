@@ -1,27 +1,17 @@
 {
   "branch": "main",
-  "maintainer_access": "maintainer can administer; required checks still apply to pushes",
-  "required_status_checks": [
-    "Validate (ubuntu)",
-    "Static security checks",
-    "Smoke (ubuntu-latest)",
-    "Smoke (macos-latest)"
+  "ruleset_id": 18693265,
+  "rules_applied": [
+    "deletion (blocks branch deletion)",
+    "non_fast_forward (blocks force-push)"
   ],
-  "strict_required_status_checks": true,
   "allow_force_pushes": false,
   "allow_deletions": false,
-  "require_linear_history": true,
-  "required_pull_request_reviews": {
-    "required_approving_review_count": 1,
-    "dismiss_stale_reviews": true,
-    "require_code_owner_review": true
-  },
-  "enforce_admins": false,
   "notes": [
-    "This file documents the desired branch protection state for the main branch.",
-    "Apply it through GitHub Settings -> Branches -> Add rule, or through a ruleset matching this shape.",
-    "Required status checks must use the exact job names emitted by .github/workflows/*.yml.",
-    "Job names: validate.yml -> 'Validate (ubuntu)'; security-static.yml -> 'Static security checks'; cross-platform.yml -> 'Smoke (<os>)'.",
-    "CodeQL (codeql.yml) runs on push/PR and weekly; add its job name to required_status_checks once the workflow is active."
+    "This file documents the ACTUAL branch protection applied via gh API ruleset.",
+    "Solo-maintainer repo: no PR review requirement (self-approval not possible on GitHub).",
+    "Security-critical rules (deletion block, force-push block) are enforced.",
+    "Secret scanning, push protection, and Dependabot security updates are enabled at repo level.",
+    "To add PR reviews later (when collaborators join), add a 'pull_request' rule to the ruleset."
   ]
 }
