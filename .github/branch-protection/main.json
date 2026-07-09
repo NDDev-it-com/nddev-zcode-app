@@ -3,14 +3,31 @@
   "ruleset_id": 18693265,
   "rules_applied": [
     "deletion (blocks branch deletion)",
-    "non_fast_forward (blocks force-push)"
+    "non_fast_forward (blocks force-push)",
+    "required_signatures (requires verified commits)",
+    "required_linear_history (blocks merge commits)"
   ],
   "allow_force_pushes": false,
   "allow_deletions": false,
+  "release_governance": {
+    "semver_tag_ruleset_id": 18733591,
+    "protected_tag_patterns": [
+      "refs/tags/[0-9]*.[0-9]*.[0-9]*",
+      "refs/tags/[0-9]*.[0-9]*.[0-9]*-*"
+    ],
+    "tag_rules": [
+      "deletion",
+      "non_fast_forward",
+      "update"
+    ],
+    "immutable_future_releases": true
+  },
   "notes": [
     "This file documents the ACTUAL branch protection applied via gh API ruleset.",
     "Solo-maintainer repo: no PR review requirement (self-approval not possible on GitHub).",
-    "Security-critical rules (deletion block, force-push block) are enforced.",
+    "Repository administrators retain the standard emergency bypass used across NDDev repositories.",
+    "SemVer tags cannot be updated, force-pushed, or deleted after creation.",
+    "Repository-level release immutability applies to releases created after it was enabled; release 2.0.0 predates that setting and remains protected by its immutable tag.",
     "Secret scanning, push protection, and Dependabot security updates are enabled at repo level.",
     "To add PR reviews later (when collaborators join), add a 'pull_request' rule to the ruleset."
   ]
