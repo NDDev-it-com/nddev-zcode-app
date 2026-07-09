@@ -6,6 +6,32 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-07-09
+
+### Added
+- **6 new builder skills** for the `nddev-builder/core` plugin (9 → 15 skills):
+  - `list-components` — list all plugins/skills/commands/agents/hooks/MCP/providers
+    in a marketplace (read-only inventory).
+  - `remove-component` — safely remove a component (checks references first,
+    updates marketplace.json, validates).
+  - `enable-plugin` — populate `enabledPlugins` in cli-config template
+    (key format: `plugin-name@marketplace-name`).
+  - `add-provider` — add a model provider (LLM endpoint) to v2-config, with
+    `${VAR}` secret handling and anthropic/openai-style provider support.
+  - `add-reference` — add a reference doc to a plugin bundle
+    (`plugins/<name>/references/<doc>.md`).
+  - `add-tool` — add a CLI tool (non-MCP) with executable script + README +
+    optional companion skill (the CLI+skill pattern as an MCP alternative).
+- **6 new slash commands**: `/nddev-list`, `/nddev-remove`, `/nddev-enable`,
+  `/nddev-add-provider`, `/nddev-add-reference`, `/nddev-add-tool`.
+
+### Changed
+- **Doctor Step 7 no longer hardcodes `nddev-builder`** — now loops over ALL
+  marketplaces (`zcode_tools/marketplaces/*/`) on both platforms. A broken
+  template in any marketplace (builder, designer, developer) is now caught.
+- **Core plugin version bumped 1.0.0 → 1.1.0** (minor: 6 new backward-compatible
+  capabilities). `marketplace.json` and `plugin.json` updated in sync.
+
 ## [1.0.1] - 2026-07-09
 
 ### Added

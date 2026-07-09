@@ -1,5 +1,5 @@
 {
-  "build_version": "1.0.1",
+  "build_version": "1.0.2",
   "zcode_app_version": "3.3.3",
   "zcode_cli_version": "0.15.0",
   "zcode_runtime": "GLM-5.2",

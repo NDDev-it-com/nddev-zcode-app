@@ -97,12 +97,14 @@ done
 
 ## Step 7 — Installer plan
 
-Both platforms must pass dry-run:
+EVERY marketplace must pass dry-run on both platforms:
 ```bash
-cli-tools/scripts/install.sh install --marketplace nddev-builder --platform macos --plan
-cli-tools/scripts/install.sh install --marketplace nddev-builder --platform ubuntu --plan
+for mp in $(ls zcode_tools/marketplaces/); do
+  cli-tools/scripts/install.sh install --marketplace "$mp" --platform macos --plan
+  cli-tools/scripts/install.sh install --marketplace "$mp" --platform ubuntu --plan
+done
 ```
-Both must end with `[ok] all checks passed`.
+Every run must end with `[ok] all checks passed`.
 
 ## Step 8 — Cross-reference integrity
 
