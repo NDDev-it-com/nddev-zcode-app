@@ -7,7 +7,7 @@
     "zcode_tools/marketplaces/<name>/": "each marketplace is a self-contained ~/.zcode setup (AGENTS.md, config templates, mcp/hooks, skills/commands/agents, plugins)",
     "cli-tools/": "installer: --marketplace <name> selects one setup and builds ~/.zcode from it (macOS + Ubuntu)",
     "build/": "build artifacts: version.json, manifest.json, system files, secrets templates (shared across setups)",
-    "development/": "meta skills for developing this repo",
+    ".agents/skills/": "workspace skills (repo-orientation, dev-workflow) — not shipped to ~/.zcode",
     "docs/": "documentation",
     "tests/": "test suite (currently empty)"
   },

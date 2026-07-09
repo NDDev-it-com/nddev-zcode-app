@@ -68,7 +68,7 @@ zcode_tools/        source of ~/.zcode (AGENTS.md, skills, commands, agents,
                     marketplace.json, plugins, config templates)
 cli-tools/          installer (install.sh, lib/, macos/, ubuntu/, restore.sh)
 build/              version.json, manifest.json, system/, .env.example
-development/        meta-skills for developing this repo
+.agents/skills/     workspace skills (repo-orientation, dev-workflow)
 docs/               install, architecture, secrets
 tests/              test suite (currently empty)
 .github/            CI workflows and issue/PR templates

@@ -8,7 +8,8 @@ description: Map of the nddev-zcode-app repository — read it FIRST when starti
 This is a **build system + installer** for ZCode, not a runtime. It recreates a
 complete, version-stamped `~/.zcode` from source on macOS and Ubuntu.
 
-**Read this skill first**, then `AGENTS.md` for the rules.
+**Read this skill first**, then `AGENTS.md` for the rules, then `dev-workflow`
+for the daily process.
 
 ## What this repo does (in one paragraph)
 
@@ -18,16 +19,19 @@ marketplace and builds a clean `~/.zcode` from it. It can also download and
 install the ZCode app itself (bootstrap), back up and restore versions, and
 switch between different setups.
 
-## The three layers
+## Repository structure
 
 ```
 zcode_tools/marketplaces/<name>/   SOURCE: each marketplace = one complete ~/.zcode setup
 cli-tools/                         INSTALLER: bootstrap + install + remove + restore
 build/                             ARTIFACTS: version pins, secrets, manifest (shared)
+.agents/skills/                    WORKSPACE SKILLS: repo-orientation + dev-workflow
+config/                            CONTRACT: nddev-contract.json
+references/                        BASELINE: zcode-baseline.json
+docs/                              DOCS: install, architecture, secrets
+.serena/                           SERENA: project config + memory
+.github/                           CI: workflows, templates, branch protection
 ```
-
-Everything else (`docs/`, `development/`, `.github/`, `config/`, `references/`,
-`.serena/`, `.agents/`) supports these three layers.
 
 ## What lives where (inside a marketplace)
 
@@ -106,6 +110,16 @@ Mode: `--plan` (dry-run, default) or `--apply`.
 - The installer checks the running ZCode against the pin and warns on mismatch.
 - `BUILD-VERSION` is stamped into every install.
 
+## Workspace skills (in `.agents/skills/`)
+
+These are read by ZCode when working inside this repo. They are NOT shipped to
+`~/.zcode` — they exist only for developing this repo.
+
+| Skill | Purpose |
+|---|---|
+| `repo-orientation` (this skill) | What the repo is and how it's structured. Read FIRST. |
+| `dev-workflow` | How to develop: make changes, validate, test, commit, release. |
+
 ## Where rules live
 
 - `AGENTS.md` (repo root) — workspace rules for editing this repo.
@@ -114,9 +128,6 @@ Mode: `--plan` (dry-run, default) or `--apply`.
 - `build/manifest.json` — machine-readable layout, backup/restore policy.
 - `references/zcode-baseline.json` — verified ZCode runtime baseline.
 - `docs/` — install, architecture, and secrets documentation.
-- `.agents/skills/repo-orientation/` — this skill (read first).
-- `.agents/skills/dev-workflow/` — how to develop this repo (workflows + conventions).
-- `development/skills/` — workspace-only meta-skills for editing this repo.
 
 ## ZCode native format reminders
 
