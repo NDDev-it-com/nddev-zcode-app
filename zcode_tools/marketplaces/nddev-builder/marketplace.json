@@ -10,7 +10,7 @@
       "name": "core",
       "source": "./plugins/core",
       "description": "Developer toolkit: skills, slash commands, and a reviewer subagent for building plugins, managing MCP servers and providers, authoring skills, listing/removing components, and cutting releases of the ~/.zcode build.",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "author": {
         "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev"
       },

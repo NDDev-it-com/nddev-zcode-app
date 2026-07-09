@@ -6,6 +6,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-07-09
+
+### Added
+- **3 new builder skills** for test/benchmark management (15 → 18 skills):
+  - `run-tests` — run the 30-test pytest suite + fast validation lane.
+  - `add-test` — scaffold a new test file using established fixtures.
+  - `run-benchmarks` — run installer lifecycle performance benchmarks.
+- **3 new slash commands**: `/nddev-run-tests`, `/nddev-add-test`,
+  `/nddev-run-benchmarks`.
+- **Test suite** (30 tests) in the parent control-plane repo
+  (`validation/nddev-zcode-app/`): marketplace structure (8), installer
+  lifecycle (6), restore safety C1/C2/C3 (5), backup rotation (4), config
+  rendering (4), version parity (3).
+- **Benchmark suite** measuring install/restore/remove/plan timing.
+- **Validation scripts**: `validate_fast.sh` (JSON + plan + ShellCheck, <60s),
+  `validate_release.sh` (full pytest + fast lane, <300s).
+
+### Changed
+- Core plugin version 1.1.0 → 1.2.0 (minor: 3 new test/benchmark capabilities).
+- Tests live in the parent repo (rldyour-ai-cli-tools/validation/), NOT inside
+  the module — keeps the implementation clean and hides test internals.
+
 ## [1.0.4] - 2026-07-09
 
 ### Fixed

@@ -5,10 +5,10 @@ building and maintaining everything under ZCode: plugin scaffolding, component
 authoring, MCP/hook/provider registration, marketplace creation, listing,
 removal, releases, and consistency checking.
 
-- **15 skills** — add-plugin, add-skill, add-command, add-agent, add-hook,
+- **18 skills** — add-plugin, add-skill, add-command, add-agent, add-hook,
   add-mcp-server, add-provider, add-reference, add-tool, add-marketplace,
-  list-components, remove-component, enable-plugin, release-build, doctor
-- **15 slash commands** — `/nddev-add-plugin`, `/nddev-add-skill`,
+  list-components, remove-component, enable-plugin, run-tests, add-test, run-benchmarks, release-build, doctor
+- **18 slash commands** — `/nddev-add-plugin`, `/nddev-add-skill`,
   `/nddev-add-command`, `/nddev-add-agent`, `/nddev-add-hook`,
   `/nddev-add-mcp`, `/nddev-add-provider`, `/nddev-add-reference`,
   `/nddev-add-tool`, `/nddev-add-marketplace`, `/nddev-list`, `/nddev-remove`,
@@ -32,6 +32,9 @@ removal, releases, and consistency checking.
 | `list-components` | List all components in a marketplace (read-only) |
 | `remove-component` | Safely remove a component (checks references first) |
 | `enable-plugin` | Enable or disable a plugin in cli-config |
+| `run-tests` | Run the test suite (30 pytest tests + fast lane) |
+| `add-test` | Scaffold a new test file |
+| `run-benchmarks` | Run installer performance benchmarks |
 | `release-build` | Bump version sources, update CHANGELOG, validate, tag |
 | `doctor` | Deep consistency check (versions, ZCode-spec, stale paths, JSON, secrets) |
 | `nddev-native-reviewer` | Strict reviewer for ZCode-native format correctness |
