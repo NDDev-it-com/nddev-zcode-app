@@ -39,7 +39,7 @@ jobs:
               echo "::warning::$uses is pinned to '$ref' (not a full SHA)"
               bad=1
             fi
-          done < <(grep -rE 'uses:' .github/workflows/ 2>/dev/null || true)
+          done < <(grep -rnE '^\s*uses:\s' .github/workflows/ 2>/dev/null || true)
           if [ "$bad" -ne 0 ]; then
             echo "::error::One or more actions are not pinned to a full commit SHA."
             exit 1

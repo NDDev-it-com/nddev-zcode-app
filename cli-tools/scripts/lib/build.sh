@@ -340,7 +340,9 @@ nddev::verify_build() {
 # marketplace. Sets NDDEV_BACKUP_PATH to the backup directory (empty on a fresh
 # install with no prior ~/.zcode).
 NDDEV_BACKUP_PATH=""
+# shellcheck disable=SC2034
 nddev::install_sequence() {
+  # shellcheck disable=SC2034
   local platform=$1
   local current_version backup_name backup_path
 

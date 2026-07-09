@@ -6,6 +6,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-07-09
+
+### Fixed
+- **CI codeql workflow: permissions corrected.** Added `actions: read` to the
+  top-level permissions (the reusable workflow needs it alongside
+  `security-events: write` and `contents: read`).
+- **CI scorecard workflow: permissions corrected.** Added `actions: read` and
+  `id-token: write` (required by the reusable scorecard workflow for OIDC).
+- **CI security-static: grep no longer matches its own command line.** Changed
+  the action-pin checker grep from bare `uses:` to `^\s*uses:\s` (YAML key
+  pattern), preventing the checker from matching its own grep command inside
+  the shell script body.
+- **CI validate: ShellCheck SC2034 false positives silenced.** Added
+  `# shellcheck disable=SC2034` for `platform` (passed but unused inside
+  `install_sequence`) and `NDDEV_BACKUP_PATH` (set in function, read by
+  platform runners as a cross-function global).
+
 ## [1.0.3] - 2026-07-09
 
 ### Fixed
