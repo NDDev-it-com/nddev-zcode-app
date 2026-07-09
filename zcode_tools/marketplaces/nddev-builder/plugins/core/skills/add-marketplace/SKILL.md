@@ -12,7 +12,7 @@ Scaffolds a new self-contained marketplace — a complete `~/.zcode` build sourc
 The installer's `validate_marketplace` requires these **5 files** to exist
 inside the marketplace directory, or it refuses to build:
 
-```
+```text
   AGENTS.md                    ← system instructions → ~/.zcode/AGENTS.md
   marketplace.json             ← root manifest (name, owner, plugins[])
   cli-config.template.json     ← → ~/.zcode/cli/config.json (rendered)
@@ -23,10 +23,10 @@ inside the marketplace directory, or it refuses to build:
 In addition, conventionally create these (start empty with a `_comment` key —
 the installer merges them into `cli/config.json` if present):
 
-```
+```text
   mcp.json                     ← MCP servers (merged into cli/config.json.mcp.servers)
   hooks.json                   ← lifecycle hooks (merged into cli/config.json.hooks.events)
-  skills/   commands/   agents/   plugins/   ← user-scope dirs (start empty, add .gitkeep)
+  skills/   commands/   agents/   plugins/   ← optional user-scope component dirs
 ```
 
 ## Procedure
@@ -35,7 +35,8 @@ the installer merges them into `cli/config.json` if present):
    `nddev-designer`). Lowercase, hyphens.
 
 2. **Create the directory tree:**
-   ```
+
+   ```bash
    mkdir -p zcode_tools/marketplaces/<name>/{skills,commands,agents,plugins}
    ```
 
@@ -45,32 +46,40 @@ the installer merges them into `cli/config.json` if present):
    - `AGENTS.md` → set the `<!-- <name>:begin -->` marker and describe this setup.
    - `cli-config.template.json` → keep the default (plugins/hooks/mcp skeleton).
    - `v2-config.template.json` → set the provider definitions (default: Z.ai GLM-5.2).
-   - `v2-setting.template.json` → set preferences (locale, recentProjects templated
-     with `${HOME}`).
+   - `v2-setting.template.json` → set portable preferences; start
+     `recentProjects` as `[]` and let ZCode populate device-local paths.
    - `mcp.json`, `hooks.json` → start empty (with the `_comment` key).
 
 4. **Validate the marketplace is self-contained** before committing:
+
    ```bash
    cli-tools/scripts/install.sh install --marketplace <name> --platform macos --plan
    ```
+
    This runs `validate_marketplace` and will error if a required file is missing.
 
 5. **Verify it appears in the list:**
+
    ```bash
    cli-tools/scripts/install.sh list
    ```
 
-6. **Record release behavior changes.** Keep `VERSION`,
-   `build/version.json`, and `build/manifest.json` in sync and update
-   `CHANGELOG.md` when the repository is being prepared for release.
+6. **Record release behavior changes.** Before a repository release, use one
+   strict SemVer in `VERSION`, the `build_version` fields in
+   `build/version.json` and `build/manifest.json`, the `nddev-builder`
+   marketplace `core` entry, and the core plugin manifest; also update
+   `CHANGELOG.md`.
 
 ## Rules
 
 - Every marketplace is self-contained — it owns its AGENTS.md and all config
   templates, not shared at the `zcode_tools/` root.
 - The marketplace name must match its directory name.
-- Start with empty `skills/`/`commands/`/`agents/`/`plugins/` (`.gitkeep`) and
-  fill them deliberately later.
+- Empty `skills/`/`commands/`/`agents/`/`plugins/` are valid only for a
+  deliberately minimal profile whose `AGENTS.md` and marketplace description
+  explain why project-specific tooling comes from the active workspace. Do not
+  publish a future-work placeholder as an available setup.
 - English only for all content.
-- `validate_marketplace` is the gatekeeper — if the `--plan` run passes, the
-  marketplace is correctly structured.
+- `validate_marketplace` proves the minimum structure. Also inspect provider
+  semantics, portability, enabled plugins, secret boundaries, and the profile's
+  substantive operating instructions before treating it as release-ready.

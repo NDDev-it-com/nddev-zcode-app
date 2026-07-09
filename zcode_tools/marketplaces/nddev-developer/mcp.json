@@ -1,4 +1,4 @@
 {
-  "_comment": "Reference MCP server definitions for the nddev-developer setup. The installer merges these into cli/config.json under mcp.servers (ZCode native key is mcp.servers, not the top-level mcpServers). Server entry shapes — stdio: { \"command\": \"...\", \"args\": [...], \"env\": {...} }; http: { \"type\": \"http\", \"url\": \"...\" }. Secrets referenced as ${VAR_NAME} are rendered from build/.env at install time. Keep empty until a server is deliberately added.",
+  "_comment": "No global MCP servers are shipped by design. The developer profile stays portable and receives language- and project-specific integrations from the active workspace. Any deliberately added user-scope server is merged into cli/config.json under mcp.servers.",
   "mcpServers": {}
 }

@@ -75,5 +75,7 @@ The body IS the subagent's system prompt. Write it as a complete role definition
 
 - Validate: `cli-tools/scripts/install.sh install --marketplace <name> --platform macos --plan`.
 - Validate the same marketplace with `--platform ubuntu --plan`.
-- For a release behavior change, keep `VERSION`, `build/version.json`, and
-  `build/manifest.json` in sync and update `CHANGELOG.md`.
+- Before a repository release, use one strict SemVer in `VERSION`, the
+  `build_version` fields in `build/version.json` and `build/manifest.json`, the
+  `nddev-builder` marketplace `core` entry, and the core plugin manifest; also
+  update `CHANGELOG.md`.

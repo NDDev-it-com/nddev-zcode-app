@@ -1,15 +1,15 @@
 {
-  "_comment": "ZCode desktop provider definitions (v2/config.json) for the nddev-designer setup. Rendered at install time; API keys injected from build/.env.",
+  "_comment": "Disabled-by-default explicit API-key provider definitions for nddev-designer. Z.ai API-key access uses the custom api.z.ai endpoint; enable it only after supplying the key. The verified Z.ai account preference remains OAuth in v2/setting.json and is independent of this entry. API keys are injected from build/.env; credentials.json contains restored account auth tokens and is never templated.",
   "provider": {
     "builtin:zai-coding-plan": {
       "name": "Z.ai - Coding Plan",
       "kind": "anthropic",
       "options": {
         "apiKey": "${ZAI_API_KEY}",
-        "baseURL": "https://open.bigmodel.cn/api/anthropic"
+        "baseURL": "https://api.z.ai/api/anthropic"
       },
-      "enabled": true,
-      "source": "builtin",
+      "enabled": false,
+      "source": "custom",
       "models": {
         "GLM-5.2": {
           "limit": { "context": 1000000 },

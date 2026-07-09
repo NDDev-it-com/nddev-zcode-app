@@ -1,4 +1,4 @@
 {
-  "_comment": "Reference MCP server definitions for the nddev-designer setup. The installer merges these into cli/config.json under mcp.servers. Keep empty until a server is deliberately added.",
+  "_comment": "No global MCP servers are shipped by design. The designer profile stays portable and receives project-specific integrations from the active workspace. Any deliberately added user-scope server is merged into cli/config.json under mcp.servers.",
   "mcpServers": {}
 }

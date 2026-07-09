@@ -6,7 +6,11 @@ Register a tool integration for the agent.
 
 Follow the `add-mcp-server` skill exactly. First, help the user decide the path:
 
-1. **Explain the trade-off briefly:** MCP loads schemas permanently (4-32x more tokens); CLI+skill costs zero until called and is more composable. Default to CLI+skill for local-dev; MCP for cross-agent standardized tools.
+1. **Explain the trade-off briefly:** MCP exposes standardized tool schemas at
+   session scope; CLI+skill keeps compact routing metadata in the baseline and
+   loads detailed guidance/output on demand, but is less constrained. Default
+   to CLI+skill for local development; use MCP for standardized cross-agent
+   discovery or a deliberately constrained interface.
 
 2. **Path A (classic MCP):**
    - Add the server entry to `zcode_tools/marketplaces/<marketplace>/mcp.json` under `mcpServers` (stdio or http shape).

@@ -4,6 +4,6 @@
     "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev",
     "url": "https://github.com/rldyourmnd"
   },
-  "description": "Designer-oriented ZCode setup (placeholder scaffold). To be filled with design-system, Figma-to-code, and design-validation plugins.",
+  "description": "Portable, deliberately lean design profile for product intent, design-system consistency, accessibility, responsive states, and implementation-ready UI decisions.",
   "plugins": []
 }

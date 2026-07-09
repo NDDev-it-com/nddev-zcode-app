@@ -1,5 +1,5 @@
 {
-  "_comment": "ZCode desktop preferences (v2/setting.json) for the nddev-developer setup. recentProjects is templated per-OS at install time via ${HOME}. Edit preferences in ZCode Settings after install; re-running the installer overwrites this file.",
+  "_comment": "Portable ZCode desktop preferences for nddev-developer. The zai=oauth family mode selects account OAuth for the built-in Z.ai experience; the explicit API-key provider in v2/config.json is separate. recentProjects starts empty and is populated by ZCode on this device. Edit preferences in ZCode Settings after install; re-running the installer overwrites this file.",
   "locale": "en-US",
   "localePreference": "system",
   "terminalInheritSystemProfile": true,
@@ -14,7 +14,5 @@
   "enabledBuiltinAgentCliProviders": ["glm"],
   "modelProviderFamilyModes": { "zai": "oauth" },
   "providerFamilyDomain": "zai",
-  "recentProjects": [
-    "${HOME}/Desktop/github/github-device-sync"
-  ]
+  "recentProjects": []
 }

@@ -6,11 +6,112 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.0.1] - 2026-07-10
+
 ### Security
 
-- Require verified signatures and linear history on `main`, protect SemVer tags
-  from update or deletion, and enable immutable releases for future
+- Required verified signatures and linear history on `main`, protected SemVer
+  tags from update or deletion, and enabled immutable releases for future
   publications.
+- Pinned every ZCode 3.3.3 distribution artifact by exact filename, byte size,
+  and SHA-512, with macOS signing identity and Debian package identity recorded
+  for platform-native verification.
+- Verified HTTPS-only download redirects, DMG/Gatekeeper/code-signing identity,
+  exact DEB control metadata and package-owned CLI paths, and strict app/CLI
+  postconditions before bootstrap can report success.
+- Restricted bootstrap to the exact canonical ZCode CDN base and the verified
+  DEB CLI path `/opt/ZCode/resources/glm/zcode.cjs`; DEB apply now requires a
+  successful privileged `dpkg --dry-run -i` before the real transaction.
+- Added private pre-install DEB payload extraction: the exact CLI path, safe
+  file shape, and pinned CLI version must pass before dpkg runs. The installed
+  dpkg-owned CLI must then be byte-identical by SHA-512 to that verified entry.
+- Added deterministic app/launcher bootstrap locks and rollback-protected swaps.
+  Exact postconditions define the commit point; incomplete post-commit cleanup
+  reports failure without discarding verified committed state.
+- Revalidated the 2.0.1 artifact pins against repeated current CDN downloads.
+  Bootstrap now fails closed on digest drift even when byte size is unchanged;
+  a pin is accepted only after SHA-512 and native identity are reconciled.
+- Replaced the release publisher with the SHA-pinned shared supply-chain
+  workflow: 2.0.1 publishes an immutable source archive, SHA256 manifest, SPDX
+  SBOM, build-provenance attestation, and SBOM attestation after local version
+  parity succeeds.
+- Required strict SemVer equality across the tag, all module build-version
+  sources, and both core-plugin version sources; the tagged commit must be an
+  ancestor of freshly fetched `origin/main` before publication.
+- Hardened the privileged pull-request labeler before any action runs, removed
+  source checkout, allowlisted only required egress, and isolated cancellation
+  by pull-request number.
+- Added always-on actionlint and fork-safe pedantic zizmor gates through the
+  exact shared CI release, with low-or-higher workflow-security findings fatal.
+- Replaced live-tree mutation with private same-filesystem staging, full
+  pre-commit verification, exclusive target and backup-pool locks, held rotation
+  slots, fsync, atomic rename, and rollback of both the target and displaced
+  slot.
+- Replaced the marker-only guard with a validated `BUILD-VERSION` schema,
+  canonical/disjoint path containment, rejection of symlinks/special
+  files/hardlink aliases, and explicit typed envelopes for reversible adoption
+  of an unstamped target.
+- Corrected the source/runtime secret boundary: rendered `.env`, provider and
+  MCP configs, `v2/credentials.json`, certificates, and backups are explicitly
+  classified as sensitive and owner-only.
+- Required `build/.env` to be a current-user-owned regular non-symlink with mode
+  `0600` or stricter. Parsing remains non-evaluating, with narrow HOME-prefix
+  expansion limited to target and backup path keys.
+- Made plan and apply reject missing or empty placeholders in keys or values
+  across active config, setting, provider, MCP, and hook branches; only
+  explicitly disabled provider/MCP nodes may remain dormant.
+- Replaced extension-authoring guidance to shell-source `.env` files with an
+  approved process-environment contract and non-evaluating, allowlisted parsing.
+
+### Changed
+
+- Bumped the public build and `nddev-builder/core` component to 2.0.1;
+  upgraded the artifact metadata contract to schema 2.
+- Standardized module, managed-stamp, adoption-envelope, and backup-name version
+  parsing on SemVer 2.0.0 rules instead of permissive SemVer-like patterns.
+- Upgraded the public product contract to version 2 and distinguished plugin
+  `mcpServers` inputs from the installed `mcp.servers` configuration path.
+- Made `nddev-designer` and `nddev-developer` production-ready minimal profiles
+  with substantive role-specific instructions. Their empty global extension
+  surfaces are intentional: project tools and policy come from the active
+  workspace.
+- Kept Z.ai account OAuth as the verified ZCode 3.3.3 preference while defining
+  explicit Z.ai API-key access as a separate, disabled-by-default custom
+  provider at `https://api.z.ai/api/anthropic`. BigModel remains a separate,
+  disabled-by-default provider on `https://open.bigmodel.cn/api/anthropic`.
+- Hardened repository governance to squash-only merges using pull-request
+  titles, branch-update support, automatic deletion of merged branches, and
+  disabled wiki/projects surfaces.
+
+### Fixed
+
+- Enabled `core@nddev-builder` by default so the advertised builder toolkit is
+  active after installation.
+- Started `recentProjects` as an empty portable list instead of shipping a
+  workstation-specific repository path.
+- Repaired the malformed Markdown fence in the `add-mcp-server` skill and
+  aligned provider/tool authoring guidance with the runtime secret contract.
+- Removed unsourced, volatile numeric token-cost claims and replaced absolute
+  zero-cost language with the durable routing-metadata/on-demand context model.
+- Used a verified, locally extracted AppImage on Ubuntu only when the complete
+  dpkg toolchain is absent; DEB installation failures now remain fatal instead
+  of producing a false-success dependency-repair path.
+- Preferred current `diskutil image attach`/`eject` operations on macOS while
+  retaining deprecated `hdiutil` mount operations only as a compatibility
+  fallback; DMG checksum verification still requires `hdiutil verify`.
+- Required explicit `--adopt-unmanaged` plus an explicit existing `--target`
+  before replacing unstamped state; adopted backups are target-bound and
+  relocation requires a second explicit flag.
+- Rejected recognized but command-inapplicable installer flags and mutually
+  exclusive apply/plan modes instead of silently ignoring user intent.
+- Bounded live CLI version probing to one canonical executable, 3 seconds, and
+  64 KiB. Probe failure is nonfatal advisory `unknown` for normal install and a
+  strict postcondition failure for bootstrap.
+
+### Removed
+
+- Removed unused tracked `.gitkeep` files for the dead `build/system` and
+  `cli-tools/templates` platform scaffolds.
 
 ## [2.0.0] - 2026-07-10
 

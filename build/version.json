@@ -1,22 +1,61 @@
 {
-  "build_version": "2.0.0",
+  "build_version": "2.0.1",
   "zcode_app_version": "3.3.3",
   "zcode_cli_version": "0.15.0",
   "zcode_runtime": "GLM-5.2",
   "zcode_cdn_base": "https://cdn-zcode.z.ai/zcode/electron/releases",
   "zcode_download_artifacts": {
-    "macos-arm64": "ZCode-3.3.3-mac-arm64.dmg",
-    "macos-x64": "ZCode-3.3.3-mac-x64.dmg",
-    "linux-x64-appimage": "ZCode-3.3.3-linux-x64.AppImage",
-    "linux-x64-deb": "ZCode-3.3.3-linux-x64.deb",
-    "linux-arm64-appimage": "ZCode-3.3.3-linux-arm64.AppImage",
-    "linux-arm64-deb": "ZCode-3.3.3-linux-arm64.deb"
+    "macos-arm64": {
+      "filename": "ZCode-3.3.3-mac-arm64.dmg",
+      "size_bytes": 161495574,
+      "sha512": "5434a525bc03adc274672ad2c9f83d6ebde67ec596ff55d1be0adc426c87731e657a0bf1db637000192491befee37fd34237eaa1b136f8c91b7da38b30fd7078",
+      "team_id": "8A5X4JJ39T",
+      "bundle_id": "dev.zcode.app",
+      "app_version": "3.3.3",
+      "bundle_version": "3.3.3.2657"
+    },
+    "macos-x64": {
+      "filename": "ZCode-3.3.3-mac-x64.dmg",
+      "size_bytes": 169792747,
+      "sha512": "22a179a23573fdcca08bc2a483ad4ab6df652d6e4af7b51a2ba79b101aad3f4e59aa894617c1bb9cd8a96cce0b93c0d123780400a6bd1d80126b99f83526846a",
+      "team_id": "8A5X4JJ39T",
+      "bundle_id": "dev.zcode.app",
+      "app_version": "3.3.3",
+      "bundle_version": "3.3.3.2657"
+    },
+    "linux-x64-appimage": {
+      "filename": "ZCode-3.3.3-linux-x64.AppImage",
+      "size_bytes": 153884701,
+      "sha512": "be02e2f39c3cb1347c32e14ccc1888fc6e9937893d55f712ce95e44fdea077bda427a317ae12315c4043fa8a5d0af3e3c4c0263bcb6b8eae5b3a6acf02dfb870"
+    },
+    "linux-x64-deb": {
+      "filename": "ZCode-3.3.3-linux-x64.deb",
+      "size_bytes": 113767364,
+      "sha512": "f71517c2af540cfe884f3417e2be8af72507f9a45cc75e5e3b10436606bba38510d838362721202d701c8cb00d33a2f8869d52d1d1c6097028de9f3843a9a407",
+      "package_name": "zcode",
+      "package_arch": "amd64",
+      "package_version": "3.3.3-2657"
+    },
+    "linux-arm64-appimage": {
+      "filename": "ZCode-3.3.3-linux-arm64.AppImage",
+      "size_bytes": 153820859,
+      "sha512": "ea60d899b88c56ec0740cca4af65317fbb0cdf9a12d12dd7bdf52c3ad2a5dd67aaf6f9299ee4ae90adc4541b9e669db014715054799150dd106f6c2b05cc6647"
+    },
+    "linux-arm64-deb": {
+      "filename": "ZCode-3.3.3-linux-arm64.deb",
+      "size_bytes": 107978832,
+      "sha512": "e36280ecb95edc71df69c5e84f109bacf2fb82aaaa0949666e2268206c7eb3b79af1c0e90afa633c050457326e578f679f4068809f92af307c724952f79bb045",
+      "package_name": "zcode",
+      "package_arch": "arm64",
+      "package_version": "3.3.3-2657"
+    }
   },
   "zcode_cli_launcher": {
     "macos_entry": "/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs",
-    "linux_entry": "/opt/ZCode/resources/glm/zcode.cjs",
+    "linux_deb_entry": "/opt/ZCode/resources/glm/zcode.cjs",
+    "linux_appimage_entry": "${HOME}/.local/opt/ZCode/resources/glm/zcode.cjs",
     "wrapper_target": "${HOME}/.local/bin/zcode"
   },
-  "schema": 1,
-  "_comment": "build_version is the semantic version of this nddev-zcode-app build. zcode_app_version and zcode_cli_version pin the exact ZCode desktop app and CLI versions this build was verified against — the installer warns if the running ZCode differs. zcode_cdn_base + zcode_download_artifacts are used by the bootstrap command to download and install the ZCode app. The CLI is the zcode.cjs inside the app bundle, launched via node through a wrapper script."
+  "schema": 2,
+  "_comment": "build_version is the semantic version of this nddev-zcode-app build. zcode_app_version and zcode_cli_version pin the exact ZCode desktop app and CLI versions this build was verified against. Every downloadable artifact is pinned by filename, byte size, and SHA-512; platform-native identity metadata is verified before installation where available. The CLI is the zcode.cjs inside the verified app bundle, launched via node through a wrapper script."
 }

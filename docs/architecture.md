@@ -1,14 +1,16 @@
 # Architecture
 
 `nddev-zcode-app` produces a complete, reproducible ZCode home from source. It
-does not run ZCode or own ZCode runtime data.
+does not run ZCode agent sessions. Its lifecycle does manage the installed
+configuration and only the explicitly declared runtime paths during protected
+backup and restore operations.
 
 ## Implementation layers
 
 ```text
 zcode_tools/   SOURCE: self-contained marketplace setups
 cli-tools/     INSTALLER: lifecycle and rendering for macOS and Ubuntu
-build/         CONTRACT: versions, manifest, system files, secret template
+build/         CONTRACT: versions, artifact integrity, manifest, secret template
 ```
 
 ### Marketplace sources
@@ -27,44 +29,121 @@ installer selects exactly one marketplace and builds the target from it.
 | `hooks.json`, `mcp.json` | keys in `cli/config.json` | merged |
 
 Template rendering expands `${VAR}` values from the process environment and
-the local `build/.env` file. Unknown placeholders remain unchanged so optional
-provider or tool credentials can be configured later.
+the local `build/.env` file through structured JSON substitution. Source
+templates never contain real credentials. Rendered `.env`, provider configs,
+MCP configs, credentials, and backups are runtime secrets and remain private to
+the current user.
+
+The local env file is accepted only when it is a current-user-owned regular
+non-symlink with no group/world permissions. Existing environment variables win
+over file values. No shell expansion occurs; only `ZCODE_TARGET` and
+`ZCODE_BACKUPS_DIR` recognize a leading literal `$HOME` or `${HOME}` path
+prefix.
+
+### Setup profiles
+
+- `nddev-builder` enables `core@nddev-builder`, a native component-authoring
+  toolkit with 13 skills, 13 matching commands, and one reviewer agent.
+- `nddev-designer` is a production-ready minimal design profile. Its empty
+  extension maps are intentional; project-specific design tools come from the
+  active workspace.
+- `nddev-developer` is a production-ready minimal engineering profile. Its
+  empty extension maps are intentional; language, framework, and repository
+  tools come from the active workspace.
+
+All preference templates keep `modelProviderFamilyModes.zai` set to `oauth`,
+which is the verified ZCode 3.3.3 account-authentication mode. The provider
+objects in `v2/config.json` are a separate explicit API-key contract: Z.ai uses
+`https://api.z.ai/api/anthropic`; BigModel uses
+`https://open.bigmodel.cn/api/anthropic`. Both API-key providers are disabled
+by default and must be enabled deliberately after their secret is configured.
 
 ### Installer
 
 The entry point is `cli-tools/scripts/install.sh`. Platform runners source the
 shared libraries and execute the same lifecycle:
 
-1. resolve and validate the selected marketplace,
-2. back up a prior stamped target,
-3. check the live ZCode runtime in apply mode,
-4. render a clean target,
-5. write `BUILD-VERSION`,
-6. selectively restore runtime state,
-7. verify the rendered result.
+1. canonicalize absolute target and backup roots; require existing real
+   immediate parents; reject files, symlink endpoints, nested roots,
+   cross-filesystem transactions, and implicit replacement of an unstamped
+   directory,
+2. validate the selected marketplace and acquire an exclusive target lock plus
+   an exclusive lock for the shared backup pool in deterministic order,
+3. create a private same-filesystem sibling stage and check the live ZCode
+   runtime in apply mode through one canonical executable, a 3-second timeout,
+   and a 64 KiB output cap,
+4. copy source, structurally render JSON and MCP inputs, write `BUILD-VERSION`,
+   and selectively restore runtime state into the stage,
+5. reject unresolved placeholders in keys or values across active
+   config/setting/provider/MCP/hook branches, symlinks, special files, and
+   hardlink aliases; normalize private permissions, verify the complete staged
+   result, and fsync it before commit,
+6. hold any occupied rotation slot, move the previous live target into its
+   backup, and atomically rename the verified stage into place,
+7. roll back both the live target and held backup occupant on errors or handled
+   signals, then release both locks. Every mutable stage/live/rollback/hold
+   endpoint is bound to its recorded filesystem identity across abort and
+   committed cleanup; an identity mismatch preserves foreign state, recovery
+   paths, and locks instead of guessing ownership.
 
-Plan mode describes the operation without writes or live `zcode` execution.
+Plan mode describes the operation without writes or live `zcode` execution, but
+still parses, substitutes, merges, and validates config/setting/provider/MCP/hook
+inputs. Missing or empty active placeholders in keys or values fail in both
+modes; only explicitly disabled provider/MCP nodes may remain dormant. An
+existing unstamped directory is never replaced implicitly: initial adoption
+requires `--adopt-unmanaged` together with an explicit `--target`.
 
 Shared implementation:
 
-- `lib/common.sh` owns logging, target/platform helpers, backup naming, safe
-  dry-run operations, and template rendering.
+- `lib/common.sh` owns logging, canonical path boundaries, backup naming,
+  private permissions, safe dry-run operations, and structured template
+  rendering.
 - `lib/version.sh` owns the public build/runtime version contract and installed
   stamp.
-- `lib/build.sh` owns selection, backup, build, restore, verification, and
-  orchestration.
+- `lib/build.sh` owns selection, two-root locking, staging, backup rotation,
+  fsync durability, rollback, build, restore, verification, and orchestration.
 - `restore.sh` applies the explicit per-path restore modes.
+
+### Bootstrap and CLI boundaries
+
+Bootstrap accepts only the exact canonical CDN base recorded in
+`build/version.json` and HTTPS-only redirects. It verifies size plus SHA-512
+before native identity checks. The DEB path is fixed to
+`/opt/ZCode/resources/glm/zcode.cjs`. Before the package transaction, private
+extraction must find exactly one safe entry there and its CLI version must match
+the pin; `dpkg --dry-run -i` must then pass. After installation, the exact
+dpkg-owned path/version and SHA-512 equality with the verified payload entry are
+required.
+
+Deterministically ordered locks protect the installer-managed app endpoint and
+the user launcher; dpkg owns the system package transaction on Debian systems.
+App and launcher swaps retain rollback state until exact postconditions pass.
+That point marks the bootstrap committed. Cleanup failure after commit remains
+visible but does not roll back verified state; pre-commit errors and handled
+signals recover the prior app/launcher when state is unambiguous. New and old
+application/launcher endpoints are identity-bound in both abort and success
+cleanup, and cleanup uses exclusive quarantine plus fd-relative deletion for
+owned state.
+
+Normal installs treat a missing, timed-out, failed, or over-limit runtime CLI
+probe as advisory `not-installed`/`unknown`. Bootstrap treats the same bounded
+probe as a strict version postcondition.
 
 ### Build contract
 
-- `VERSION`, `build/version.json`, and `build/manifest.json` carry the same
-  module build version.
-- `build/version.json` also pins the verified ZCode app, CLI, runtime model, CDN,
-  artifacts, and launcher locations.
-- `build/manifest.json` defines public layout, backup, restore, and secrets
-  contracts.
-- The `nddev-builder/core` version is independent and must match between its
-  marketplace entry and `.zcode-plugin/plugin.json`.
+- `VERSION`, `build/version.json`, `build/manifest.json`, the `nddev-builder`
+  marketplace `core` entry, and the core plugin manifest carry one strict
+  SemVer for every repository release.
+- `build/version.json` also pins the verified ZCode app, CLI, runtime model,
+  launcher locations, and each CDN artifact's filename, byte size, SHA-512, and
+  available platform-native identity metadata. Linux launcher entries are
+  explicit for the DEB (`/opt/ZCode/resources/glm/zcode.cjs`) and the default
+  AppImage extraction (`${HOME}/.local/opt/ZCode/resources/glm/zcode.cjs`).
+- `build/manifest.json` defines public layout, artifact/bootstrap, command-option,
+  runtime-probe, transaction, backup/restore, adoption, and secrets contracts.
+- The release workflow validates every version source, requires the tagged
+  commit to be reachable from fetched `origin/main`, and rejects publication
+  before invoking the shared supply-chain workflow if any contract drifts.
 
 ## ZCode-native component format
 
@@ -82,6 +161,12 @@ marketplaces/<marketplace>/plugins/<plugin>/.mcp.json
 Plugin manifests are metadata, not component registries. User-scope components
 live directly under `<target>/{skills,commands,agents}/`. Hooks and MCP servers
 are installed into `<target>/cli/config.json`.
+
+The public product contract is `config/nddev-contract.json` version 2. It keeps
+the two MCP namespaces explicit: plugin `.mcp.json` inputs use `mcpServers`,
+while the installed CLI configuration uses `mcp.servers`. The installer remains
+independent of this descriptive metadata and implements the same mapping
+directly.
 
 ## Public/private repository boundary
 

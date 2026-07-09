@@ -1,4 +1,4 @@
-# Secrets — never commit. The real values live in build/.env, sourced at install time.
+# Secrets — never commit. build/.env is strictly parsed and allowlisted; it is never shell-sourced.
 .env
 
 # Generated build outputs (if any future tooling writes here)

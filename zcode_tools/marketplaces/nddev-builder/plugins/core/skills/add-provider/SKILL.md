@@ -20,7 +20,7 @@ Adds a model provider definition to `v2-config.template.json`.
         "baseURL": "https://api.example.com/v1"
       },
       "enabled": true,
-      "source": "builtin",
+      "source": "custom",
       "models": {
         "<model-id>": {
           "limit": { "context": 200000 },
@@ -34,7 +34,8 @@ Adds a model provider definition to `v2-config.template.json`.
 
 ### Fields
 
-- **`<provider-key>`** — unique key, convention `builtin:<name>-<plan>`.
+- **`<provider-key>`** — unique key. Use the repository's established key when
+  updating an existing provider; use `custom:<name>` for a new API-key provider.
 - **`name`** — human-readable display name.
 - **`kind`** — `"anthropic"` (Anthropic-compatible API) or `"openai"`
   (OpenAI-compatible API). Determines the request format ZCode uses.
@@ -42,8 +43,9 @@ Adds a model provider definition to `v2-config.template.json`.
   renders it from `build/.env` at install time.
 - **`options.baseURL`** — the API endpoint URL.
 - **`enabled`** — `true` to activate, `false` to define but disable.
-- **`source`** — `"builtin"` (ZCode knows this provider natively) or
-  `"custom"` (user-defined).
+- **`source`** — use `"custom"` for every user-defined or explicit API-key
+  provider. Use `"builtin"` only when a verified ZCode-native definition
+  explicitly requires it; never infer it from the provider's brand name.
 - **`models`** — map of model IDs to their limits. `limit.context` =
   max context window. `modalities.input`/`output` = supported types
   (`"text"`, `"image"`). Optional model fields: `limit.output` (max output
@@ -55,7 +57,7 @@ Adds a model provider definition to `v2-config.template.json`.
 ## Procedure
 
 1. Ask the user for:
-   - Provider display name and key (e.g. `builtin:openai-coding`).
+   - Provider display name and key (e.g. `custom:openai-coding`).
    - API kind: `anthropic` or `openai`.
    - Base URL (the API endpoint).
    - API key env var name (e.g. `OPENAI_API_KEY`) — must be uppercase.
@@ -67,21 +69,30 @@ Adds a model provider definition to `v2-config.template.json`.
 
 3. Add the provider entry to the `provider` object.
 
+   For an explicit Z.ai API-key provider, use kind `anthropic`, source
+   `custom`, and base URL `https://api.z.ai/api/anthropic`. Do not replace the
+   separate `modelProviderFamilyModes.zai: oauth` account preference. BigModel
+   API-key providers use `https://open.bigmodel.cn/api/anthropic`.
+
 4. Add the secret placeholder to `build/.env.example`:
-   ```
+
+   ```dotenv
    # <Provider display name> API key
    <API_KEY_VAR>=
    ```
+
    Place it under the `# ─── Provider secrets` section. If the var already
    exists, skip.
 
 5. Remind the user to add the real value to `build/.env` (gitignored):
-   ```
+
+   ```bash
    cp build/.env.example build/.env  # if not done yet
    $EDITOR build/.env                 # fill in <API_KEY_VAR>
    ```
 
 6. Validate:
+
    ```bash
    python3 -c "import json; json.load(open('zcode_tools/marketplaces/<mp>/v2-config.template.json'))"
    cli-tools/scripts/install.sh install --marketplace <mp> --platform macos --plan
@@ -92,5 +103,6 @@ Adds a model provider definition to `v2-config.template.json`.
 - API key is ALWAYS a `${VAR}` placeholder — never a real value in the template.
 - The env var name must be uppercase (`[A-Z0-9_]`).
 - Add the matching key to `build/.env.example` (committed, empty value).
-- `credentials.json` (auth tokens) is restored from backup, NOT templated here.
+- `credentials.json` contains account auth tokens and is restored from backup,
+  not templated. Treat it as a secret.
 - English only.

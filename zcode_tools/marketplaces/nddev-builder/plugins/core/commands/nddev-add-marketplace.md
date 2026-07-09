@@ -10,8 +10,11 @@ Follow the `add-marketplace` skill exactly:
 2. Create the directory tree: `zcode_tools/marketplaces/<name>/{skills,commands,agents,plugins}`.
 3. Copy the template files from `nddev-designer` (the cleanest minimal example) and edit:
    - `marketplace.json` → set `name` and `description`.
-   - `AGENTS.md` → set the `<!-- <name>:begin -->` marker.
-   - Keep the default `cli-config.template.json`, `v2-config.template.json`, `v2-setting.template.json`, `mcp.json`, `hooks.json`.
+   - `AGENTS.md` → set the `<!-- <name>:begin -->` marker and write substantive,
+     purpose-specific operating instructions.
+   - Keep `recentProjects: []`; update providers and enabled plugins
+     deliberately. Empty plugins/hooks/MCP are valid only when the profile
+     documents why workspace-specific tooling is intentional.
 4. Validate by running: `cli-tools/scripts/install.sh install --marketplace <name> --plan` — it must pass `validate_marketplace`.
 5. Confirm it appears in `install.sh list`.
 6. Remind to bump the build version if this is a release change.

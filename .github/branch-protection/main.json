@@ -5,10 +5,44 @@
     "deletion (blocks branch deletion)",
     "non_fast_forward (blocks force-push)",
     "required_signatures (requires verified commits)",
-    "required_linear_history (blocks merge commits)"
+    "required_linear_history (blocks merge commits)",
+    "pull_request (requires squash-only PRs and resolved review threads)",
+    "required_status_checks (requires the exact strict CI contexts below)"
   ],
   "allow_force_pushes": false,
   "allow_deletions": false,
+  "repository_settings": {
+    "allow_squash_merge": true,
+    "allow_merge_commit": false,
+    "allow_rebase_merge": false,
+    "squash_merge_commit_title": "PR_TITLE",
+    "squash_merge_commit_message": "BLANK",
+    "allow_update_branch": true,
+    "delete_branch_on_merge": true,
+    "has_wiki": false,
+    "has_projects": false
+  },
+  "pull_request_policy": {
+    "required_approving_review_count": 0,
+    "required_review_thread_resolution": true,
+    "require_code_owner_review": false,
+    "require_last_push_approval": false,
+    "dismiss_stale_reviews_on_push": false,
+    "allowed_merge_methods": [
+      "squash"
+    ]
+  },
+  "required_status_checks": {
+    "strict": true,
+    "do_not_enforce_on_create": false,
+    "contexts": [
+      "actionlint / actionlint",
+      "CodeQL / CodeQL (actions)",
+      "Dependency review / Dependency review",
+      "Secret scan / Gitleaks secret scan",
+      "zizmor (SARIF) / zizmor (SARIF)"
+    ]
+  },
   "release_governance": {
     "semver_tag_ruleset_id": 18733591,
     "protected_tag_patterns": [
@@ -26,9 +60,11 @@
     "This file documents the ACTUAL branch protection applied via gh API ruleset.",
     "Solo-maintainer repo: no PR review requirement (self-approval not possible on GitHub).",
     "Repository administrators retain the standard emergency bypass used across NDDev repositories.",
+    "Repository merges are squash-only, use the pull-request title as the commit title, and omit an auto-generated body.",
+    "Update-branch is enabled, merged branches are deleted automatically, and unused wiki/projects surfaces are disabled.",
     "SemVer tags cannot be updated, force-pushed, or deleted after creation.",
     "Repository-level release immutability applies to releases created after it was enabled; release 2.0.0 predates that setting and remains protected by its immutable tag.",
-    "Secret scanning, push protection, and Dependabot security updates are enabled at repo level.",
-    "To add PR reviews later (when collaborators join), add a 'pull_request' rule to the ruleset."
+    "Secret scanning, push protection, dependency graph, Dependabot alerts, and Dependabot security updates are enabled at repo level.",
+    "The pull-request rule intentionally requires zero approvals for the solo maintainer while still requiring resolved review threads; increase the approval count when collaborators join."
   ]
 }

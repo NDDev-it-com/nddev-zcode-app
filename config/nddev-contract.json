@@ -1,8 +1,8 @@
 {
-  "contract_version": 1,
+  "contract_version": 2,
   "product_name": "nddev-zcode-app",
   "display_name": "NDDev ZCode App",
-  "description": "Build system + installer that recreates a complete, version-stamped ~/.zcode from source on macOS/Ubuntu.",
+  "description": "Build system and installer that recreates a complete, version-stamped ZCode home from a selected portable setup on macOS or Ubuntu.",
   "github_repository": "NDDev-it-com/nddev-zcode-app",
   "license": "AGPL-3.0-or-later",
   "author": {
@@ -20,7 +20,8 @@
     "marketplace_root": "zcode_tools/marketplaces/<name>/marketplace.json",
     "plugin_manifest": "plugins/<name>/.zcode-plugin/plugin.json",
     "plugin_components_convention": true,
-    "mcp_key": "mcpServers",
+    "plugin_mcp_key": "mcpServers",
+    "installed_mcp_key": "mcp.servers",
     "hooks_require_enabled_flag": true,
     "supported_hook_events": [
       "SessionStart",
@@ -36,9 +37,24 @@
     "template": "build/.env.example",
     "real": "build/.env",
     "real_gitignored": true,
+    "source_requirements": "current-user-owned regular non-symlink, 0600 or stricter",
+    "path_expansion": "exact leading literal $HOME, $HOME/, ${HOME}, or ${HOME}/ prefix only for ZCODE_TARGET and ZCODE_BACKUPS_DIR",
     "placeholder_syntax": "${VAR_NAME}",
-    "render_at": "install_time"
+    "render_at": ["plan_validation", "apply_install"],
+    "rendering": "structured JSON value substitution with JSON escaping; placeholder-bearing object keys are rejected",
+    "validation_modes": ["plan", "apply"],
+    "active_placeholders_required": ["config", "setting", "provider", "mcp", "hooks"],
+    "disabled_placeholder_exception": ["provider", "mcp"],
+    "runtime_contains_secrets": true,
+    "runtime_permissions": "directories 0700; secret-bearing files 0600",
+    "never_print_or_commit": true
   },
+  "bootstrap_policy_ref": "build/manifest.json:bootstrap_policy",
+  "command_option_policy_ref": "build/manifest.json:command_option_policy",
+  "runtime_probe_policy_ref": "build/manifest.json:runtime_probe_policy",
+  "version_policy_ref": "build/manifest.json:version_policy",
+  "transaction_policy_ref": "build/manifest.json:transaction_policy",
+  "adoption_policy_ref": "build/manifest.json:adoption_policy",
   "backup_policy_ref": "build/manifest.json:backup_policy",
   "restore_policy_ref": "build/manifest.json:restore_policy"
 }

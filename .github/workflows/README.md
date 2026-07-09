@@ -7,11 +7,13 @@ against a pinned submodule revision.
 
 Reusable workflows are sourced from
 [`NDDev-it-com/nddev-ci-workflows`](https://github.com/NDDev-it-com/nddev-ci-workflows)
-release `0.3.0`, pinned to commit
-`1acba687361415b3f5942acceb40b228bb0387fd`.
+release `0.5.0`, pinned to commit
+`d1bb39730a45bae1e8c507477bb15c5e05a2b412`.
 
 ## Workflows
 
+- **`actionlint.yml`** validates every public workflow's syntax and expressions
+  through the checksum-verified shared `actionlint.yml` workflow.
 - **`codeql.yml`** runs CodeQL for GitHub Actions on pushes, pull requests, and
   the weekly schedule through `public-codeql.yml`.
 - **`dependency-review.yml`** checks pull-request dependency changes through
@@ -20,10 +22,19 @@ release `0.3.0`, pinned to commit
   `secret-scan.yml`.
 - **`scorecard.yml`** runs the public OpenSSF Scorecard JSON workflow on pushes
   and the weekly schedule.
-- **`release.yml`** verifies a SemVer tag against all three build-version
-  sources, checks core-plugin version parity, extracts the matching changelog
-  section, and publishes the GitHub Release.
-- **`labeler.yml`** labels pull requests from `.github/labeler.yml`.
+- **`zizmor.yml`** performs pedantic GitHub Actions security analysis, publishes
+  SARIF to code scanning, and fails on low-or-higher findings. GitHub permits
+  code-scanning result upload for workflows triggered by `pull_request`,
+  including fork and Dependabot pull requests.
+- **`release.yml`** requires strict SemVer equality across the tag, every build
+  contract, and both core-plugin version sources. The tagged commit must be an
+  ancestor of freshly fetched `origin/main`. It then calls the shared
+  supply-chain workflow to publish one immutable release with a deterministic
+  source archive (including the root secret-boundary `.gitignore`), checksums,
+  SPDX SBOM, build provenance, and SBOM attestation.
+- **`labeler.yml`** labels pull requests from `.github/labeler.yml` without
+  checking out contributor code. Its hardened runner uses minimal egress and
+  per-pull-request concurrency.
 
 All external actions and reusable workflows are pinned to immutable commit SHAs.
 The private harness validates those pins and the public/private repository

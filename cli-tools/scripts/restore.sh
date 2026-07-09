@@ -12,6 +12,8 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=lib/common.sh
 . "$SCRIPT_DIR/lib/common.sh"
 
+nddev::require_cmd python3 required || exit 1
+
 BACKUP="${NDDEV_BACKUP:-}"
 TARGET="${NDDEV_TARGET:-}"
 
@@ -19,9 +21,29 @@ if [ -z "$BACKUP" ] || [ -z "$TARGET" ]; then
   nddev::log "error" "NDDEV_BACKUP and NDDEV_TARGET must be set"
   exit 2
 fi
-if [ ! -d "$BACKUP" ]; then
-  nddev::log "error" "backup directory not found: $BACKUP"
+if ! BACKUP="$(nddev::validate_directory_endpoint "restore source" "$BACKUP")"; then
   exit 2
+fi
+if ! TARGET="$(nddev::validate_directory_endpoint "restore target" "$TARGET")"; then
+  exit 2
+fi
+if [ ! -d "$BACKUP" ] || [ -L "$BACKUP" ]; then
+  nddev::log "error" "restore source is not a real directory: $BACKUP"
+  exit 2
+fi
+if { [ ! -d "$TARGET" ] || [ -L "$TARGET" ]; } && [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
+  nddev::log "error" "restore target is not a real directory: $TARGET"
+  exit 2
+fi
+nddev::assert_safe_tree "$BACKUP" || exit 1
+if [ -d "$TARGET" ]; then
+  nddev::assert_safe_tree "$TARGET" || exit 1
+fi
+if [ "${NDDEV_ALLOW_UNMANAGED_BACKUP:-0}" != "1" ]; then
+  nddev::stamp_version "$BACKUP" >/dev/null || {
+    nddev::log "error" "restore source has no valid managed BUILD-VERSION"
+    exit 1
+  }
 fi
 
 # Files/dirs that are ALWAYS restored (auth + session + runtime data).
@@ -72,32 +94,55 @@ for entry in "${RESTORE_PATHS[@]}"; do
     continue
   fi
 
-  # H2: Normalize dest type mismatch — if src is a dir but dest is a file (or
-  # vice versa), remove dest first so the copy succeeds without nesting.
+  # Every restore path is a fixed relative contract. Prove containment again
+  # before any type normalization or replacement.
+  python3 -I - "$TARGET" "$dest" <<'PY'
+import os
+import sys
+
+root, destination = map(os.path.realpath, sys.argv[1:])
+if os.path.commonpath((root, destination)) != root or destination == root:
+    raise SystemExit("restore destination escapes target")
+PY
+
+  if [ -L "$src" ] || [ -L "$dest" ]; then
+    nddev::log "error" "refusing symlinked restore path: ${entry%%:*}"
+    exit 1
+  fi
+
+  # Normalize type mismatch so copies never nest into an unexpected endpoint.
   if [ -e "$dest" ] || [ -L "$dest" ]; then
     if [ -d "$src" ] && [ ! -d "$dest" ]; then
-      rm -f "$dest"
+      rm -f -- "$dest"
     elif [ ! -d "$src" ] && [ -d "$dest" ]; then
-      rm -rf "$dest"
+      rm -rf -- "$dest"
     fi
   fi
 
-  # H1: For "replace" mode (authoritative dirs), wipe dest first so stale files
+  # For "replace" mode (authoritative dirs), wipe dest first so stale files
   # from the fresh build do not survive. For "merge" mode (databases), copy
   # contents into the existing dest to preserve partial state.
   if [ -d "$src" ]; then
     if [ "$mode" = "replace" ] && [ -d "$dest" ]; then
-      rm -rf "$dest"
+      rm -rf -- "$dest"
     fi
     mkdir -p "$dest"
+    chmod 700 "$dest"
     cp -R "$src/." "$dest/"
   else
+    [ -f "$src" ] || { nddev::log "error" "restore source is not a regular file: $src"; exit 1; }
     mkdir -p "$(dirname "$dest")"
+    chmod 700 "$(dirname "$dest")"
     cp "$src" "$dest"
+    chmod 600 "$dest"
   fi
   nddev::log "ok" "restored: ${dest_rel} ($mode)"
   restored=$((restored + 1))
 done
+
+if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
+  nddev::normalize_tree_permissions "$TARGET"
+fi
 
 nddev::log "info" "restored $restored path(s), $skipped absent in backup"
 

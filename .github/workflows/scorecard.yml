@@ -6,10 +6,7 @@ on:
   schedule:
     - cron: "40 7 * * 1"
 
-permissions:
-  contents: read
-  actions: read
-  id-token: write
+permissions: {}
 
 concurrency:
   group: scorecard-${{github.ref}}
@@ -18,4 +15,8 @@ concurrency:
 jobs:
   scorecard:
     name: OpenSSF Scorecard
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard-json.yml@1acba687361415b3f5942acceb40b228bb0387fd # 0.3.0
+    permissions:
+      contents: read
+      actions: read # Inspect workflow metadata for Scorecard checks.
+      id-token: write # Obtain OIDC identity for the Scorecard artifact.
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard-json.yml@d1bb39730a45bae1e8c507477bb15c5e05a2b412 # 0.5.0

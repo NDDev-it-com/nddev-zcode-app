@@ -1,5 +1,5 @@
 {
-  "_comment": "ZCode desktop preferences (v2/setting.json). recentProjects is templated per-OS at install time via ${HOME}. Edit preferences in ZCode Settings after install; re-running the installer overwrites this file.",
+  "_comment": "Portable ZCode desktop preferences. The zai=oauth family mode selects account OAuth for the built-in Z.ai experience; explicit API-key providers in v2/config.json are separate. recentProjects starts empty and is populated by ZCode on this device. Edit preferences in ZCode Settings after install; re-running the installer overwrites this file.",
   "locale": "en-US",
   "localePreference": "system",
   "terminalInheritSystemProfile": true,
@@ -16,7 +16,5 @@
     "zai": "oauth"
   },
   "providerFamilyDomain": "zai",
-  "recentProjects": [
-    "${HOME}/Desktop/github/github-device-sync"
-  ]
+  "recentProjects": []
 }

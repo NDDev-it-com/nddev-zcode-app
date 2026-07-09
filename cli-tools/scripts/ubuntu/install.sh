@@ -13,15 +13,21 @@ LIB_DIR="$(cd "$SCRIPT_DIR/../lib" && pwd)"
 . "$LIB_DIR/common.sh"
 # shellcheck source=lib/version.sh
 . "$LIB_DIR/version.sh"
+
+nddev::require_cmd python3 required || exit 1
+nddev::load_env paths-only || exit 1
+
+# Load target-aware build state only after the narrow path configuration has
+# been validated. Direct runner invocation follows the same contract.
 # shellcheck source=lib/build.sh
 . "$LIB_DIR/build.sh"
 
-# Load build/.env (idempotent — env vars already set win, so this is safe even
-# when install.sh already loaded them before exec).
-nddev::load_env
-
 # Re-select the marketplace (install.sh validated it, but this is a fresh process).
 nddev::select_marketplace "${NDDEV_MARKETPLACE:?NDDEV_MARKETPLACE must be set by install.sh}"
+
+# Only now may secrets referenced by trusted marketplace JSON enter this
+# process. Existing environment values retain precedence.
+nddev::load_env full "$SOURCE_DIR" || exit 1
 
 # On a headless server there is no desktop app; the ~/.zcode config still applies
 # to the CLI and any agent sessions run there.
@@ -30,12 +36,6 @@ if [ -z "${DISPLAY:-}" ] && [ -z "${WAYLAND_DISPLAY:-}" ]; then
   PROFILE="server"
 fi
 nddev::log "info" "profile: $PROFILE (Ubuntu)"
-
-# Ubuntu-specific overlay: apply templates from cli-tools/templates/ubuntu/ if present.
-OVERLAY_DIR="$(nddev::repo_root)/cli-tools/templates/ubuntu"
-if [ -d "$OVERLAY_DIR" ] && [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
-  nddev::log "info" "Ubuntu overlay dir present: $OVERLAY_DIR (reserved)"
-fi
 
 nddev::install_sequence "ubuntu"
 
