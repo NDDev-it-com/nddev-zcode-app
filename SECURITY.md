@@ -50,6 +50,9 @@ accepted report within 30 business days. These targets are best-effort.
 
 - External GitHub Actions and reusable workflows are pinned to full commit SHAs.
 - Workflow permissions follow least privilege.
+- `main` requires verified signatures and linear history; SemVer tags cannot be
+  updated or deleted.
+- Repository-level release immutability is enabled for future releases.
 - Generic CodeQL, dependency-review, secret-scan, and Scorecard checks run in
   this public repository.
 - The maintainers' private `nddev-harnesses` control plane validates module

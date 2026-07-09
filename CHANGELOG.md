@@ -6,6 +6,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Security
+
+- Require verified signatures and linear history on `main`, protect SemVer tags
+  from update or deletion, and enable immutable releases for future
+  publications.
+
 ## [2.0.0] - 2026-07-10
 
 ### Changed
