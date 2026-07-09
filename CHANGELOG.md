@@ -6,6 +6,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-07-09
+
+### Changed
+- **repo-orientation skill: fully rewritten for current state.** Now documents
+  the 3 marketplaces, the 18-skill nddev-builder toolkit, the 4 version files,
+  the test suite location (parent repo), and the restore hardening. This is the
+  skill a new agent reads FIRST — it was stale (described only 2 marketplaces
+  and 0 of the builder skills).
+- **AGENTS.md: rewritten for current state.** Added marketplace table, builder
+  toolkit overview, test suite reference, and the 4-file version sync rule.
+- **.serena/memories/INDEX-01-OVERVIEW.md: updated** with 3 marketplaces,
+  18-skill toolkit, 4 version files, restore hardening facts, and test suite
+  location.
+
 ## [1.0.7] - 2026-07-09
 
 ### Fixed

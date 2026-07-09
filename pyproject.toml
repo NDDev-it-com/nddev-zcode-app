@@ -1,6 +1,6 @@
 [project]
 name = "nddev-zcode-app"
-version = "1.0.7"
+version = "1.0.8"
 description = "Build system + installer that recreates a complete, version-stamped ~/.zcode from source on macOS and Ubuntu."
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
