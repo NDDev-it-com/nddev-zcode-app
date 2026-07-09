@@ -235,22 +235,65 @@ if [ "$COMMAND" = "restore" ]; then
   nddev::log "info" "target: $ZCODE_HOME"
   nddev::log "info" "mode: $([ "$APPLY" -eq 1 ] && echo 'APPLY' || echo 'PLAN (dry-run)')"
 
-  # Safety: don't overwrite the target without backing it up first (if it exists).
+  # C2: Safety guard — refuse to overwrite a target that is not one of ours
+  # (no BUILD-VERSION), same as the 'remove' command. Prevents accidental
+  # destruction of a non-nddev directory via --target.
+  if [ -d "$ZCODE_HOME" ] && [ ! -f "$ZCODE_HOME/BUILD-VERSION" ]; then
+    nddev::log "error" "refusing to restore: $ZCODE_HOME has no BUILD-VERSION (not an nddev-zcode-app install). Pass --target explicitly if you are sure."
+    exit 1
+  fi
+
+  # C1: Copy the restore source to a temp dir BEFORE any backup/destructive
+  # operation. The pre-restore backup_current call below may reuse the source's
+  # slot (when all 10 are full) and delete it — operating from a temp copy makes
+  # that harmless. The temp dir is cleaned up on exit.
+  restore_source=""
+  if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
+    restore_source="$(mktemp -d -t nddev-restore.XXXXXX)"
+    cp -R "$backup_dir" "$restore_source/zcode-backup"
+    restore_source="$restore_source/zcode-backup"
+    # Re-validate the copy exists before proceeding.
+    if [ ! -d "$restore_source" ]; then
+      nddev::log "error" "failed to stage restore source — aborting before any destructive operation"
+      exit 1
+    fi
+  else
+    restore_source="$backup_dir"
+  fi
+  # Cleanup the temp dir on exit (only in APPLY mode, only if we created it).
+  _restore_cleanup() {
+    local tmp_parent
+    tmp_parent="$(dirname "$restore_source")"
+    case "$tmp_parent" in
+      /tmp/nddev-restore.*|*/T/nddev-restore.*) rm -rf "$tmp_parent" ;;
+    esac
+  }
+  trap '_restore_cleanup' EXIT
+
+  # Safety: back up the existing target before overwriting it (if it exists).
+  # C3: Do NOT silence failures — a failed backup must abort the restore.
   if [ -d "$ZCODE_HOME" ]; then
     nddev::log "warn" "target exists — it will be backed up before restore"
     if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
       ZCODE_HOME="$ZCODE_HOME" BACKUPS_DIR="$backups_dir" \
-        NDDEV_DRY_RUN=0 nddev::backup_current 2>/dev/null || true
+        NDDEV_DRY_RUN=0 nddev::backup_current
     fi
   fi
 
-  # Clear the target, then copy the backup wholesale.
+  # C1: Re-validate the staged source still exists (belt-and-suspenders after
+  # the backup_current call that may have reused a slot).
+  if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ] && [ ! -d "$restore_source" ]; then
+    nddev::log "error" "restore source was lost during pre-restore backup — aborting (target untouched)"
+    exit 1
+  fi
+
+  # Clear the target, then copy the (staged) backup wholesale.
   if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
     printf '[DRY-RUN] rm -rf %q\n' "$ZCODE_HOME"
-    printf '[DRY-RUN] cp -R %q %q\n' "${backup_dir}" "${ZCODE_HOME}"
+    printf '[DRY-RUN] cp -R %q %q\n' "${restore_source}" "${ZCODE_HOME}"
   else
     rm -rf "$ZCODE_HOME"
-    cp -R "$backup_dir" "$ZCODE_HOME"
+    cp -R "$restore_source" "$ZCODE_HOME"
     nddev::log "ok" "restored $ZCODE_HOME from $(basename "$backup_dir")"
   fi
 

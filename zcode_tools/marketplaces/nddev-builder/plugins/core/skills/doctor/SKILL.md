@@ -70,7 +70,9 @@ old pre-refactor structure (these should NOT appear outside CHANGELOG history):
 - `zcode_tools/AGENTS.md` (now inside marketplaces)
 - `zcode_tools/cli-config`, `zcode_tools/v2-config`, `zcode_tools/mcp.json`,
   `zcode_tools/hooks.json` (now inside marketplaces)
-- bare `nddev` or `nddev-developer` marketplace name (renamed to `nddev-builder`)
+- bare `nddev` marketplace name (the old pre-refactor name, now `nddev-builder`).
+  Note: `nddev-developer` is a valid active marketplace (full-stack developer
+  setup) — do NOT flag it as stale.
 
 ## Step 4 — Broken command detection
 

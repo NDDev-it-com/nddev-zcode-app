@@ -162,11 +162,22 @@ nddev::section "Wire zcode CLI launcher"
 bin_dir="${HOME}/.local/bin"
 launcher="${bin_dir}/zcode"
 
-# Resolve the entry point based on what exists.
-[ -z "${app_entry:-}" ] && app_entry="/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs"
+# M6: Resolve the entry point based on platform (not by guessing macOS first).
+# app_entry may already be set if the app was just installed; otherwise pick
+# the platform-default path and verify it exists.
+if [ -z "${app_entry:-}" ]; then
+  case "$PLATFORM" in
+    macos) app_entry="/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs" ;;
+    ubuntu) app_entry="/opt/ZCode/resources/glm/zcode.cjs" ;;
+    *) app_entry="/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs" ;;
+  esac
+fi
+# If the platform-default doesn't exist, try the other platform's path.
 if [ ! -f "$app_entry" ]; then
-  # Try the Linux path.
-  app_entry="/opt/ZCode/resources/glm/zcode.cjs"
+  case "$PLATFORM" in
+    macos) app_entry="/opt/ZCode/resources/glm/zcode.cjs" ;;
+    *) app_entry="/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs" ;;
+  esac
 fi
 
 if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then

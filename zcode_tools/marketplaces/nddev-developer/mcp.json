@@ -1,0 +1,4 @@
+{
+  "_comment": "Reference MCP server definitions for the nddev-developer setup. The installer merges these into cli/config.json under mcp.servers (ZCode native key is mcp.servers, not the top-level mcpServers). Server entry shapes — stdio: { \"command\": \"...\", \"args\": [...], \"env\": {...} }; http: { \"type\": \"http\", \"url\": \"...\" }. Secrets referenced as ${VAR_NAME} are rendered from build/.env at install time. Keep empty until a server is deliberately added.",
+  "mcpServers": {}
+}

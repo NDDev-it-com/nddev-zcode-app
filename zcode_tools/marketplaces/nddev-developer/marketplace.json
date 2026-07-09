@@ -1,0 +1,9 @@
+{
+  "name": "nddev-developer",
+  "owner": {
+    "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev",
+    "url": "https://github.com/rldyourmnd"
+  },
+  "description": "Developer-oriented ZCode setup for full-stack engineering and writing any code. Placeholder scaffold — to be filled with full-stack development plugins, skills, and tooling.",
+  "plugins": []
+}

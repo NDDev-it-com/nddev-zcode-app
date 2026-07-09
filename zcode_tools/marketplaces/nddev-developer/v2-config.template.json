@@ -1,0 +1,24 @@
+{
+  "_comment": "ZCode desktop provider definitions (v2/config.json) for the nddev-developer setup. Rendered at install time; API keys injected from build/.env via ${VAR} placeholders. credentials.json (auth tokens) is restored from backup, NOT templated here.",
+  "provider": {
+    "builtin:zai-coding-plan": {
+      "name": "Z.ai - Coding Plan",
+      "kind": "anthropic",
+      "options": {
+        "apiKey": "${ZAI_API_KEY}",
+        "baseURL": "https://open.bigmodel.cn/api/anthropic"
+      },
+      "enabled": true,
+      "source": "builtin",
+      "models": {
+        "GLM-5.2": {
+          "limit": { "context": 1000000 },
+          "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+          }
+        }
+      }
+    }
+  }
+}

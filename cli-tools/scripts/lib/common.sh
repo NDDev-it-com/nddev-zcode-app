@@ -35,6 +35,12 @@ nddev::load_env() {
     # Strip surrounding quotes from the value.
     val="${val#\"}" ; val="${val%\"}"
     val="${val#\'}" ; val="${val%\'}"
+    # M2: Validate the key is a legal shell identifier before exporting.
+    # A malformed key (e.g. "MY KEY=v") would make export fail under set -e.
+    if ! printf '%s' "$key" | grep -qE '^[A-Za-z_][A-Za-z0-9_]*$'; then
+      nddev::log "warn" "skipping invalid env key in build/.env: '$key'"
+      continue
+    fi
     # Export only if not already set (environment takes precedence).
     if [ -z "${!key+x}" ]; then
       export "$key=$val"

@@ -6,7 +6,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-07-09
+
 ### Added
+- **`nddev-developer` marketplace** — a developer-oriented ZCode setup for
+  full-stack engineering and writing any code. Currently a placeholder scaffold
+  (empty `skills/`/`commands/`/`agents/`/`plugins/`); to be filled with
+  full-stack development plugins. Distinct from `nddev-builder` (meta-tooling
+  for creating marketplaces/plugins).
 - **`bootstrap` command — install ZCode from zero.** Downloads and installs the
   ZCode desktop app + CLI at the pinned version (macOS `.dmg` → `/Applications/`,
   Ubuntu `.deb` → `dpkg`), then wires the `zcode` CLI launcher into `~/.local/bin`.
@@ -34,7 +41,41 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `dependency-review`, `secret-scan`, `scorecard`, and `cross-platform-smoke`,
   all pinned by full SHA. Repo flipped to PUBLIC to enable the free tier.
 
+### Fixed
+- **`restore` command data-loss bug (critical).** When all 10 backup slots were
+  full, the pre-restore `backup_current` call could reuse the oldest slot and
+  delete the exact backup being restored from, then `rm -rf` the target, then
+  fail on `cp` — leaving the user with neither source nor target. The restore
+  source is now staged to a temp directory before any destructive operation,
+  and re-validated after the pre-restore backup.
+- **`restore` now requires a `BUILD-VERSION` guard** on the existing target
+  (same as `remove`), preventing accidental destruction of a non-nddev directory
+  via `--target`.
+- **Pre-restore `backup_current` failure no longer silenced.** Previously
+  `2>/dev/null || true` swallowed all errors; a failed backup now aborts the
+  restore before any destructive operation.
+- **Selective restore replaces stale dirs instead of merging.** `restore.sh`
+  now uses `replace` mode for authoritative paths (`cli/agents`, `cli/artifacts`,
+  `v2/certs`) — stale files from the fresh build no longer survive. `cli/db`
+  keeps `merge` mode to preserve partial database state.
+- **`restore.sh` type-mismatch handling.** If a backup entry is a dir but the
+  target is a file (or vice versa), the target is normalized before copy instead
+  of failing or nesting.
+- **`cli/artifacts` now pre-created** by `create_runtime_dirs` (was restored but
+  never created, causing an asymmetry on fresh installs).
+- **`load_env` key validation.** Malformed env keys (e.g. containing spaces) are
+  now skipped with a warning instead of crashing `export` under `set -e`.
+- **`detect_cli_version` empty-result fallback.** A non-numeric `zcode --version`
+  first line no longer produces an empty string (now defaults to `unknown`),
+  preventing a spurious mismatch warning.
+- **Bootstrap `app_entry` is now platform-aware.** When the ZCode app is already
+  installed (skip-download path), the entry point is chosen based on `$PLATFORM`
+  instead of defaulting to the macOS path and correcting on Linux.
+
 ### Changed
+- **Doctor stale-path rule updated.** `nddev-developer` is now a valid active
+  marketplace name (removed from the stale-path list in the `doctor` skill).
+  Only the bare `nddev` name remains flagged as stale.
 - **Each marketplace is now a self-contained `~/.zcode` setup.** AGENTS.md, config
   templates (cli-config/v2-config/v2-setting), mcp/hooks, and user-scope
   skills/commands/agents moved *inside* each marketplace directory

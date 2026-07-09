@@ -1,0 +1,22 @@
+{
+  "_comment": "Config-file hooks shape: events live under hooks.events.<Event> (NOT hooks.<Event>). hooks.enabled must be true. See the official diagnosing-hooks skill.",
+  "plugins": {
+    "enabled": true,
+    "enabledPlugins": {}
+  },
+  "hooks": {
+    "enabled": true,
+    "events": {
+      "SessionStart": [],
+      "UserPromptSubmit": [],
+      "PreToolUse": [],
+      "PermissionRequest": [],
+      "PostToolUse": [],
+      "PostToolUseFailure": [],
+      "Stop": []
+    }
+  },
+  "mcp": {
+    "servers": {}
+  }
+}

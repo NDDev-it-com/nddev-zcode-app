@@ -63,9 +63,15 @@ nddev::detect_app_version() {
 # Detect the RUNNING ZCode CLI version (if the `zcode` binary is on PATH).
 nddev::detect_cli_version() {
   if command -v zcode >/dev/null 2>&1; then
-    zcode --version 2>/dev/null | head -1 | sed 's/^v//; s/^[^0-9]*//' || printf 'unknown'
+    local ver
+    ver="$(zcode --version 2>/dev/null | head -1 | sed 's/^v//; s/^[^0-9]*//' || true)"
+    # M3: sed exits 0 even when it produces an empty string (non-numeric first
+    # line). Default to "unknown" so check_runtime_version doesn't emit a
+    # spurious mismatch warning with an empty version.
+    [ -z "$ver" ] && ver='unknown'
+    printf '%s\n' "$ver"
   else
-    printf 'not-installed'
+    printf 'not-installed\n'
   fi
 }
 

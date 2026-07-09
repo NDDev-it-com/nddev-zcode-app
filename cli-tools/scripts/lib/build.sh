@@ -107,6 +107,7 @@ nddev::create_runtime_dirs() {
   local target=$1
   local dirs=(
     "$target/cli/agents"
+    "$target/cli/artifacts"
     "$target/cli/db"
     "$target/cli/log"
     "$target/cli/plugins/cache"
