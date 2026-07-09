@@ -16,7 +16,7 @@ concurrency:
 jobs:
   cross-platform-smoke:
     name: Cross-platform smoke
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/cross-platform-smoke.yml@f4b2971fd38896d033a3bcfe0ee079368c7fd6fc # 0.3.0
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/cross-platform-smoke.yml@1acba687361415b3f5942acceb40b228bb0387fd # 0.3.0
     with:
       os_list: '["ubuntu-latest", "macos-latest"]'
       python_version: "3.13"

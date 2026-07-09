@@ -6,6 +6,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.3] - 2026-07-09
+
+### Fixed
+- **CI workflows: all stale action SHAs corrected.** 9 action references across 8
+  workflows had SHAs that GitHub Actions could no longer resolve (force-pushed tags,
+  annotated-tag vs commit-SHA mismatches, or nonexistent version tags):
+  - `nddev-ci-workflows` (5 workflows): pinned annotated-tag SHA → dereferenced to
+    commit SHA `1acba68` (the actual 0.3.0 commit).
+  - `actions/setup-python` v6: stale SHA `a26af69` → `ece7cb0`.
+  - `actions/labeler` v6: stale SHA `8c99a5e` → `b8dd2d9`.
+  - `ludeeus/action-shellcheck`: pinned "2.2.0" (never existed) → corrected to
+    2.0.0 commit SHA `00cae50`.
+  - `softprops/action-gh-release` v2.3.2: fixed in 1.0.1 (SHA `5ac8` → `5cd8`).
+  All CI workflows (validate, security-static, codeql, cross-platform, secret-scan,
+  scorecard, dependency-review, labeler) now resolve correctly.
+
 ## [1.0.2] - 2026-07-09
 
 ### Added

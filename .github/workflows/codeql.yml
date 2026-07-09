@@ -19,7 +19,7 @@ concurrency:
 jobs:
   codeql:
     name: CodeQL
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-codeql.yml@f4b2971fd38896d033a3bcfe0ee079368c7fd6fc # 0.3.0
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-codeql.yml@1acba687361415b3f5942acceb40b228bb0387fd # 0.3.0
     with:
       languages: '["python", "actions"]'
       queries: security-and-quality
