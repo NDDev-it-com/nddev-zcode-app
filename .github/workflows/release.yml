@@ -4,72 +4,145 @@ on:
   push:
     tags:
       - "[0-9]+.[0-9]+.[0-9]+"
-      - "[0-9]+.[0-9]+.[0-9]+-pre"
 
-permissions:
-  contents: write
+permissions: {}
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
-    name: Publish GitHub Release
+  verify:
+    name: Verify release contract
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    permissions:
+      contents: read
     steps:
+      - name: Harden runner
+        uses: step-security/harden-runner@bf7454d06d71f1098171f2acdf0cd4708d7b5920 # v2.20.0
+        with:
+          egress-policy: block
+          allowed-endpoints: >
+            agent.api.stepsecurity.io:443
+            api.github.com:443
+            github.com:443
+            codeload.github.com:443
+            objects.githubusercontent.com:443
+
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Verify tag and version contracts
+        env:
+          RELEASE_SHA: ${{ github.sha }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
-          tag="${GITHUB_REF_NAME}"
-          version="$(cat VERSION)"
-          version_json="$(python3 -c 'import json; print(json.load(open("build/version.json"))["build_version"])')"
-          manifest_json="$(python3 -c 'import json; print(json.load(open("build/manifest.json"))["build_version"])')"
-          marketplace_plugin="$(python3 -c 'import json; plugins=json.load(open("zcode_tools/marketplaces/nddev-builder/marketplace.json"))["plugins"]; print(next(plugin["version"] for plugin in plugins if plugin["name"] == "core"))')"
-          plugin_manifest="$(python3 -c 'import json; print(json.load(open("zcode_tools/marketplaces/nddev-builder/plugins/core/.zcode-plugin/plugin.json"))["version"])')"
-          if [ "$tag" != "$version" ] || [ "$version" != "$version_json" ] || [ "$version" != "$manifest_json" ]; then
-            echo "::error::Tag and build versions differ: tag=$tag VERSION=$version version.json=$version_json manifest.json=$manifest_json"
+          python3 -I <<'PY'
+          import json
+          import os
+          import pathlib
+          import re
+          import sys
+
+          semver = re.compile(
+              r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
+              r"(?:-(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*)"
+              r"(?:\.(?:0|[1-9][0-9]*|[0-9]*[A-Za-z-][0-9A-Za-z-]*))*)?"
+              r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
+          )
+
+          def fail(message):
+              print(f"::error::{message}", file=sys.stderr)
+              raise SystemExit(1)
+
+          def load_json(path):
+              try:
+                  with pathlib.Path(path).open(encoding="utf-8") as stream:
+                      value = json.load(stream)
+              except (OSError, json.JSONDecodeError) as exc:
+                  fail(f"cannot read valid JSON from {path}: {exc}")
+              if not isinstance(value, dict):
+                  fail(f"{path} must contain a JSON object")
+              return value
+
+          raw_version = pathlib.Path("VERSION").read_bytes()
+          if (
+              not raw_version.endswith(b"\n")
+              or raw_version.count(b"\n") != 1
+              or b"\r" in raw_version
+          ):
+              fail("VERSION must contain exactly one LF-terminated SemVer line")
+          try:
+              version_file = raw_version[:-1].decode("ascii")
+          except UnicodeDecodeError:
+              fail("VERSION must contain ASCII SemVer only")
+
+          version_json = load_json("build/version.json").get("build_version")
+          manifest_json = load_json("build/manifest.json").get("build_version")
+          marketplace_path = "zcode_tools/marketplaces/nddev-builder/marketplace.json"
+          marketplace = load_json(marketplace_path)
+          plugins = marketplace.get("plugins")
+          if not isinstance(plugins, list):
+              fail(f"{marketplace_path}.plugins must be an array")
+          core_entries = [
+              plugin for plugin in plugins
+              if isinstance(plugin, dict) and plugin.get("name") == "core"
+          ]
+          if len(core_entries) != 1:
+              fail(f"{marketplace_path} must declare exactly one core plugin")
+          marketplace_plugin = core_entries[0].get("version")
+          plugin_path = (
+              "zcode_tools/marketplaces/nddev-builder/plugins/core/"
+              ".zcode-plugin/plugin.json"
+          )
+          plugin_manifest = load_json(plugin_path).get("version")
+
+          versions = {
+              "release tag": os.environ["RELEASE_TAG"],
+              "VERSION": version_file,
+              "build/version.json": version_json,
+              "build/manifest.json": manifest_json,
+              "nddev-builder marketplace core": marketplace_plugin,
+              "nddev-builder core plugin": plugin_manifest,
+          }
+          invalid = [
+              name for name, value in versions.items()
+              if not isinstance(value, str) or semver.fullmatch(value) is None
+          ]
+          if invalid:
+              fail("invalid strict SemVer value(s): " + ", ".join(invalid))
+          if len(set(versions.values())) != 1:
+              details = ", ".join(f"{name}={value}" for name, value in versions.items())
+              fail("release versions differ: " + details)
+          print(f"ok: all release contracts match {version_file}")
+          PY
+
+          git fetch --no-tags --force origin \
+            '+refs/heads/main:refs/remotes/origin/main'
+          tag_commit="$(git rev-parse --verify "${RELEASE_SHA}^{commit}")"
+          if ! git merge-base --is-ancestor "$tag_commit" refs/remotes/origin/main; then
+            echo "::error::Tagged commit $tag_commit is not reachable from fetched origin/main"
             exit 1
           fi
-          if [ "$marketplace_plugin" != "$plugin_manifest" ]; then
-            echo "::error::Core plugin versions differ: marketplace=$marketplace_plugin plugin.json=$plugin_manifest"
-            exit 1
-          fi
-          echo "ok: tag and build versions match $version"
-          echo "ok: core plugin versions match $plugin_manifest"
+          echo "ok: tagged commit $tag_commit is an ancestor of fetched origin/main"
 
-      - name: Extract changelog section
-        id: changelog
-        run: |
-          set -euo pipefail
-          tag="${GITHUB_REF_NAME}"
-          # Extract the matching ## [TAG] section from CHANGELOG.md (up to the next ##).
-          # Match the heading prefix (## [TAG] may be followed by " - YYYY-MM-DD").
-          body=$(awk -v tag="## [${tag}]" '
-            index($0, tag) == 1 { found=1; next }
-            found && /^## \[/ { exit }
-            found { print }
-          ' CHANGELOG.md | sed '/^[[:space:]]*$/d')
-          if [ -z "$body" ]; then
-            body="Release $tag. See CHANGELOG.md for details."
-          fi
-          {
-            echo "body<<EOF"
-            echo "$body"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Create GitHub Release
-        uses: softprops/action-gh-release@72f2c25fcb47643c292f7107632f7a47c1df5cd8 # v2.3.2
-        with:
-          name: ${{ github.ref_name }}
-          body: ${{ steps.changelog.outputs.body }}
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-pre') }}
-          generate_release_notes: false
+  publish:
+    name: Publish attested immutable release
+    needs: verify
+    permissions:
+      contents: write # Create the immutable release and its exact assets.
+      id-token: write # Exchange workflow identity for attestations.
+      attestations: write # Publish provenance and SBOM attestations.
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/release-supply-chain.yml@d1bb39730a45bae1e8c507477bb15c5e05a2b412 # 0.5.0
+    with:
+      version: ${{ github.ref_name }}
+      package_name: nddev-zcode-app
+      archive_paths: >-
+        README.md LICENSE NOTICE VERSION CHANGELOG.md SECURITY.md SUPPORT.md
+        CODE_OF_CONDUCT.md CONTRIBUTING.md .gitignore .github build cli-tools
+        config docs references zcode_tools

@@ -8,10 +8,7 @@ on:
   schedule:
     - cron: "20 7 * * 1"
 
-permissions:
-  contents: read
-  security-events: write
-  actions: read
+permissions: {}
 
 concurrency:
   group: codeql-${{ github.ref }}
@@ -20,7 +17,11 @@ concurrency:
 jobs:
   codeql:
     name: CodeQL
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-codeql.yml@1acba687361415b3f5942acceb40b228bb0387fd # 0.3.0
+    permissions:
+      contents: read
+      security-events: write # Publish CodeQL analysis to code scanning.
+      actions: read # Read workflow metadata for the actions language.
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-codeql.yml@d1bb39730a45bae1e8c507477bb15c5e05a2b412 # 0.5.0
     with:
       languages: '["actions"]'
       queries: security-and-quality

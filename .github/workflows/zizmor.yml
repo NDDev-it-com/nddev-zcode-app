@@ -1,0 +1,27 @@
+name: zizmor
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: "50 7 * * 1"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: zizmor-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  zizmor:
+    name: zizmor (SARIF)
+    permissions:
+      contents: read
+      security-events: write # Publish workflow-analysis results to code scanning.
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/zizmor-sarif.yml@d1bb39730a45bae1e8c507477bb15c5e05a2b412 # 0.5.0
+    with:
+      persona: pedantic
+      min_severity: low
