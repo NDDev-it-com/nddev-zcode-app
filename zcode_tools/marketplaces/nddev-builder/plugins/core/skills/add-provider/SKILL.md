@@ -46,7 +46,11 @@ Adds a model provider definition to `v2-config.template.json`.
   `"custom"` (user-defined).
 - **`models`** — map of model IDs to their limits. `limit.context` =
   max context window. `modalities.input`/`output` = supported types
-  (`"text"`, `"image"`).
+  (`"text"`, `"image"`). Optional model fields: `limit.output` (max output
+  tokens), `name` (upstream API model id if it differs from the map key),
+  `reasoning` (`{enabled, variants, defaultVariant}` for reasoning-capable
+  models — see `builtin:bigmodel-coding-plan` → `GLM-5-Turbo` in the builder
+  template for a real example).
 
 ## Procedure
 
@@ -68,7 +72,7 @@ Adds a model provider definition to `v2-config.template.json`.
    # <Provider display name> API key
    <API_KEY_VAR>=
    ```
-   Place it under the `# --- Provider secrets ---` section. If the var already
+   Place it under the `# ─── Provider secrets` section. If the var already
    exists, skip.
 
 5. Remind the user to add the real value to `build/.env` (gitignored):

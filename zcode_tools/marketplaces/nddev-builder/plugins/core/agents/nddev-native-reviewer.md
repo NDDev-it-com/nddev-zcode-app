@@ -13,6 +13,7 @@ verdict with specific, file:line findings.
 **Manifest (`.zcode-plugin/plugin.json`)**
 - Present and valid JSON.
 - `name` matches `^[a-z0-9][a-z0-9._-]{0,127}$`.
+- `version` is present, SemVer, and matches the marketplace entry's `version`.
 - Metadata-only: NO `commands`, `skills`, `hooks`, `mcpServers`, or `agents` arrays.
 - `license` is `AGPL-3.0-or-later`.
 - `description`, `author`, `homepage`, `repository`, `keywords` are English.
@@ -21,14 +22,16 @@ verdict with specific, file:line findings.
 - Directory name == frontmatter `name` field.
 - Frontmatter delimited by `---`; contains `name` and `description`.
 - `description` is English and states WHEN to use it.
+- `description` is ≤ 1024 characters (over = silently dropped by ZCode).
 
 **Commands (`commands/<name>.md`) and Agents (`agents/<name>.md`)**
 - Flat `.md` files, one per component.
+- Command filenames match `^[a-z0-9][a-z0-9_:-]{0,63}$`; keys are hyphenated.
 - Frontmatter present (commands: `description`; agents: `name`, `model`).
 
 **Marketplace (`zcode_tools/marketplaces/<marketplace>/marketplace.json`)**
 - The plugin is registered in the `plugins` array with `source: "./plugins/<name>"`.
-- The marketplace `version` matches the manifest `version`.
+- Each `plugins[]` entry's `version` matches its `.zcode-plugin/plugin.json` `version`.
 
 **Secrets**
 - No secret values anywhere in the source tree.

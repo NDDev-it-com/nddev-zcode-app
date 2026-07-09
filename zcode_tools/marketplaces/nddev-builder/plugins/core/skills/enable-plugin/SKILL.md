@@ -29,7 +29,21 @@ ZCode's `cli/config.json` has:
   explicitly disabled. Absent = not enabled.
 
 If `enabledPlugins` is `{}` (empty), no plugins are active even if they are
-registered in `marketplace.json`.
+registered in `marketplace.json`. **Every marketplace template ships with
+`enabledPlugins: {}` by design** — no plugin is active until you add its key.
+
+**Worked example:** to enable the `core` plugin in the `nddev-builder`
+marketplace:
+```json
+{
+  "plugins": {
+    "enabled": true,
+    "enabledPlugins": {
+      "core@nddev-builder": true
+    }
+  }
+}
+```
 
 ## Procedure
 

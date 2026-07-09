@@ -9,19 +9,24 @@ Scaffolds a new self-contained marketplace — a complete `~/.zcode` build sourc
 
 ## What a marketplace must contain (self-contained)
 
-The installer's `validate_marketplace` requires these files to exist inside the
-marketplace directory, or it refuses to build:
+The installer's `validate_marketplace` requires these **5 files** to exist
+inside the marketplace directory, or it refuses to build:
 
 ```
-zcode_tools/marketplaces/<name>/
   AGENTS.md                    ← system instructions → ~/.zcode/AGENTS.md
   marketplace.json             ← root manifest (name, owner, plugins[])
   cli-config.template.json     ← → ~/.zcode/cli/config.json (rendered)
   v2-config.template.json      ← → ~/.zcode/v2/config.json (rendered)
   v2-setting.template.json     ← → ~/.zcode/v2/setting.json (rendered)
-  mcp.json                     ← MCP servers (merged into cli/config.json)
-  hooks.json                   ← lifecycle hooks (merged into cli/config.json)
-  skills/   commands/   agents/   plugins/   ← user-scope dirs (start empty)
+```
+
+In addition, conventionally create these (start empty with a `_comment` key —
+the installer merges them into `cli/config.json` if present):
+
+```
+  mcp.json                     ← MCP servers (merged into cli/config.json.mcp.servers)
+  hooks.json                   ← lifecycle hooks (merged into cli/config.json.hooks.events)
+  skills/   commands/   agents/   plugins/   ← user-scope dirs (start empty, add .gitkeep)
 ```
 
 ## Procedure

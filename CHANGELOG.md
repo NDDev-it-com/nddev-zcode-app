@@ -6,6 +6,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-07-09
+
+### Fixed
+- **release-build skill: now mentions all 3 version files.** Previously omitted
+  `pyproject.toml`, which would cause a version-parity test failure on release.
+- **enable-plugin skill: added worked example and empty-map note.** Clarified
+  that templates ship `enabledPlugins: {}` (empty by design) and showed a
+  concrete `core@nddev-builder` example.
+- **add-marketplace skill: corrected validate_marketplace requirements.** The
+  function requires only 5 files (AGENTS.md, marketplace.json, 3 templates);
+  mcp.json and hooks.json are recommended but optional.
+- **add-provider skill: corrected .env.example section heading reference.** The
+  heading uses Unicode box-drawing characters; also added optional model fields
+  (`limit.output`, `name`, `reasoning`).
+- **nddev-native-reviewer agent: hardened review checklist.** Fixed marketplace
+  version wording (per-entry, not top-level); added `version` field check;
+  added 1024-char description limit check; added command filename regex check.
+
+### Changed
+- **doctor Step 1: now checks `build/manifest.json` build_version** (was stale
+  at 1.0.0 while other files were at 1.0.5).
+- `build/manifest.json` build_version synced to current.
+
 ## [1.0.5] - 2026-07-09
 
 ### Added

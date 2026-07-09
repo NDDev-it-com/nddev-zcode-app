@@ -1,6 +1,6 @@
 ---
 name: release-build
-description: Cut a new release of the nddev-zcode-app build. Bumps build/version.json and VERSION in sync, adds a CHANGELOG.md entry, validates the installer --plan runs clean, and prepares the SemVer tag. Use when releasing a new build version.
+description: Cut a new release of the nddev-zcode-app build. Bumps build/version.json, VERSION, and pyproject.toml in sync, adds a CHANGELOG.md entry, validates the installer --plan runs clean, and prepares the SemVer tag. Use when releasing a new build version.
 ---
 
 # release-build
@@ -9,13 +9,14 @@ Prepares a new versioned release of the `~/.zcode` build.
 
 ## Version sources (keep in sync)
 
-Two files hold the build version and must always match:
+Three files hold the build version and must always match:
 
 - `build/version.json` → `build_version` field
 - `VERSION` (root, single line)
+- `pyproject.toml` → `[project]` → `version`
 
 The installer reads `build/version.json`; the `release.yml` workflow refuses to publish
-a tag that does not match `VERSION`.
+a tag that does not match `VERSION`; the version-parity test asserts all three agree.
 
 ## Procedure
 
@@ -25,9 +26,10 @@ a tag that does not match `VERSION`.
    - **major** `+1.0.0` — breaking change to the installer contract or `~/.zcode` layout.
    The owner directs minor/major; patch is the default.
 
-2. **Bump both files to the new version** (e.g. `1.0.0` → `1.0.1`):
+2. **Bump all three files to the new version** (e.g. `1.0.0` → `1.0.1`):
    - `build/version.json` → `"build_version": "1.0.1"`
    - `VERSION` → `1.0.1`
+   - `pyproject.toml` → `version = "1.0.1"` (under `[project]`)
 
 3. **Add a CHANGELOG entry.** Under `## [Unreleased]` (or create it), add a new section:
    ```markdown
@@ -43,6 +45,7 @@ a tag that does not match `VERSION`.
    ```bash
    python3 -c "import json; print(json.load(open('build/version.json'))['build_version'])"
    cat VERSION
+   python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])"
    cli-tools/scripts/install.sh install --marketplace <name> --platform macos --plan
    cli-tools/scripts/install.sh install --marketplace <name> --platform ubuntu --plan
    # Validate every marketplace manifest:

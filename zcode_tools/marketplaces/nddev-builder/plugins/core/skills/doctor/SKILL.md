@@ -27,6 +27,7 @@ Only after reading these can you judge whether the repo matches its own rules.
 Check that these all agree on the build version:
 - `VERSION`
 - `build/version.json` → `build_version`
+- `build/manifest.json` → `build_version`
 - `pyproject.toml` → `version`
 - Each `marketplace.json` plugin entry `version` == its `plugin.json` `version`
 
