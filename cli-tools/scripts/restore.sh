@@ -64,9 +64,15 @@ for entry in "${RESTORE_PATHS[@]}"; do
     continue
   fi
 
-  # Ensure parent dir exists, then copy over the fresh build.
-  mkdir -p "$(dirname "$dest")"
-  cp -R "$src" "$dest"
+  # Copy the file or directory. For directories, copy CONTENTS (src/.)
+  # to avoid nesting (e.g. cli/agents/agents/...). For files, copy directly.
+  if [ -d "$src" ]; then
+    mkdir -p "$dest"
+    cp -R "$src/." "$dest/"
+  else
+    mkdir -p "$(dirname "$dest")"
+    cp "$src" "$dest"
+  fi
   nddev::log "ok" "restored: ${entry##*:}"
   restored=$((restored + 1))
 done
