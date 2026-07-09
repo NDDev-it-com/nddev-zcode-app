@@ -47,8 +47,9 @@ development process.
 
 Tests live in the **parent control-plane repo** (`rldyour-ai-cli-tools`), under
 `validation/nddev-zcode-app/` — NOT inside this module. This keeps the
-implementation clean. 30 pytest tests cover marketplace structure, installer
-lifecycle, restore safety, backup rotation, config rendering, and version parity.
+implementation clean. 31 pytest tests cover marketplace structure, installer
+lifecycle, restore safety, backup rotation, config rendering, version parity,
+and validation helper scripts.
 
 Run: `python3 -m pytest -q validation/nddev-zcode-app/ --rootdir=validation/nddev-zcode-app`
 

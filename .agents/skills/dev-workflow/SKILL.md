@@ -43,7 +43,7 @@ For a deep check, follow the `doctor` skill (in `nddev-builder/plugins/core/skil
 — it checks 8 axes: versions, ZCode spec, stale paths, broken commands, JSON,
 secrets, installer plan, cross-references.
 
-## Step 3b: Run the test suite (30 pytest tests)
+## Step 3b: Run the test suite (31 pytest tests)
 
 The centralized test suite lives in the **parent control-plane repo**
 (`validation/nddev-zcode-app/`), NOT inside this module. Run it from the

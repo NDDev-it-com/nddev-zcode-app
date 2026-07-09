@@ -6,6 +6,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.9] - 2026-07-09
+
+### Fixed
+- **release-build skill: now documents all 4 build-version files.** The
+  release instructions now match the version-parity test and include
+  `build/manifest.json`.
+- **Test-suite metadata updated to 31 tests.** The parent validation suite now
+  includes a regression test for `validate_fast.sh`, covering the prior
+  `pipefail`/SIGPIPE false negative.
+- **Release history repaired for 1.0.3.** The missing `1.0.3` tag and GitHub
+  Release now exist for commit `35077ae`.
+
 ## [1.0.8] - 2026-07-09
 
 ### Changed

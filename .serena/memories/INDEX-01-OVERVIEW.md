@@ -34,8 +34,9 @@ version-stamped `~/.zcode` from source on macOS (desktop) and Ubuntu
   placeholders rendered at install time.
 - ZCode plugin components are convention-discovered (skills/commands/agents);
   MCP uses `{"mcpServers":{}}`; hooks need `hooks.enabled: true` + `hooks.events.<Event>`.
-- Tests (30 pytest) + benchmarks live in the PARENT repo (`rldyour-ai-cli-tools/
-  validation/nddev-zcode-app/`), NOT inside this module.
+- Tests (31 pytest) + benchmarks live in the PARENT repo (`rldyour-ai-cli-tools/
+  validation/nddev-zcode-app/`), NOT inside this module. The suite includes
+  validation helper coverage for `validate_fast.sh`.
 - Restore hardening (1.0.1): C1 (temp-copy staging prevents source self-destruction),
   C2 (BUILD-VERSION guard), C3 (no silenced failures).
 

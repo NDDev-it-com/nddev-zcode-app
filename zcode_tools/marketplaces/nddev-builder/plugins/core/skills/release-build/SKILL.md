@@ -9,14 +9,15 @@ Prepares a new versioned release of the `~/.zcode` build.
 
 ## Version sources (keep in sync)
 
-Three files hold the build version and must always match:
+Four files hold the build version and must always match:
 
 - `build/version.json` → `build_version` field
 - `VERSION` (root, single line)
 - `pyproject.toml` → `[project]` → `version`
+- `build/manifest.json` → `build_version`
 
 The installer reads `build/version.json`; the `release.yml` workflow refuses to publish
-a tag that does not match `VERSION`; the version-parity test asserts all three agree.
+a tag that does not match `VERSION`; the version-parity test asserts all four agree.
 
 ## Procedure
 
@@ -26,10 +27,11 @@ a tag that does not match `VERSION`; the version-parity test asserts all three a
    - **major** `+1.0.0` — breaking change to the installer contract or `~/.zcode` layout.
    The owner directs minor/major; patch is the default.
 
-2. **Bump all three files to the new version** (e.g. `1.0.0` → `1.0.1`):
+2. **Bump all four files to the new version** (e.g. `1.0.0` → `1.0.1`):
    - `build/version.json` → `"build_version": "1.0.1"`
    - `VERSION` → `1.0.1`
    - `pyproject.toml` → `version = "1.0.1"` (under `[project]`)
+   - `build/manifest.json` → `"build_version": "1.0.1"`
 
 3. **Add a CHANGELOG entry.** Under `## [Unreleased]` (or create it), add a new section:
    ```markdown

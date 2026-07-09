@@ -146,9 +146,9 @@ inside this module — by design, to keep the implementation clean:
 ```
 rldyour-ai-cli-tools/validation/nddev-zcode-app/
   conftest.py + _helpers.py        ← fixtures + helpers
-  test_*.py (6 files, 30 tests)    ← pytest (marketplace structure, lifecycle,
+  test_*.py (7 files, 31 tests)    ← pytest (marketplace structure, lifecycle,
                                       restore safety, backup rotation, config
-                                      rendering, version parity)
+                                      rendering, version parity, validation scripts)
   benchmarks/bench_lifecycle.py    ← performance timing
   scripts/validate_fast.sh         ← quick lane (<60s)
   scripts/validate_release.sh      ← full lane (<300s)

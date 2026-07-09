@@ -197,7 +197,7 @@ nddev::backup_name() {
 nddev::render_template() {
   local template=$1 dest=$2
   if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
-    printf '[DRY-RUN] render %q -> %q (substitute ${VAR} from env)\n' "$template" "$dest"
+    printf "[DRY-RUN] render %q -> %q (substitute \${VAR} from env)\n" "$template" "$dest"
     return 0
   fi
   local env_file
