@@ -263,7 +263,7 @@ if [ "$COMMAND" = "restore" ]; then
     restore_source="$backup_dir"
   fi
   # Cleanup the temp dir on exit (only in APPLY mode, only if we created it).
-  # shellcheck disable=SC2329 # invoked indirectly by the EXIT trap below.
+  # shellcheck disable=SC2317,SC2329 # invoked indirectly by the EXIT trap below.
   _restore_cleanup() {
     local tmp_parent
     tmp_parent="$(dirname "$restore_source")"
