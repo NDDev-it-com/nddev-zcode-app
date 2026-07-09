@@ -298,12 +298,11 @@ nddev::verify_build() {
   nddev::section "Verify build"
   local errors=0
 
-  if [ ! -f "$target/AGENTS.md" ]; then
-    nddev::log "missing" "AGENTS.md not found"
-    errors=$((errors + 1))
-  fi
-
   if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
+    if [ ! -f "$target/AGENTS.md" ]; then
+      nddev::log "missing" "AGENTS.md not found"
+      errors=$((errors + 1))
+    fi
     if ! nddev::validate_json "$target/cli/config.json" 2>/dev/null; then
       nddev::log "missing" "cli/config.json is not valid JSON"
       errors=$((errors + 1))

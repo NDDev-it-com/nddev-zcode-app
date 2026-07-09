@@ -7,7 +7,7 @@ version-stamped `~/.zcode` from source on macOS (desktop) and Ubuntu
 (desktop/server). It is **not** a runtime — it produces the `~/.zcode` directory
 that the ZCode client reads.
 
-GitHub repository: `https://github.com/NDDev-it-com/nddev-zcode-app` (`PRIVATE`).
+GitHub repository: `https://github.com/NDDev-it-com/nddev-zcode-app` (`PUBLIC`).
 Author: Danil Silantyev (github:rldyourmnd), CEO NDDev. License: AGPL-3.0-or-later.
 
 ## Source of truth

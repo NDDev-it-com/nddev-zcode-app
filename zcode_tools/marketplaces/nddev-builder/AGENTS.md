@@ -11,7 +11,7 @@ source on macOS (desktop) and Ubuntu (desktop/server).
 
 - `AGENTS.md` — this file. User-scope default instructions for every ZCode workspace.
 - `skills/`, `commands/`, `agents/` — user-scope skills, slash commands, and subagents.
-- `marketplace.json` — the local `nddev` plugin marketplace (installed via Discover → local directory).
+- `marketplace.json` — the local `nddev-builder` plugin marketplace (installed via Discover → local directory).
 - `plugins/` — self-contained plugin bundles (`<name>/.zcode-plugin/plugin.json` + `skills/`,
   `commands/`, `agents/`, `.mcp.json`).
 - `cli/config.json` — plugin enable/disable state, hooks (`hooks.enabled: true`), and MCP servers

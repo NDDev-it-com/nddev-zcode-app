@@ -48,7 +48,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   can discover its plugins.
 - Updated `repo-orientation` skill, `AGENTS.md`, `architecture.md`, `install.md`,
   `manifest.json`, and CI workflows to the self-contained marketplace model.
-- Renamed the marketplace from `nddev` to `nddev-developer`; the developer toolkit
+- Renamed the marketplace from `nddev` to `nddev-builder`; the developer toolkit
   is the `core` plugin inside it.
 
 ## [1.0.0] - 2026-07-09

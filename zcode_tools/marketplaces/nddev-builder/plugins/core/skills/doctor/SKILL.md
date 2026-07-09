@@ -31,8 +31,8 @@ Check that these all agree on the build version:
 - Each `marketplace.json` plugin entry `version` == its `plugin.json` `version`
 
 Check ZCode pin consistency:
-- `build/version.json` `zcode_app_version` == `references/zcode-baseline.json` `app_version`
-- `build/version.json` `zcode_cli_version` == `references/zcode-baseline.json` `cli_version`
+- `build/version.json` `zcode_app_version` == `references/zcode-baseline.json` → `zcode.app_version`
+- `build/version.json` `zcode_cli_version` == `references/zcode-baseline.json` → `zcode.cli_version`
 
 Report any mismatch with file + field.
 
