@@ -35,16 +35,18 @@ APPLY=0
 PLATFORM="auto"
 MARKETPLACE=""
 TARGET_OVERRIDE=""
+SLOT=""
 
 usage() {
   cat <<'EOF'
-Usage: cli-tools/scripts/install.sh [bootstrap|install|remove|list] [options]
+Usage: cli-tools/scripts/install.sh [bootstrap|install|remove|restore|list] [options]
 
 Commands:
   bootstrap             Download and install the ZCode desktop app + CLI (from zero).
   install (default)     Build ~/.zcode from a marketplace.
   remove                Back up and delete the installed ~/.zcode.
-  list                  List available marketplaces.
+  restore               Restore ~/.zcode from a backup slot (0-9).
+  list                  List available marketplaces (and backups with --backups).
 
 Options (bootstrap):
   --platform macos|ubuntu   Target platform (default: auto-detect from uname).
@@ -62,7 +64,12 @@ Options (remove):
   --apply                   Actually delete (default is --plan).
   --keep-backup <dir>       Move the target here instead of the default backups dir.
 
-Target resolution (install/remove):
+Options (restore):
+  --slot <N>                Backup slot to restore (0-9). Required.
+  --target <dir>            Restore destination (default: ~/.zcode, or ZCODE_TARGET in .env).
+  --apply                   Execute the restore (default is --plan).
+
+Target resolution (install/remove/restore):
   --target flag > ZCODE_TARGET (build/.env) > ~/.zcode
 
 Backup convention:
@@ -91,7 +98,7 @@ list_marketplaces() {
 # ─── Parse command (first positional, if present) ────────────────────────
 if [ "$#" -gt 0 ]; then
   case "$1" in
-    bootstrap|install|remove|list)
+    bootstrap|install|remove|restore|list)
       COMMAND="$1"
       shift
       ;;
@@ -131,6 +138,14 @@ while [ "$#" -gt 0 ]; do
       export NDDEV_BACKUPS_DIR="${2:?--keep-backup requires a directory path}"
       shift 2
       ;;
+    --slot)
+      SLOT="${2:?--slot requires a number 0-9}"
+      shift 2
+      ;;
+    --backups)
+      COMMAND="list-backups"
+      shift
+      ;;
     -l | --list)
       list_marketplaces
       exit 0
@@ -160,6 +175,90 @@ fi
 # ─── Handle 'list' command ───────────────────────────────────────────────
 if [ "$COMMAND" = "list" ]; then
   list_marketplaces
+  exit 0
+fi
+
+# ─── Handle 'list-backups' command ───────────────────────────────────────
+if [ "$COMMAND" = "list-backups" ]; then
+  backups_dir="${NDDEV_BACKUPS_DIR:-${ZCODE_BACKUPS_DIR:-$HOME/.zcode-backups}}"
+  nddev::section "Backups ($backups_dir)"
+  if [ ! -d "$backups_dir" ]; then
+    nddev::log "info" "no backups directory"
+    exit 0
+  fi
+  local_found=0
+  for d in "$backups_dir"/*/; do
+    [ -d "$d" ] || continue
+    local_found=1
+    name="$(basename "$d")"
+    bv="$d/BUILD-VERSION"
+    if [ -f "$bv" ]; then
+      ver="$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('build_version','?'))" "$bv" 2>/dev/null || echo '?')"
+      stamp="$(python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(d.get('installed_at','?'))" "$bv" 2>/dev/null || echo '?')"
+    else
+      ver="?"; stamp="?"
+    fi
+    printf '  %s  build=%s  installed=%s\n' "$name" "$ver" "$stamp"
+  done
+  [ "$local_found" -eq 0 ] && nddev::log "info" "no backups found"
+  exit 0
+fi
+
+# ─── Handle 'restore' command ────────────────────────────────────────────
+if [ "$COMMAND" = "restore" ]; then
+  # shellcheck source=lib/build.sh
+  . "$LIB_DIR/build.sh"
+
+  if [ -z "$SLOT" ]; then
+    nddev::log "error" "restore requires --slot <N> (0-9). Use 'list --backups' to see options."
+    exit 2
+  fi
+  if ! printf '%s' "$SLOT" | grep -qE '^[0-9]$'; then
+    nddev::log "error" "--slot must be a single digit 0-9 (got: $SLOT)"
+    exit 2
+  fi
+
+  backups_dir="${NDDEV_BACKUPS_DIR:-${ZCODE_BACKUPS_DIR:-$HOME/.zcode-backups}}"
+  # Find the backup directory matching this slot (N-*-old.zcode).
+  backup_dir="$(find "$backups_dir" -maxdepth 1 -name "${SLOT}-*-old.zcode" -print -quit 2>/dev/null || true)"
+  if [ -z "$backup_dir" ] || [ ! -d "$backup_dir" ]; then
+    nddev::log "error" "no backup found in slot $SLOT (looked for ${SLOT}-*-old.zcode in $backups_dir)"
+    nddev::log "info" "available backups:"
+    for d in "$backups_dir"/*/; do
+      [ -d "$d" ] && nddev::log "info" "  $(basename "$d")"
+    done
+    exit 1
+  fi
+
+  nddev::section "Restore from backup slot $SLOT"
+  nddev::log "info" "backup: $backup_dir"
+  nddev::log "info" "target: $ZCODE_HOME"
+  nddev::log "info" "mode: $([ "$APPLY" -eq 1 ] && echo 'APPLY' || echo 'PLAN (dry-run)')"
+
+  # Safety: don't overwrite the target without backing it up first (if it exists).
+  if [ -d "$ZCODE_HOME" ]; then
+    nddev::log "warn" "target exists — it will be backed up before restore"
+    if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
+      ZCODE_HOME="$ZCODE_HOME" BACKUPS_DIR="$backups_dir" \
+        NDDEV_DRY_RUN=0 nddev::backup_current 2>/dev/null || true
+    fi
+  fi
+
+  # Clear the target, then copy the backup wholesale.
+  if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
+    printf '[DRY-RUN] rm -rf %q\n' "$ZCODE_HOME"
+    printf '[DRY-RUN] cp -R %q %q\n' "${backup_dir}" "${ZCODE_HOME}"
+  else
+    rm -rf "$ZCODE_HOME"
+    cp -R "$backup_dir" "$ZCODE_HOME"
+    nddev::log "ok" "restored $ZCODE_HOME from $(basename "$backup_dir")"
+  fi
+
+  nddev::section "Restore complete"
+  bv="$ZCODE_HOME/BUILD-VERSION"
+  if [ -f "$bv" ]; then
+    python3 -c "import json,sys; d=json.load(open(sys.argv[1])); print(f'[ok] build {d.get(\"build_version\",\"?\")} from {d.get(\"installed_at\",\"?\")}')" "$bv" 2>/dev/null || true
+  fi
   exit 0
 fi
 
