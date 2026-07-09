@@ -11,6 +11,7 @@ knows which plugins to activate.
 ## How plugin enabling works
 
 ZCode's `cli/config.json` has:
+
 ```json
 {
   "plugins": {
@@ -29,11 +30,14 @@ ZCode's `cli/config.json` has:
   explicitly disabled. Absent = not enabled.
 
 If `enabledPlugins` is `{}` (empty), no plugins are active even if they are
-registered in `marketplace.json`. **Every marketplace template ships with
-`enabledPlugins: {}` by design** — no plugin is active until you add its key.
+registered in `marketplace.json`. That is appropriate only for a deliberately
+plugin-free profile. A marketplace that advertises bundled plugin capability
+must explicitly enable the intended plugin keys; `nddev-builder` therefore
+ships with `core@nddev-builder: true`.
 
 **Worked example:** to enable the `core` plugin in the `nddev-builder`
 marketplace:
+
 ```json
 {
   "plugins": {
@@ -53,9 +57,12 @@ marketplace:
    - Action: enable or disable.
 
 2. Read `marketplace.json` and confirm the plugin is registered:
+
    ```bash
-   python3 -c "import json; d=json.load(open('zcode_tools/marketplaces/<mp>/marketplace.json')); print([p['name'] for p in d.get('plugins',[])])"
+   python3 -m json.tool \
+     zcode_tools/marketplaces/<mp>/marketplace.json
    ```
+
    If the plugin is not in the list, tell the user to add it first (follow the
    `add-plugin` skill).
 
@@ -68,8 +75,10 @@ marketplace:
 5. Write the updated JSON (preserve `_comment`, indent=2, trailing newline).
 
 6. Validate:
+
    ```bash
-   python3 -c "import json; d=json.load(open('zcode_tools/marketplaces/<mp>/cli-config.template.json')); print(d['plugins']['enabledPlugins'])"
+   python3 -m json.tool \
+     zcode_tools/marketplaces/<mp>/cli-config.template.json
    cli-tools/scripts/install.sh install --marketplace <mp> --platform macos --plan
    ```
 

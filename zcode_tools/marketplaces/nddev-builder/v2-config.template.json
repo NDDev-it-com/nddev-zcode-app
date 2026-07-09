@@ -1,15 +1,15 @@
 {
-  "_comment": "ZCode desktop provider definitions (v2/config.json). Rendered at install time. Provider API keys are injected from build/.env via ${VAR} placeholders. credentials.json (auth tokens) is restored from backup, NOT templated here.",
+  "_comment": "Disabled-by-default explicit API-key provider definitions for v2/config.json. Z.ai API-key access uses the custom api.z.ai endpoint; BigModel uses open.bigmodel.cn. Enable an entry only after supplying its key. The verified Z.ai account preference remains OAuth in v2/setting.json and is independent of these entries. API keys are injected from build/.env; credentials.json contains restored account auth tokens and is never templated.",
   "provider": {
     "builtin:zai-coding-plan": {
       "name": "Z.ai - Coding Plan",
       "kind": "anthropic",
       "options": {
         "apiKey": "${ZAI_API_KEY}",
-        "baseURL": "https://open.bigmodel.cn/api/anthropic"
+        "baseURL": "https://api.z.ai/api/anthropic"
       },
-      "enabled": true,
-      "source": "builtin",
+      "enabled": false,
+      "source": "custom",
       "models": {
         "GLM-5.2": {
           "limit": { "context": 1000000 },
@@ -21,7 +21,7 @@
       }
     },
     "builtin:bigmodel-coding-plan": {
-      "name": "Bigmodel - Coding Plan",
+      "name": "BigModel - Coding Plan",
       "kind": "anthropic",
       "options": {
         "apiKey": "${BIGMODEL_API_KEY}",

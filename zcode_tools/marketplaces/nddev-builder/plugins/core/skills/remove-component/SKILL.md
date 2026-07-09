@@ -51,9 +51,10 @@ Safely removes a component from a marketplace.
    cli-tools/scripts/install.sh install --marketplace <mp> --platform macos --plan
    ```
 
-8. If this is a release behavior change, remind the user to keep `VERSION`,
-   `build/version.json`, and `build/manifest.json` in sync and update
-   `CHANGELOG.md`.
+8. Before a repository release, use one strict SemVer in `VERSION`, the
+   `build_version` fields in `build/version.json` and `build/manifest.json`, the
+   `nddev-builder` marketplace `core` entry, and the core plugin manifest; also
+   update `CHANGELOG.md`.
 
 ## Rules
 

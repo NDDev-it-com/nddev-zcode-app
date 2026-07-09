@@ -1,23 +1,23 @@
 ---
 name: add-tool
-description: Add a CLI tool (non-MCP) to a plugin bundle. Creates a tools directory with an executable script and a README, plus optionally a companion skill that teaches the agent how to invoke the tool. Covers the CLI+skill pattern as an alternative to MCP servers — zero tokens until invoked, more composable, less constrained. Use when adding a linter, formatter, utility script, or any command-line tool the agent should be able to run.
+description: Add a CLI tool (non-MCP) to a plugin bundle. Creates a tools directory with an executable script and a README, plus optionally a companion skill that teaches the agent how to invoke the tool. Covers the CLI+skill pattern as a small-baseline, on-demand alternative to MCP servers that is more composable but less constrained. Use when adding a linter, formatter, utility script, or any command-line tool the agent should be able to run.
 ---
 
 # add-tool
 
-Adds a CLI tool to a plugin bundle. This is the "CLI+skill" pattern — an
-alternative to MCP servers that costs zero tokens until invoked.
+Adds a CLI tool to a plugin bundle. This "CLI+skill" pattern keeps baseline
+routing metadata small and loads detailed guidance and output on demand.
 
 ## Why CLI+skill instead of MCP?
 
-MCP servers load their full tool schema permanently (4-35x more tokens). A CLI
-tool + companion skill costs nothing until the agent decides to use it, and the
-skill can provide rich context (when to use, examples, output format) in a
-token-thin wrapper (~225 tokens vs 13-18k for MCP).
+MCP servers expose tool schemas at session scope. A CLI tool plus a concise
+companion skill keeps only compact routing metadata in the baseline context;
+the skill body, command guidance, and output are consumed when the tool is
+needed. The exact footprint depends on the client and integration surface.
 
 ## Layout
 
-```
+```text
 plugins/<plugin>/
   tools/
     <tool-name>/
@@ -39,6 +39,7 @@ plugins/<plugin>/
    - Whether to create a companion skill (recommended).
 
 2. Create the directory:
+
    ```bash
    mkdir -p zcode_tools/marketplaces/<mp>/plugins/<plugin>/tools/<name>
    ```
@@ -61,15 +62,17 @@ plugins/<plugin>/
    contain: available commands, when to use each, examples, output format.
 
 6. **Secrets**: if the tool needs API keys or tokens:
-   - Add `${VAR}` to `build/.env.example` (committed, empty).
-   - The installer renders `build/.env` → `~/.zcode/.env` (chmod 600).
-   - The script reads secrets via:
-     ```bash
-     set -a; . "${HOME}/.zcode/.env"; set +a
-     ```
-   - Never hardcode secrets in the script.
+   - Add the supported key to `build/.env.example` with an empty value.
+   - Accept the real value through the process environment supplied by the
+     active project's approved launcher, secrets manager, or environment
+     helper.
+   - Never execute an env file with `source`, `.`, or `eval`. If the project
+     provides a non-evaluating env parser, accept only explicitly allowlisted
+     keys.
+   - Never hardcode, print, trace, or include secret values in errors.
 
 7. Validate:
+
    ```bash
    cli-tools/scripts/install.sh install --marketplace <mp> --platform macos --plan
    ```
@@ -79,7 +82,8 @@ plugins/<plugin>/
 ## Rules
 
 - Scripts must be executable (`chmod +x`).
-- Secrets via `~/.zcode/.env` — never hardcoded in the script.
+- Secrets arrive through an approved process environment; never shell-source
+  env files or hardcode secrets in the script.
 - The companion skill is the agent's entry point — the script is the engine.
 - Do NOT declare tools in `plugin.json` — convention discovery.
 - English only for all content (scripts, README, skill).

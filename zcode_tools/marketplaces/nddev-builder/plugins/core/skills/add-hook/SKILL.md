@@ -148,5 +148,7 @@ a command hook but 500ms (half a second) for a process hook. Default is 60000ms
 
 - Validate: `cli-tools/scripts/install.sh install --marketplace <name> --platform macos --plan`.
 - Validate the same marketplace with `--platform ubuntu --plan`.
-- For a release behavior change, keep `VERSION`, `build/version.json`, and
-  `build/manifest.json` in sync and update `CHANGELOG.md`.
+- Before a repository release, use one strict SemVer in `VERSION`, the
+  `build_version` fields in `build/version.json` and `build/manifest.json`, the
+  `nddev-builder` marketplace `core` entry, and the core plugin manifest; also
+  update `CHANGELOG.md`.

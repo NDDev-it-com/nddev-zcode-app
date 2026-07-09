@@ -9,19 +9,19 @@ Registers a tool integration. **Two paths exist** — choose based on the trade-
 
 ## Path A (classic MCP) vs Path B (CLI + skill) — the decision
 
-MCP servers load their full tool schema into the agent's context **permanently**
-(every session). 2026 benchmarks show this costs **up to 10–35× more tokens**
-than CLI tools for the same task (Arize eval: ~6× costlier; Scalekit: 10-32×;
-Firecrawl: 4-32×). MCP schemas are also hard to extend and not composable
-(results must pass through the context window).
+MCP servers expose tool schemas to the agent's session context. The exact
+context footprint depends on the client and server surface, and results also
+pass through the model context. This standardized interface is useful, but a
+large tool catalog can create a larger permanent context surface.
 
-CLI tools + a skill (or README) cost **zero tokens until invoked**. The agent
-writes loops, pipes, and scripts — composable, cheap, easy to modify. The
-trade-off: CLI is less constrained (the agent can do anything the shell allows).
+CLI tools plus a concise skill or README keep baseline routing metadata small;
+the detailed skill body, command help, and tool output are loaded only when
+needed. The agent can compose loops, pipes, and scripts, but the shell surface
+is less constrained than MCP.
 
 | Dimension | MCP server | CLI + skill |
-|---|---|---|
-| Token cost | High (schema always loaded) | Zero until called |
+| --- | --- | --- |
+| Context footprint | Session tool schemas | Small metadata; detail on demand |
 | Composability | Low (results through context) | High (pipes, files, loops) |
 | Safety | More constrained | Less constrained |
 | Best for | Standardized discovery, cross-agent | Local dev, token efficiency |
@@ -37,7 +37,7 @@ permission model.
 
 Register in the active marketplace's `mcp.json`:
 
-```
+```text
 zcode_tools/marketplaces/<marketplace>/mcp.json
 ```
 
@@ -47,6 +47,7 @@ time.
 ### Entry shapes
 
 stdio server (`command` is a **string**, NOT an array — OpenCode-style arrays crash):
+
 ```json
 {
   "mcpServers": {
@@ -62,6 +63,7 @@ stdio server (`command` is a **string**, NOT an array — OpenCode-style arrays 
 ```
 
 http server:
+
 ```json
 {
   "mcpServers": {
@@ -101,8 +103,9 @@ Add the matching `VAR=` key (empty) to `build/.env.example` (committed) and
 ## Path B: CLI + skill (the lean alternative)
 
 Instead of an MCP server, create a small CLI tool (a shell or node script) plus
-a skill (or README) that documents how the agent calls it. The agent discovers
-the tool by reading the skill on demand — zero context cost until used.
+a skill (or README) that documents how the agent calls it. Compact metadata
+supports routing; the detailed skill body and tool output are consumed on
+demand.
 
 ### Layout
 
@@ -112,7 +115,7 @@ so tools arrive automatically. At runtime, the agent references them via
 `${CLAUDE_PLUGIN_ROOT}/tools/<name>/<script>` (expanded by ZCode for plugin
 context) or by their absolute installed path.
 
-```
+```text
 zcode_tools/marketplaces/<marketplace>/plugins/<plugin>/
   tools/<name>/                   ← the CLI tool(s)
     README.md                     ← how to call them (the agent reads this)
@@ -122,18 +125,15 @@ zcode_tools/marketplaces/<marketplace>/plugins/<plugin>/
 
 ### Secrets at runtime
 
-The installer renders `build/.env` into `~/.zcode/.env` (gitignored) at install
-time. CLI tools read secrets from there:
+Pass CLI-tool secrets through the process environment. Prefer the active
+project's existing launcher, secrets manager, or environment-loading helper so
+ownership, allowlisting, and redaction stay centralized.
 
-```bash
-# In a CLI tool script:
-set -a; . "${HOME}/.zcode/.env"; set +a
-# Now $GITHUB_TOKEN etc. are available
-```
-
-Or use system environment variables (exported in `.zshrc`/`.bashrc`) — either
-works. The `~/.zcode/.env` approach is self-contained (no shell config needed).
-```
+The installed `~/.zcode/.env` is sensitive data, not a shell script. A tool
+must never execute it with `source`, `.`, or `eval`. If a project deliberately
+supports reading that file, use its provided non-evaluating parser and accept
+only explicitly allowlisted keys. Never print the file or inherited secret
+values in help output, traces, errors, or diagnostics.
 
 ### What the skill/README must contain
 
@@ -165,7 +165,8 @@ Minimal CDP tools for site exploration.
 ./scripts/browser/screenshot.js
 ```
 
-This README is ~225 tokens vs 13–18k for an MCP server covering the same surface.
+This pattern keeps permanent routing text compact while leaving detailed
+command guidance available on demand.
 
 ## Procedure (both paths)
 
@@ -175,14 +176,17 @@ This README is ~225 tokens vs 13–18k for an MCP server covering the same surfa
    `build/.env.example`, validate the JSON.
 3. **Path B (CLI+skill):** create the tool(s) under `plugins/<plugin>/tools/<name>/`,
    write a README or SKILL.md documenting the commands, make scripts executable.
-4. **Secrets:** never commit real values. Use `${VAR}` (MCP) or `~/.zcode/.env`
-   (CLI — the installer renders `build/.env` there at install time). Add the key
-   to `build/.env.example`.
+4. **Secrets:** never commit real values. Use `${VAR}` for installer-rendered
+   MCP configuration. For CLI tools, accept an explicit process environment
+   supplied by the project's approved launcher or secrets helper. Add each
+   supported key to `build/.env.example` without a value.
 5. Remind to run `install --apply` to propagate (MCP servers and ~/.zcode/.env).
 
 ## Rules
 
 - English only.
-- Secrets never committed — `${VAR}` placeholders + `build/.env` (gitignored).
+- Secrets are never committed, shell-sourced, printed, or embedded in examples.
+  Use `${VAR}` placeholders for rendered MCP config and an approved process
+  environment for CLI tools.
 - Prefer CLI+skill for token efficiency unless MCP's constrained model is needed.
 - Document CLI tools with a README or skill so the agent discovers them on demand.

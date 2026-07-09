@@ -1,5 +1,5 @@
 {
-  "_comment": "Config-file hooks shape: events live under hooks.events.<Event> (NOT hooks.<Event>). hooks.enabled must be true.",
+  "_comment": "This portable profile intentionally enables no global plugins, hooks, or MCP servers; project-specific tooling belongs to the active workspace. Event placeholders retain the ZCode hooks.events.<Event> shape and hooks.enabled contract.",
   "plugins": {
     "enabled": true,
     "enabledPlugins": {}

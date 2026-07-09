@@ -94,9 +94,11 @@ zcode_tools/marketplaces/<marketplace>/
    `python3 -c "import json; json.load(open('zcode_tools/marketplaces/<marketplace>/marketplace.json'))"`
    and the same for the new `plugin.json`.
 
-8. **Record release behavior changes.** Keep `VERSION`,
-   `build/version.json`, and `build/manifest.json` in sync and update
-   `CHANGELOG.md` when preparing a repository release.
+8. **Record release behavior changes.** Before a repository release, use one
+   strict SemVer in `VERSION`, the `build_version` fields in
+   `build/version.json` and `build/manifest.json`, the `nddev-builder`
+   marketplace `core` entry, and the core plugin manifest; also update
+   `CHANGELOG.md`.
 
 ## Rules
 

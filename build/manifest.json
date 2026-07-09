@@ -1,23 +1,83 @@
 {
   "name": "nddev-zcode-app",
-  "build_version": "2.0.0",
+  "build_version": "2.0.1",
   "source_root": "zcode_tools/marketplaces/",
   "installer": "cli-tools/scripts/install.sh --marketplace <name>",
   "layout": {
     "zcode_tools/marketplaces/<name>/": "each marketplace is a self-contained ~/.zcode setup (AGENTS.md, config templates, mcp/hooks, skills/commands/agents, plugins)",
     "cli-tools/": "installer: --marketplace <name> selects one setup and builds ~/.zcode from it (macOS + Ubuntu)",
-    "build/": "build artifacts: version.json, manifest.json, system files, secrets templates (shared across setups)",
+    "build/": "build contracts: version.json, manifest.json, and the local secrets template shared across setups",
     "config/": "public repository and release contract metadata",
     "references/": "verified public ZCode compatibility baseline",
     "docs/": "public installation, architecture, and secrets documentation",
     ".github/": "public security, release, and repository-automation workflows"
   },
+  "artifact_integrity_policy": {
+    "metadata_source": "build/version.json:zcode_download_artifacts",
+    "canonical_cdn_base": "https://cdn-zcode.z.ai/zcode/electron/releases",
+    "required_before_install": [
+      "exact filename",
+      "exact byte size",
+      "SHA-512 digest"
+    ],
+    "macos_identity": "hdiutil checksum, exact Team ID/bundle ID/app version/bundle version, deep/strict code signature, and Gatekeeper source=Notarized Developer ID",
+    "debian_identity": "before install: exact package metadata plus one safe /opt/ZCode/resources/glm/zcode.cjs payload entry with the pinned CLI version; after install: exact dpkg-owned path/version and byte-identical CLI SHA-512",
+    "appimage_identity": "exact filename, byte size, SHA-512 digest, embedded CLI version, and installed version marker"
+  },
+  "bootstrap_policy": {
+    "locking": "deterministically ordered locks protect each managed application endpoint and the user launcher; dpkg retains ownership of its system package transaction",
+    "debian_preflight": "dpkg --dry-run -i must succeed before the real dpkg -i transaction",
+    "commit_point": "exact app, package, entrypoint, launcher, and CLI postconditions define a committed bootstrap",
+    "cleanup_after_commit": "cleanup failure is reported without rolling back a verified committed app or launcher",
+    "cleanup_before_commit": "errors and handled signals roll back staged app and launcher swaps where recovery state is unambiguous"
+  },
+  "command_option_policy": {
+    "bootstrap": ["--platform", "--apply", "--plan", "--dry-run"],
+    "install": ["--marketplace", "--target", "--platform", "--apply", "--plan", "--dry-run", "--adopt-unmanaged"],
+    "remove": ["--target", "--apply", "--plan", "--dry-run", "--keep-backup"],
+    "restore": ["--slot", "--target", "--apply", "--plan", "--dry-run", "--allow-target-relocation"],
+    "list": ["-l", "--list", "--backups"],
+    "invalid_combination": "unknown, command-inapplicable, and mutually exclusive mode options are rejected instead of ignored"
+  },
+  "runtime_probe_policy": {
+    "resolution": "resolve and canonicalize one executable before invoking it",
+    "timeout_seconds": 3,
+    "max_output_bytes": 65536,
+    "advisory_failure": "timeout, nonzero exit, excessive output, decode/runtime error, or missing executable becomes unknown/not-installed without aborting install",
+    "bootstrap_postcondition": "bootstrap remains strict and rejects an unknown or mismatched CLI version"
+  },
+  "version_policy": {
+    "syntax": "SemVer 2.0.0 for module, runtime, managed-stamp, adopted-envelope, and backup-name versions",
+    "release_lockstep": [
+      "VERSION",
+      "build/version.json:build_version",
+      "build/manifest.json:build_version",
+      "zcode_tools/marketplaces/nddev-builder/marketplace.json:plugins[name=core].version",
+      "zcode_tools/marketplaces/nddev-builder/plugins/core/.zcode-plugin/plugin.json:version"
+    ],
+    "release_lineage": "the tagged commit must be an ancestor of freshly fetched origin/main"
+  },
   "backup_policy": {
     "location": "~/.zcode-backups/",
-    "name_format": "<N>-<VERSION>-old.zcode (N = slot 0-9; VERSION inside BUILD-VERSION too)",
+    "name_format": "<N>-<VERSION>-old.zcode (N = slot 0-9; VERSION is validated SemVer, or unmanaged only for explicit adoption)",
     "max_backups": 10,
     "rotation": "lowest free slot 0-9; oldest (by mtime) overwritten when full, regardless of version",
-    "version_source": "~/.zcode/BUILD-VERSION"
+    "version_source": "validated <target>/BUILD-VERSION for managed targets",
+    "adopted_unmanaged_envelope": "<N>-unmanaged-old.zcode/{NDDEV-BACKUP.json,payload/}"
+  },
+  "transaction_policy": {
+    "path_boundaries": "canonical non-root target and backup roots must be disjoint absent-or-real-directory endpoints on one filesystem",
+    "safe_tree": "managed inputs reject symlinks, special files, and multiply-linked regular files",
+    "locking": "exclusive target lock and exclusive lock for the shared backup pool, acquired in deterministic order",
+    "staging": "render, restore selected state, normalize permissions, verify, and fsync a same-filesystem sibling stage before live replacement",
+    "commit": "identity-bind and hold an occupied backup slot, move the previous target into its backup, then atomically rename the verified stage without replacement",
+    "rollback": "restore only identity-matched previous-target and held-slot state if commit, a handled signal, or pre-commit finalization fails; identity mismatch preserves foreign state, recovery paths, and locks; post-commit housekeeping failure is reported without discarding committed state",
+    "hard_interruption": "SIGKILL or power loss may leave a stale lock, stage, or recovery hold for operator inspection"
+  },
+  "adoption_policy": {
+    "authorization": "--adopt-unmanaged requires install with an explicit existing --target",
+    "backup": "the original unstamped content tree is stored inside a typed adopted-unmanaged envelope with permissions normalized to private owner-only modes",
+    "restore": "the original target is enforced; relocation requires restore with explicit --target and --allow-target-relocation"
   },
   "restore_policy": {
     "always_restore": [
@@ -37,6 +97,17 @@
   "secrets": {
     "template": "build/.env.example",
     "real": "build/.env (gitignored)",
-    "injection": "${VAR} placeholders in zcode_tools/marketplaces/<name>/*.template.json rendered at install time"
+    "source_requirements": "build/.env must be a current-user-owned regular non-symlink file with no group/world permission bits (0600 or stricter)",
+    "path_expansion": "only ZCODE_TARGET and ZCODE_BACKUPS_DIR expand an exact leading literal $HOME, $HOME/, ${HOME}, or ${HOME}/ prefix; no shell evaluation or general expansion",
+    "injection": "${VAR} placeholders in marketplace JSON values are resolved for plan validation and JSON-escaped during apply rendering; placeholder-bearing object keys are rejected",
+    "active_placeholder_validation": "plan and apply reject missing/empty placeholders in keys or values across active config, setting, provider, MCP, and hook branches; explicitly disabled providers/MCP servers may remain dormant",
+    "runtime_locations": [
+      "<target>/.env",
+      "<target>/cli/config.json",
+      "<target>/v2/config.json",
+      "<target>/v2/credentials.json",
+      "<backups>/"
+    ],
+    "permissions": "target and backup trees are private to the current user; rendered secret-bearing files use owner-only permissions"
   }
 }
