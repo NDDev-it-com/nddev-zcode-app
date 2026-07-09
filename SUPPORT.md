@@ -15,3 +15,7 @@ When filing an issue, include:
 - the `--plan` output (or `--apply` output if it failed),
 - the relevant `BUILD-VERSION` contents,
 - sanitized logs and minimal repro steps.
+
+Never attach `.env` files, rendered provider or MCP configs,
+`v2/credentials.json`, certificates, or backup contents. Redact tokens, API
+keys, paths containing private account information, and other sensitive values.

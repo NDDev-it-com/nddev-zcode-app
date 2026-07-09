@@ -23,11 +23,10 @@ its full validation and platform matrix before merging or releasing changes.
 
 ## Local setup
 
-Required tools are Git, Bash, and Python 3. A local ZCode installation is not
+Required tools are Git, Bash, and Python 3.10+. A local ZCode installation is not
 required for plan-mode validation.
 
 ```bash
-cp build/.env.example build/.env
 cli-tools/scripts/install.sh list
 cli-tools/scripts/install.sh install \
   --marketplace nddev-builder --platform macos --plan
@@ -51,13 +50,16 @@ use `--apply` against a real target merely to validate a pull request.
 - Keep repository artifacts in English.
 - Never commit credentials, tokens, cookies, private keys, `build/.env`, runtime
   state, caches, or generated ZCode output.
+- Treat an installed target and its backups as sensitive: never print, attach,
+  or commit `.env`, rendered provider/MCP configs, `v2/credentials.json`,
+  certificates, or backup contents.
 - Preserve ZCode convention discovery: plugin components live under
   `skills/`, `commands/`, `agents/`, and `references/`; metadata stays in
   `.zcode-plugin/plugin.json`.
-- Keep the build version identical in `VERSION`, `build/version.json`, and
-  `build/manifest.json`.
-- Keep the `nddev-builder/core` plugin version identical in its marketplace
-  entry and `.zcode-plugin/plugin.json`.
+- For a release, use one strict SemVer in `VERSION`, the `build_version` fields
+  in `build/version.json` and `build/manifest.json`, the `nddev-builder`
+  marketplace `core` entry, and the core `.zcode-plugin/plugin.json` manifest.
+  The release workflow rejects drift.
 - Add a `CHANGELOG.md` entry for release behavior changes.
 - Treat backup, restore, remove, target resolution, and plan purity as safety
   contracts. Changes to them require regression coverage in the private harness.
