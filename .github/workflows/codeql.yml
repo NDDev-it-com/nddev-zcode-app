@@ -22,5 +22,5 @@ jobs:
     name: CodeQL
     uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-codeql.yml@1acba687361415b3f5942acceb40b228bb0387fd # 0.3.0
     with:
-      languages: '["python", "actions"]'
+      languages: '["actions"]'
       queries: security-and-quality

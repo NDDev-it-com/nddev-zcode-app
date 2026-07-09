@@ -22,6 +22,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `# shellcheck disable=SC2034` for `platform` (passed but unused inside
   `install_sequence`) and `NDDEV_BACKUP_PATH` (set in function, read by
   platform runners as a cross-function global).
+- **CI codeql: languages corrected.** Removed `python` from the CodeQL scan
+  languages — this is a shell/JSON/Markdown project with no Python source
+  files (only `pyproject.toml` metadata and Python one-liners inside shell
+  scripts). CodeQL now scans `actions` only.
 
 ## [1.0.3] - 2026-07-09
 
