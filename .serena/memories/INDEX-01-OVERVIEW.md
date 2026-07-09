@@ -4,7 +4,7 @@
 > `<DOMAIN>-<NN>-<TOPIC>.md` siblings. This index is the entry point.
 
 Last updated: 2026-07-09
-Last commit: 5a6dcd3
+Last commit: 08f5e7b
 
 ## Project
 
