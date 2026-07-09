@@ -1,2 +1,10 @@
 /cache
 /project.local.yml
+/.auto_sync_head
+/.dirty_stop_ack
+/.flow_blocker_ack.json
+/.flow_post_task_state.json
+/.flow_sync_marker
+/.serena_sync_state.json
+/.stop_lifecycle_timeout_marker
+/.sync_marker
