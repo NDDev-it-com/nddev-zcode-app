@@ -6,6 +6,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [1.0.7] - 2026-07-09
+
+### Fixed
+- **dev-workflow skill: updated to reflect current 18-skill toolkit.** Added
+  test suite step (Step 3b), added pyproject.toml + manifest.json to version
+  bump list, expanded "How to add new things" table from 9 to 18 entries.
+- **test_version_parity.py: now checks 4 build-version files** (was 3).
+  Added `build/manifest.json` build_version to the parity assertion.
+- **add-agent, add-hook, add-skill, add-test skills: added validation reminders.**
+  Each now ends with "validate with install --plan + run doctor + bump version".
+- **doctor skill: added Step 9 (test suite reference).** Doctor is structural
+  (8 axes); the test suite is behavioral (30 tests). Step 9 recommends running
+  both for full quality coverage.
+
 ## [1.0.6] - 2026-07-09
 
 ### Fixed

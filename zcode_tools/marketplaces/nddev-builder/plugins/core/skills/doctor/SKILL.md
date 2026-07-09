@@ -115,6 +115,20 @@ Every run must end with `[ok] all checks passed`.
 - Every file path mentioned in docs (README, AGENTS, CONTRIBUTING, docs/*, the
   repo-orientation skill) actually exists.
 
+## Step 9 — Test suite (recommended after doctor)
+
+Doctor checks structural consistency. For behavioral correctness, also run the
+centralized test suite (30 pytest tests in the parent control-plane repo):
+
+```bash
+cd <rldyour-ai-cli-tools root>
+python3 -m pytest -q validation/nddev-zcode-app/ --rootdir=validation/nddev-zcode-app
+```
+
+This covers marketplace structure, installer lifecycle, restore safety, backup
+rotation, config rendering, and version parity. Follow the `run-tests` skill
+for details. Not a doctor axis (doctor is structural; tests are behavioral).
+
 ## Output format
 
 ```

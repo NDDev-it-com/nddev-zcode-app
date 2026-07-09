@@ -79,7 +79,8 @@ So a user-scope skill shadows a plugin skill of the same name. Pick unique names
 3. Write frontmatter: `name` (matches dir), `description` (English, trigger-rich).
 4. Write the body: a clear procedure an agent can follow.
 5. Validate the YAML parses (a missing `---` fence is the most common error).
-6. Bump version + changelog if this is a release behavior change.
+6. Validate: `cli-tools/scripts/install.sh install --marketplace <name> --platform macos --plan`.
+7. Bump version + changelog if this is a release behavior change.
 
 ## Rules
 

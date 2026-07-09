@@ -43,6 +43,20 @@ For a deep check, follow the `doctor` skill (in `nddev-builder/plugins/core/skil
 — it checks 8 axes: versions, ZCode spec, stale paths, broken commands, JSON,
 secrets, installer plan, cross-references.
 
+## Step 3b: Run the test suite (30 pytest tests)
+
+The centralized test suite lives in the **parent control-plane repo**
+(`validation/nddev-zcode-app/`), NOT inside this module. Run it from the
+parent root:
+
+```bash
+cd <rldyour-ai-cli-tools root>
+python3 -m pytest -q validation/nddev-zcode-app/ -v --rootdir=validation/nddev-zcode-app
+```
+
+Or use the fast lane: `bash validation/nddev-zcode-app/scripts/validate_fast.sh`.
+Follow the `run-tests` skill for details.
+
 ## Step 4: Test in a temp directory (safe, isolated)
 
 Never test `--apply` against the live `~/.zcode` while ZCode is running. Use a
@@ -70,9 +84,10 @@ to `main` are allowed for the solo maintainer.
 ## Step 6: Release (when behavior changes)
 
 Follow the `release-build` skill (in `nddev-builder/plugins/core/skills/release-build/`):
-1. Bump `build/version.json` + `VERSION` (default: patch `+0.0.1`).
+1. Bump `build/version.json` + `VERSION` + `pyproject.toml` + `build/manifest.json`
+   (default: patch `+0.0.1`).
 2. Add a CHANGELOG entry.
-3. Validate (Step 3).
+3. Validate (Step 3) + run tests (Step 3b).
 4. Tag + push (`git tag X.Y.Z && git push --tags`).
 
 The `release.yml` workflow verifies tag == VERSION and publishes a GitHub Release.
@@ -81,13 +96,22 @@ The `release.yml` workflow verifies tag == VERSION and publishes a GitHub Releas
 
 | You want to… | Read this skill (in nddev-builder core plugin) |
 |---|---|
+| Add a marketplace | `add-marketplace` |
 | Add a plugin | `add-plugin` |
 | Add a skill | `add-skill` |
 | Add a command | `add-command` |
 | Add an agent | `add-agent` |
 | Add a hook | `add-hook` |
 | Add an MCP/CLI tool | `add-mcp-server` |
-| Add a marketplace | `add-marketplace` |
+| Add a model provider | `add-provider` |
+| Add a reference doc | `add-reference` |
+| Add a CLI tool | `add-tool` |
+| Enable a plugin | `enable-plugin` |
+| List components | `list-components` |
+| Remove a component | `remove-component` |
+| Run tests | `run-tests` |
+| Add a test | `add-test` |
+| Run benchmarks | `run-benchmarks` |
 | Cut a release | `release-build` |
 | Check consistency | `doctor` |
 

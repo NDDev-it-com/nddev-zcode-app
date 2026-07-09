@@ -58,3 +58,9 @@ rldyour-ai-cli-tools/validation/nddev-zcode-app/test_<name>.py
 - Each test should verify ONE behavior (single assertion focus).
 - Use `expect_success=False` when testing error cases (guard rejections, etc.).
 - English only.
+
+## After creating
+
+- Run the full suite to verify no regressions:
+  `python3 -m pytest -q validation/nddev-zcode-app/ --rootdir=validation/nddev-zcode-app`.
+- Bump the build version if this is a release behavior change (follow `release-build`).

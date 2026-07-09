@@ -70,3 +70,9 @@ The body IS the subagent's system prompt. Write it as a complete role definition
 - `name` must match the filename; `model` must be `GLM-5.2` by default.
 - The body is a system prompt — be specific about role, constraints, and output.
 - Convention-discovered: no `agents` array in `plugin.json`.
+
+## After creating
+
+- Validate: `cli-tools/scripts/install.sh install --marketplace <name> --platform macos --plan`.
+- Run the doctor (`/nddev-doctor`) to check consistency.
+- Bump the build version if this is a release behavior change (follow `release-build`).

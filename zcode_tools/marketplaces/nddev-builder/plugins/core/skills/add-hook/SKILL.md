@@ -143,3 +143,9 @@ a command hook but 500ms (half a second) for a process hook. Default is 60000ms
 - The installer merges `hooks.json` into `cli/config.json` at install time.
 - `hooks.enabled: true` is required (set in the template).
 - Keep hook commands fast — they run on every matched event.
+
+## After creating
+
+- Validate: `cli-tools/scripts/install.sh install --marketplace <name> --platform macos --plan`.
+- Run the doctor (`/nddev-doctor`) to check consistency.
+- Bump the build version if this is a release behavior change (follow `release-build`).
