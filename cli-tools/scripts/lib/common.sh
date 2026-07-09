@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # Shared helpers for the nddev-zcode-app installer.
 # Sourced by install.sh and the macos/ubuntu runners.
-# Conventions mirror rldyour-new-mac-or-ubuntu: set -euo pipefail at the caller,
-# NDDEV_DRY_RUN=1 means plan (no writes), NDDEV_DRY_RUN=0 means apply.
+# Callers enable strict shell mode. NDDEV_DRY_RUN=1 means plan (no writes), and
+# NDDEV_DRY_RUN=0 means apply.
 
 # Resolve the repository root (three levels up from this file:
 # lib/ -> scripts/ -> cli-tools/ -> repo root).

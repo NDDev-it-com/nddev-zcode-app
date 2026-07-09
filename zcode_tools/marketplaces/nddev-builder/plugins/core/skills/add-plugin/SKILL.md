@@ -94,8 +94,9 @@ zcode_tools/marketplaces/<marketplace>/
    `python3 -c "import json; json.load(open('zcode_tools/marketplaces/<marketplace>/marketplace.json'))"`
    and the same for the new `plugin.json`.
 
-8. **Bump version + changelog** if this is a release behavior change (see the
-   `release-build` skill).
+8. **Record release behavior changes.** Keep `VERSION`,
+   `build/version.json`, and `build/manifest.json` in sync and update
+   `CHANGELOG.md` when preparing a repository release.
 
 ## Rules
 

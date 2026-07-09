@@ -39,7 +39,8 @@ Templates live inside each marketplace directory:
 committed. This is why backups live under `~/.zcode-backups/` (outside the repo),
 not inside the repository tree.
 
-## CI guard
+## Repository guards
 
-The `validate` workflow fails if `build/.env` (or any `.env`) is ever tracked by
-git. Keep real values only in your local `build/.env`.
+Public secret scanning checks tracked content for exposed credentials. The
+maintainers' private harness also rejects any tracked `.env` file as a module
+boundary violation. Keep real values only in your local `build/.env`.

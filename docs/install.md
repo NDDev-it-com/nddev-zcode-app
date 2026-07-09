@@ -20,7 +20,7 @@ Both work on macOS (desktop) and Ubuntu (desktop/server).
 ## From zero (fresh machine)
 
 ```bash
-# 1. Clone the repo (or tools/sync.sh clone nddev-zcode-app in the estate).
+# 1. Clone or download the repository.
 # 2. Populate secrets:
 cp build/.env.example build/.env
 $EDITOR build/.env
@@ -35,8 +35,11 @@ cli-tools/scripts/install.sh install --marketplace nddev-builder --plan
 cli-tools/scripts/install.sh install --marketplace nddev-builder --apply
 ```
 
-After step 3, ZCode is installed and the `zcode` command is on PATH. After step 4,
-`~/.zcode` is configured and ready to use.
+After step 3, ZCode is installed and the `zcode` command is on PATH. After
+step 4, `~/.zcode` is configured and ready to use.
+
+Plan mode performs no writes, downloads, target mutation, or live `zcode`
+execution. Runtime detection is deferred until apply mode.
 
 ## Usage
 
@@ -49,25 +52,34 @@ cli-tools/scripts/install.sh install --marketplace nddev-builder --plan
 cli-tools/scripts/install.sh install --marketplace nddev-builder --apply
 
 # Update — re-run install with the same marketplace (old ~/.zcode is backed up).
-# Switch — run install with a different --marketplace (old is backed up, new is built).
+# Switch — install a different marketplace (the old setup is backed up).
 # Remove — back up and delete the install:
 cli-tools/scripts/install.sh remove --apply
 
+# Inspect and restore numbered backup slots:
+cli-tools/scripts/install.sh list --backups
+cli-tools/scripts/install.sh restore --slot 3 --plan
+cli-tools/scripts/install.sh restore --slot 3 --apply
+
 # Custom install directory (default is ~/.zcode):
-cli-tools/scripts/install.sh install --marketplace nddev-builder --target /opt/my-zcode --apply
+cli-tools/scripts/install.sh install \
+  --marketplace nddev-builder --target /opt/my-zcode --apply
 # ...or set it once in build/.env (ZCODE_TARGET=...) and skip --target.
 
 # Force a platform (otherwise auto-detected from uname):
-cli-tools/scripts/install.sh install --marketplace nddev-builder --platform macos --apply
+cli-tools/scripts/install.sh install \
+  --marketplace nddev-builder --platform macos --apply
 ```
 
 ### Commands
 
 | Command | What it does |
-|---|---|
-| `install` (default) | Back up the target, build a clean `~/.zcode` from a marketplace, restore runtime state. |
-| `remove` | Back up the target, then delete it. Refuses to delete a directory without `BUILD-VERSION` (safety). |
-| `list` | Show available marketplaces. |
+| --- | --- |
+| `bootstrap` | Install the pinned ZCode app and CLI; defaults to plan mode. |
+| `install` | Back up, build from one marketplace, and restore runtime state. |
+| `remove` | Back up and delete a stamped target. |
+| `restore` | Restore one backup slot into an empty or stamped target. |
+| `list` | Show marketplaces; add `--backups` to show backup slots. |
 
 ### Target directory resolution
 
@@ -120,9 +132,14 @@ you stay logged in. If the auth token expired, re-authenticate in the app.
 
 ## Reverting
 
-To revert to a backup, move it back:
+Use the guarded restore lifecycle instead of moving backup directories manually:
 
 ```bash
-mv ~/.zcode ~/.zcode-backups/revert-$(date +%s)
-mv ~/.zcode-backups/<N>-<VERSION>-old.zcode ~/.zcode
+cli-tools/scripts/install.sh list --backups
+cli-tools/scripts/install.sh restore --slot <N> --plan
+cli-tools/scripts/install.sh restore --slot <N> --apply
 ```
+
+If the target exists, restore first backs it up. The restore source is staged
+before any backup rotation or target replacement so a full 10-slot pool cannot
+invalidate the selected source.

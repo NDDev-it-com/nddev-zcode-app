@@ -20,6 +20,6 @@
     "mcp_plugin_file": ".mcp.json",
     "mcp_plugin_key": "mcpServers"
   },
-  "verified_date": "2026-07-09",
-  "verified_against": "NDDev-it-com/nddev-zcode-app @ 1.0.0"
+  "verified_date": "2026-07-10",
+  "verified_against": "NDDev-it-com/nddev-zcode-app @ 2.0.0"
 }

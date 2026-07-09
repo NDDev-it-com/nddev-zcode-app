@@ -1,29 +1,30 @@
 # GitHub workflows
 
-The free OSS security suite reuses public workflows from
+The public repository keeps release automation, repository labeling, and generic
+security checks. Implementation validation, platform matrices, tests, and
+benchmarks run from the maintainers' private `nddev-harnesses` control plane
+against a pinned submodule revision.
+
+Reusable workflows are sourced from
 [`NDDev-it-com/nddev-ci-workflows`](https://github.com/NDDev-it-com/nddev-ci-workflows)
-@ `0.3.0` (`f4b2971...`), pinned by full SHA.
+release `0.3.0`, pinned to commit
+`1acba687361415b3f5942acceb40b228bb0387fd`.
 
 ## Workflows
 
-- **`validate.yml`** *(custom)* — JSON validation, secret-leak guard, ShellCheck,
-  and the installer `--plan` dry-run. Runs on push/PR to `main`.
-- **`codeql.yml`** — GitHub CodeQL analysis (Python + Actions, security-and-quality).
-  Delegates to `nddev-ci-workflows/public-codeql.yml`. Runs on push/PR + weekly.
-- **`dependency-review.yml`** — blocks PRs that introduce high-severity
-  vulnerabilities or incompatible licenses. Delegates to `public-dependency-review.yml`.
-- **`secret-scan.yml`** — scans tracked files for leaked credentials.
-  Delegates to `nddev-ci-workflows/secret-scan.yml`.
-- **`scorecard.yml`** — OpenSSF Scorecard analysis (JSON artifact/check mode).
-  Delegates to `public-scorecard-json.yml`. Runs on push to `main` + weekly.
-- **`cross-platform.yml`** — JSON validation + installer `--plan` on Ubuntu and
-  macOS runners. Delegates to `cross-platform-smoke.yml`.
-- **`security-static.yml`** *(custom)* — enforces all GitHub Actions are pinned to
-  full commit SHAs. Runs on push/PR + weekly.
-- **`release.yml`** *(custom)* — tag-driven: on a SemVer tag, verifies it matches
-  `VERSION`, extracts the matching `CHANGELOG.md` section, publishes a GitHub Release.
-- **`labeler.yml`** *(custom)* — applies area labels based on changed paths.
+- **`codeql.yml`** runs CodeQL for GitHub Actions on pushes, pull requests, and
+  the weekly schedule through `public-codeql.yml`.
+- **`dependency-review.yml`** checks pull-request dependency changes through
+  `public-dependency-review.yml`.
+- **`secret-scan.yml`** scans tracked content for exposed credentials through
+  `secret-scan.yml`.
+- **`scorecard.yml`** runs the public OpenSSF Scorecard JSON workflow on pushes
+  and the weekly schedule.
+- **`release.yml`** verifies a SemVer tag against all three build-version
+  sources, checks core-plugin version parity, extracts the matching changelog
+  section, and publishes the GitHub Release.
+- **`labeler.yml`** labels pull requests from `.github/labeler.yml`.
 
-All external actions are pinned to full commit SHAs; `security-static.yml`
-enforces this. The secret-leak guard in `validate.yml` fails CI if any `.env`
-is ever tracked.
+All external actions and reusable workflows are pinned to immutable commit SHAs.
+The private harness validates those pins and the public/private repository
+boundary before a module revision is released.

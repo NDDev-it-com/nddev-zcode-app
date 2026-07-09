@@ -24,16 +24,25 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify tag matches VERSION
+      - name: Verify tag and version contracts
         run: |
           set -euo pipefail
           tag="${GITHUB_REF_NAME}"
           version="$(cat VERSION)"
-          if [ "$tag" != "$version" ]; then
-            echo "::error::Tag '$tag' does not match VERSION '$version'"
+          version_json="$(python3 -c 'import json; print(json.load(open("build/version.json"))["build_version"])')"
+          manifest_json="$(python3 -c 'import json; print(json.load(open("build/manifest.json"))["build_version"])')"
+          marketplace_plugin="$(python3 -c 'import json; plugins=json.load(open("zcode_tools/marketplaces/nddev-builder/marketplace.json"))["plugins"]; print(next(plugin["version"] for plugin in plugins if plugin["name"] == "core"))')"
+          plugin_manifest="$(python3 -c 'import json; print(json.load(open("zcode_tools/marketplaces/nddev-builder/plugins/core/.zcode-plugin/plugin.json"))["version"])')"
+          if [ "$tag" != "$version" ] || [ "$version" != "$version_json" ] || [ "$version" != "$manifest_json" ]; then
+            echo "::error::Tag and build versions differ: tag=$tag VERSION=$version version.json=$version_json manifest.json=$manifest_json"
             exit 1
           fi
-          echo "ok: tag $tag == VERSION $version"
+          if [ "$marketplace_plugin" != "$plugin_manifest" ]; then
+            echo "::error::Core plugin versions differ: marketplace=$marketplace_plugin plugin.json=$plugin_manifest"
+            exit 1
+          fi
+          echo "ok: tag and build versions match $version"
+          echo "ok: core plugin versions match $plugin_manifest"
 
       - name: Extract changelog section
         id: changelog

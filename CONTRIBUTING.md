@@ -1,60 +1,69 @@
 # Contributing
 
-This repository is `nddev-zcode-app`, a build system + installer that recreates
-a complete, version-stamped `~/.zcode` from source on macOS and Ubuntu. It is
-maintained by [@rldyourmnd](https://github.com/rldyourmnd). Contributions are
-welcome under the project's AGPL-3.0-or-later license, but the maintainer keeps
-final authority on direction, plugin boundaries, the installer contract, and the
-backup/restore policy.
+`nddev-zcode-app` is the public, reusable implementation of the NDDev ZCode
+setup installer. Contributions are welcome under AGPL-3.0-or-later. The
+maintainer retains final authority over installer contracts, ZCode-native
+format, setup boundaries, and backup/restore safety.
 
-By submitting a pull request, you certify that you have the right to license the
-contribution under AGPL-3.0-or-later.
+By submitting a pull request, you certify that you can license the contribution
+under AGPL-3.0-or-later. Participants must follow the
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
-Participants must follow the [Code of Conduct](CODE_OF_CONDUCT.md).
+## Repository boundary
+
+Keep this repository limited to code and public documentation required to use
+or distribute the module. Do not add repository-local agent instructions,
+development memories, test suites, validation implementations, benchmarks, or
+generated development artifacts.
+
+The maintainers keep those control-plane concerns in the private
+`nddev-harnesses` repository, where this module is pinned as a submodule. Public
+contributors are not expected to have access to that harness; maintainers run
+its full validation and platform matrix before merging or releasing changes.
+
+## Local setup
+
+Required tools are Git, Bash, and Python 3. A local ZCode installation is not
+required for plan-mode validation.
+
+```bash
+cp build/.env.example build/.env
+cli-tools/scripts/install.sh list
+cli-tools/scripts/install.sh install \
+  --marketplace nddev-builder --platform macos --plan
+cli-tools/scripts/install.sh install \
+  --marketplace nddev-builder --platform ubuntu --plan
+```
+
+Plan mode performs no writes and does not invoke a local `zcode` binary. Never
+use `--apply` against a real target merely to validate a pull request.
+
+## Pull requests
+
+- Target `main` from a scope-limited feature or fix branch.
+- Use a Conventional Commit title such as `fix(installer): preserve plan purity`.
+- Explain intent, affected public contract, plan-mode evidence, and risks.
+- Keep implementation, documentation, and version changes consistent.
+- Do not rewrite pushed shared history without maintainer approval.
+
+## Change rules
+
+- Keep repository artifacts in English.
+- Never commit credentials, tokens, cookies, private keys, `build/.env`, runtime
+  state, caches, or generated ZCode output.
+- Preserve ZCode convention discovery: plugin components live under
+  `skills/`, `commands/`, `agents/`, and `references/`; metadata stays in
+  `.zcode-plugin/plugin.json`.
+- Keep the build version identical in `VERSION`, `build/version.json`, and
+  `build/manifest.json`.
+- Keep the `nddev-builder/core` plugin version identical in its marketplace
+  entry and `.zcode-plugin/plugin.json`.
+- Add a `CHANGELOG.md` entry for release behavior changes.
+- Treat backup, restore, remove, target resolution, and plan purity as safety
+  contracts. Changes to them require regression coverage in the private harness.
 
 ## License
 
-This project is licensed under the GNU Affero General Public License v3.0 or
-later. See [LICENSE](LICENSE). Contributions are accepted under the same
-license; downstream operators that run modified versions over a network must
-comply with AGPL-3.0 Section 13.
-
-## Local Setup
-
-Required tools: Git, Python 3.13, and the ZCode client.
-
-```bash
-cp build/.env.example build/.env   # then fill in real values
-cli-tools/scripts/install.sh install --marketplace nddev-builder --plan   # dry-run
-cli-tools/scripts/install.sh install --marketplace nddev-builder --apply  # back up, build, restore
-```
-
-## Branches
-
-- `main`: primary integration branch.
-- `feat/<topic>`, `fix/<topic>`, `chore/<topic>`: feature/fix/chore branches.
-  Open a pull request targeting `main`.
-
-## Pull Requests
-
-- Open a pull request against `main` with a clear, scope-limited change.
-- Title format: Conventional Commits (`type(scope): description`). Types:
-  `feat`, `fix`, `refactor`, `docs`, `test`, `chore`, `perf`, `style`, `ci`,
-  `build`. Scope is the area, lowercase.
-- Description must include intent, surface touched, evidence (installer
-  `--plan` output, validation logs), and risks.
-- Keep commits atomic. Do not rewrite already-pushed history without explicit
-  maintainer approval.
-
-## Change Rules
-
-- Keep repository artifacts in English.
-- Never commit credentials, tokens, cookies, private keys, or `build/.env`.
-  The `validate` workflow enforces this.
-- Bump `build/version.json` and `VERSION`, and add a `CHANGELOG.md` entry for
-  release behavior changes.
-- When adding ZCode components, follow the native format: plugin components are
-  convention-discovered (`skills/<n>/SKILL.md`, `commands/<n>.md`,
-  `agents/<n>.md`); MCP servers use `{"mcpServers":{}}` in
-  `plugins/<mcps>/.mcp.json`; hooks and the MCP registry live in
-  `cli/config.json`.
+This project is licensed under GNU AGPL v3.0 or later. See [LICENSE](LICENSE).
+Downstream operators that run modified versions over a network must comply with
+AGPL-3.0 Section 13.

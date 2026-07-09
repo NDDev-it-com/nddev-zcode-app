@@ -83,10 +83,18 @@ nddev::check_runtime_version() {
 
   pinned_app="$(nddev::pinned_app_version)"
   pinned_cli="$(nddev::pinned_cli_version)"
+
+  nddev::section "ZCode version check"
+  if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
+    nddev::log "info" "pinned app:  $pinned_app    running: skipped-plan"
+    nddev::log "info" "pinned cli:  $pinned_cli    running: skipped-plan"
+    nddev::log "info" "live runtime detection is skipped in plan mode"
+    return 0
+  fi
+
   running_app="$(nddev::detect_app_version)"
   running_cli="$(nddev::detect_cli_version)"
 
-  nddev::section "ZCode version check"
   nddev::log "info" "pinned app:  $pinned_app    running: $running_app"
   nddev::log "info" "pinned cli:  $pinned_cli    running: $running_cli"
 
@@ -105,16 +113,25 @@ nddev::check_runtime_version() {
   return 0
 }
 
-# Write the BUILD-VERSION stamp into the target zcode home. $1=target ~/.zcode path.
+# Write the BUILD-VERSION stamp into the target ZCode home.
+# $1 = target path, $2 = selected installer platform (macos|ubuntu).
 nddev::write_version_stamp() {
   local target=$1
-  local build_version zcode_runtime platform installed_at app_ver cli_ver
+  local platform=$2
+  local build_version zcode_runtime installed_at app_ver cli_ver
+
+  case "$platform" in
+    macos | ubuntu) ;;
+    *)
+      nddev::log "error" "invalid platform for BUILD-VERSION: $platform"
+      return 2
+      ;;
+  esac
 
   build_version="$(nddev::build_version)"
   zcode_runtime="$(nddev::zcode_runtime)"
   app_ver="$(nddev::pinned_app_version)"
   cli_ver="$(nddev::pinned_cli_version)"
-  platform="$(nddev::detect_platform)"
   installed_at="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
   if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then

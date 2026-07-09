@@ -74,5 +74,6 @@ The body IS the subagent's system prompt. Write it as a complete role definition
 ## After creating
 
 - Validate: `cli-tools/scripts/install.sh install --marketplace <name> --platform macos --plan`.
-- Run the doctor (`/nddev-doctor`) to check consistency.
-- Bump the build version if this is a release behavior change (follow `release-build`).
+- Validate the same marketplace with `--platform ubuntu --plan`.
+- For a release behavior change, keep `VERSION`, `build/version.json`, and
+  `build/manifest.json` in sync and update `CHANGELOG.md`.

@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 #
 # nddev-zcode-app installer — manages a complete, version-stamped ~/.zcode
-# built from ONE selected marketplace. Supports install, update, switch, and
-# remove on macOS (desktop) or Ubuntu (desktop/server).
+# built from ONE selected marketplace. Supports bootstrap, install, update,
+# switch, backup inspection, restore, and removal on macOS or Ubuntu.
 #
 # Usage:
 #   cli-tools/scripts/install.sh <command> [options]
 #
 # Commands:
+#   bootstrap           Download and install the pinned ZCode app and CLI.
 #   install (default)   Build ~/.zcode from a marketplace (backup → build → restore).
 #   remove              Back up and delete the installed ~/.zcode.
-#   list                List available marketplaces.
+#   restore             Restore ~/.zcode from a numbered backup slot.
+#   list                List available marketplaces or backups.
 #
 # Each marketplace is a self-contained setup (its own AGENTS.md, config
 # templates, skills/commands/agents, and plugins). The installer selects one
@@ -239,7 +241,7 @@ if [ "$COMMAND" = "restore" ]; then
   # (no BUILD-VERSION), same as the 'remove' command. Prevents accidental
   # destruction of a non-nddev directory via --target.
   if [ -d "$ZCODE_HOME" ] && [ ! -f "$ZCODE_HOME/BUILD-VERSION" ]; then
-    nddev::log "error" "refusing to restore: $ZCODE_HOME has no BUILD-VERSION (not an nddev-zcode-app install). Pass --target explicitly if you are sure."
+    nddev::log "error" "refusing to restore: $ZCODE_HOME has no BUILD-VERSION (not an nddev-zcode-app install). Choose an empty target or an existing stamped installation."
     exit 1
   fi
 
@@ -335,7 +337,7 @@ if [ "$COMMAND" = "remove" ]; then
 
   # Check it's one of ours (has BUILD-VERSION) before deleting.
   if [ ! -f "$ZCODE_HOME/BUILD-VERSION" ]; then
-    nddev::log "error" "refusing to remove: $ZCODE_HOME has no BUILD-VERSION (not an nddev-zcode-app install). Pass --target explicitly if you are sure."
+    nddev::log "error" "refusing to remove: $ZCODE_HOME has no BUILD-VERSION (not an nddev-zcode-app install). Only stamped installations can be removed."
     exit 1
   fi
 

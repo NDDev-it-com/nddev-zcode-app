@@ -340,9 +340,7 @@ nddev::verify_build() {
 # marketplace. Sets NDDEV_BACKUP_PATH to the backup directory (empty on a fresh
 # install with no prior ~/.zcode).
 NDDEV_BACKUP_PATH=""
-# shellcheck disable=SC2034
 nddev::install_sequence() {
-  # shellcheck disable=SC2034
   local platform=$1
   local current_version backup_name backup_path
 
@@ -359,7 +357,7 @@ nddev::install_sequence() {
   nddev::backup_current
   nddev::check_runtime_version
   nddev::build_clean "$ZCODE_HOME"
-  nddev::write_version_stamp "$ZCODE_HOME"
+  nddev::write_version_stamp "$ZCODE_HOME" "$platform"
 
   if [ -n "$backup_path" ]; then
     nddev::restore_runtime "$backup_path" "$ZCODE_HOME"
@@ -367,5 +365,6 @@ nddev::install_sequence() {
 
   nddev::verify_build "$ZCODE_HOME"
 
+  # shellcheck disable=SC2034 # read by the sourced platform runner.
   NDDEV_BACKUP_PATH="$backup_path"
 }

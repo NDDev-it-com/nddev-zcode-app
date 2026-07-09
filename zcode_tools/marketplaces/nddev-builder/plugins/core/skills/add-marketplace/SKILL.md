@@ -60,8 +60,9 @@ the installer merges them into `cli/config.json` if present):
    cli-tools/scripts/install.sh list
    ```
 
-6. **Bump the build version** if this is a release behavior change (see
-   `release-build` skill).
+6. **Record release behavior changes.** Keep `VERSION`,
+   `build/version.json`, and `build/manifest.json` in sync and update
+   `CHANGELOG.md` when the repository is being prepared for release.
 
 ## Rules
 

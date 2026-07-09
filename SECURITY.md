@@ -1,69 +1,69 @@
 # Security Policy
 
-## Supported Surface
+## Supported surface
 
-Security reporting covers this repository's `~/.zcode` source tree
-(`zcode_tools/`), the installer (`cli-tools/`), build artifacts and secret
-templates (`build/`), and CI/CD workflows (`.github/`).
+Security reporting covers the public implementation in this repository:
 
-## Supported Versions
+- marketplace sources under `zcode_tools/`,
+- installer and lifecycle logic under `cli-tools/`,
+- version, manifest, system, and secret-template data under `build/`,
+- public references, documentation, and GitHub workflows.
+
+## Supported versions
 
 Only the current exact numeric release tag receives security fixes.
 
 | Version | Supported |
-|---|---|
-| Current exact tag `1.0.0` | yes |
-| Older tags | no; upgrade to current exact tag |
+| --- | --- |
+| Current exact tag `2.0.0` | yes |
+| Older tags | no; upgrade to the current exact tag |
 
-## Reporting a Vulnerability
+## Reporting a vulnerability
 
-Please report vulnerabilities privately. Do not open public issues or pull
-requests describing them.
+Report vulnerabilities privately. Do not open a public issue or pull request
+that contains exploit details or sensitive material.
 
-Preferred channel: GitHub Security Advisories.
+Preferred channel: [GitHub Security Advisories](https://github.com/NDDev-it-com/nddev-zcode-app/security/advisories/new).
 
-- https://github.com/NDDev-it-com/nddev-zcode-app/security/advisories/new
-
-Alternative channel: contact the maintainer through their GitHub profile at
-https://github.com/rldyourmnd and request a private disclosure handle.
+Alternatively, contact the maintainer through
+[@rldyourmnd](https://github.com/rldyourmnd) and request a private disclosure
+channel.
 
 Include:
 
-- affected path, file, installer step, or workflow,
-- reproduction steps,
-- expected impact and threat scenario,
-- non-sensitive logs or command output,
-- a suggested fix when known.
+- affected path, installer step, or workflow,
+- reproduction steps and expected impact,
+- the relevant threat scenario,
+- non-sensitive logs or output,
+- a suggested fix, if known.
 
-Do not paste credentials, tokens, cookies, private keys, or sensitive logs into
-reports. If a report requires sharing sensitive material, request a secure
-channel before sending.
+Never include credentials, tokens, cookies, private keys, or sensitive runtime
+logs in a report.
 
-## Response Targets
+## Response targets
 
-The maintainer aims for:
+The maintainer aims to acknowledge reports within 5 business days, complete
+triage within 10 business days, and provide a fix or mitigation plan for an
+accepted report within 30 business days. These targets are best-effort.
 
-- acknowledgement within 5 business days,
-- triage and severity assessment within 10 business days,
-- a fix or mitigation plan for accepted reports within 30 business days,
-  depending on complexity.
+## Baseline controls
 
-These targets are best-effort and not contractual.
+- External GitHub Actions and reusable workflows are pinned to full commit SHAs.
+- Workflow permissions follow least privilege.
+- Generic CodeQL, dependency-review, secret-scan, and Scorecard checks run in
+  this public repository.
+- The maintainers' private `nddev-harnesses` control plane validates module
+  boundaries, JSON and shell contracts, plan-mode purity, lifecycle behavior,
+  restore safety, platform behavior, and release consistency.
+- Secrets are rendered from a local, gitignored `build/.env`; only
+  `build/.env.example` is tracked.
+- Restore and remove refuse existing targets without the installer's
+  `BUILD-VERSION` marker.
 
-## Baseline Controls
+## Out of scope
 
-- External GitHub Actions are pinned to full commit SHAs.
-- CI uses least-privilege `GITHUB_TOKEN` permissions by default.
-- The `validate` workflow fails if any `.env` file (including `build/.env`) is
-  tracked by git.
-- Secrets are rendered from a local, gitignored `build/.env` at install time;
-  no secret values are committed.
-
-## Out Of Scope
-
-- Findings against downstream environments running modified versions of this
-  software.
-- Issues stemming from running the installer's `--apply` mode (which wipes and
-  rebuilds `~/.zcode`) without keeping the automatic backup. The installer
-  always creates a backup before applying; reverting is documented in
-  [docs/install.md](docs/install.md).
+- Downstream environments running independently modified versions.
+- Problems caused by bypassing the documented installer lifecycle or manually
+  deleting its backup pool.
+- Availability or behavior of the upstream ZCode service, app, CDN, or model
+  provider when the module itself does not cause the issue.

@@ -6,6 +6,43 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-07-10
+
+### Changed
+
+- **Public implementation boundary.** This repository now contains only the
+  reusable ZCode setup sources, installer, build contract, public references,
+  documentation, and public security/release automation. Development agent
+  context, validation, tests, and benchmarks moved to the private
+  `nddev-harnesses` control plane, where this repository is pinned as a
+  submodule.
+- **Build version contract reduced to three authoritative files:** `VERSION`,
+  `build/version.json`, and `build/manifest.json`.
+- **`nddev-builder/core` 2.0.0 is a focused reusable component toolkit** with
+  13 skills, 13 matching commands, and one reviewer agent.
+
+### Removed
+
+- Removed the five development-only plugin capabilities `add-test`,
+  `run-tests`, `run-benchmarks`, `doctor`, and `release-build`, together with
+  their slash commands. These workflows now belong to `nddev-harnesses`.
+- Removed repository-local agent configuration, Serena state, placeholder test
+  files, Python development metadata, and functional validation workflows from
+  the public module.
+
+### Fixed
+
+- Installer and bootstrap plan modes no longer invoke the live `zcode` binary,
+  create temporary download files, or report a false runtime match; runtime
+  discovery is explicitly logged as skipped.
+- Restore and remove errors no longer suggest that `--target` bypasses the
+  mandatory `BUILD-VERSION` safety guard.
+- `BUILD-VERSION.platform` now records the explicitly selected installer
+  platform instead of the host returned by `uname`, so cross-platform builds
+  retain the correct target provenance.
+- Bootstrap now rejects unsupported explicit platform values instead of
+  continuing with an incomplete platform branch.
+
 ## [1.0.9] - 2026-07-09
 
 ### Fixed

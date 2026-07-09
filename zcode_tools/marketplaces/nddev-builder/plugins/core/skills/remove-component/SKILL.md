@@ -51,8 +51,9 @@ Safely removes a component from a marketplace.
    cli-tools/scripts/install.sh install --marketplace <mp> --platform macos --plan
    ```
 
-8. Remind the user to bump the build version if this is a release behavior
-   change (follow the `release-build` skill).
+8. If this is a release behavior change, remind the user to keep `VERSION`,
+   `build/version.json`, and `build/manifest.json` in sync and update
+   `CHANGELOG.md`.
 
 ## Rules
 

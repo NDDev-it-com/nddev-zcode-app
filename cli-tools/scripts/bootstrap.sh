@@ -62,6 +62,10 @@ export NDDEV_DRY_RUN=$((1 - APPLY))
 if [ "$PLATFORM" = "auto" ]; then
   PLATFORM="$(nddev::detect_platform)" || exit 1
 fi
+if [ "$PLATFORM" != "macos" ] && [ "$PLATFORM" != "ubuntu" ]; then
+  nddev::log "error" "unsupported platform: $PLATFORM (expected macos|ubuntu)"
+  exit 2
+fi
 
 ROOT="$(nddev::repo_root)"
 VERSION_JSON="$ROOT/build/version.json"
@@ -90,7 +94,11 @@ nddev::log "info" "architecture: $arch"
 
 # ─── Check if already installed ──────────────────────────────────────────
 nddev::check_runtime_version
-running_app="$(nddev::detect_app_version)"
+if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
+  running_app="skipped-plan"
+else
+  running_app="$(nddev::detect_app_version)"
+fi
 if [ "$running_app" = "$APP_VERSION" ]; then
   nddev::log "ok" "ZCode $APP_VERSION already installed; skipping app download"
 else
@@ -103,7 +111,11 @@ if [ "$running_app" != "$APP_VERSION" ]; then
     macos)
       artifact="ZCode-${APP_VERSION}-mac-${arch}.dmg"
       url="${CDN_BASE}/${APP_VERSION}/${artifact}"
-      tmp_dmg="$(mktemp -t nddev-zcode.XXXXXX).dmg"
+      if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
+        tmp_dmg="${TMPDIR:-/tmp}/nddev-zcode-${APP_VERSION}-${arch}.dmg"
+      else
+        tmp_dmg="$(mktemp -t nddev-zcode.XXXXXX)"
+      fi
 
       nddev::section "Download ZCode.app ($artifact)"
       nddev::log "info" "url: $url"
@@ -126,7 +138,9 @@ if [ "$running_app" != "$APP_VERSION" ]; then
         hdiutil detach "$mount_point" >/dev/null 2>&1
         nddev::log "ok" "installed ZCode.app to /Applications/"
       fi
-      rm -f "$tmp_dmg"
+      if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
+        rm -f "$tmp_dmg"
+      fi
       app_entry="/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs"
       ;;
 
@@ -134,7 +148,11 @@ if [ "$running_app" != "$APP_VERSION" ]; then
       # Prefer .deb (cleaner uninstall); fall back to AppImage.
       artifact="ZCode-${APP_VERSION}-linux-${arch}.deb"
       url="${CDN_BASE}/${APP_VERSION}/${artifact}"
-      tmp_deb="$(mktemp -t nddev-zcode.XXXXXX).deb"
+      if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
+        tmp_deb="${TMPDIR:-/tmp}/nddev-zcode-${APP_VERSION}-${arch}.deb"
+      else
+        tmp_deb="$(mktemp -t nddev-zcode.XXXXXX)"
+      fi
 
       nddev::section "Download ZCode ($artifact)"
       nddev::log "info" "url: $url"
@@ -151,7 +169,9 @@ if [ "$running_app" != "$APP_VERSION" ]; then
         fi
         nddev::log "ok" "installed ZCode via dpkg"
       fi
-      rm -f "$tmp_deb"
+      if [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
+        rm -f "$tmp_deb"
+      fi
       app_entry="/opt/ZCode/resources/glm/zcode.cjs"
       ;;
   esac
@@ -211,6 +231,11 @@ nddev::section "Verify"
 nddev::check_runtime_version
 
 nddev::section "Bootstrap complete"
-nddev::log "ok" "ZCode app: $(nddev::detect_app_version)"
-nddev::log "ok" "ZCode CLI: $(nddev::detect_cli_version)"
+if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
+  nddev::log "info" "ZCode app: skipped-plan"
+  nddev::log "info" "ZCode CLI: skipped-plan"
+else
+  nddev::log "ok" "ZCode app: $(nddev::detect_app_version)"
+  nddev::log "ok" "ZCode CLI: $(nddev::detect_cli_version)"
+fi
 nddev::log "info" "next: run 'install.sh install --marketplace <name> --apply' to configure ~/.zcode"
