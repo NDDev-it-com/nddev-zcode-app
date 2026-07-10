@@ -281,9 +281,13 @@ nddev::check_runtime_version() {
 }
 
 nddev::write_version_stamp() {
-  local target=$1 platform=$2
+  local target=$1 platform=$2 setup_id=$3
   local build_version zcode_runtime installed_at app_ver cli_ver
   case "$platform" in macos | ubuntu) ;; *) nddev::log "error" "invalid platform: $platform"; return 2 ;; esac
+  if ! printf '%s\n' "$setup_id" | grep -qE '^[a-z0-9][a-z0-9-]*$'; then
+    nddev::log "error" "invalid setup id: $setup_id"
+    return 2
+  fi
 
   build_version="$(nddev::build_version)" || return 1
   zcode_runtime="$(nddev::zcode_runtime)" || return 1
@@ -295,15 +299,16 @@ nddev::write_version_stamp() {
     return 0
   fi
 
-  python3 -I - "$target/BUILD-VERSION" "$build_version" "$app_ver" "$cli_ver" "$zcode_runtime" "$platform" "$installed_at" <<'PY' || return 1
+  python3 -I - "$target/BUILD-VERSION" "$build_version" "$app_ver" "$cli_ver" "$zcode_runtime" "$platform" "$setup_id" "$installed_at" <<'PY' || return 1
 import json
 import os
 import sys
 import tempfile
 
-path, build, app, cli, runtime, platform, installed = sys.argv[1:]
+path, build, app, cli, runtime, platform, setup_id, installed = sys.argv[1:]
 payload = {
-    "schema": 1,
+    "schema": 2,
+    "setup_id": setup_id,
     "build_version": build,
     "zcode_app_version": app,
     "zcode_cli_version": cli,
@@ -329,5 +334,5 @@ except BaseException:
 PY
   chmod 600 "$target/BUILD-VERSION" || return 1
   nddev::stamp_version "$target" >/dev/null || return 1
-  nddev::log "ok" "wrote BUILD-VERSION ($build_version, $platform, zcode $app_ver)"
+  nddev::log "ok" "wrote BUILD-VERSION ($build_version, setup $setup_id, $platform, zcode $app_ver)"
 }

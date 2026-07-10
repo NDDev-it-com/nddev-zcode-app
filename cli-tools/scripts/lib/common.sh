@@ -550,18 +550,19 @@ raise SystemExit(0 if re.fullmatch(pattern, value) else 1)
 PY
 }
 
-# Validate a managed BUILD-VERSION stamp and print its sanitized build version.
+# Validate a managed BUILD-VERSION stamp and print one sanitized representation.
 # The complete schema is required so a marker file alone cannot authorize a
-# destructive remove or restore.
-nddev::stamp_version() {
-  local tree=$1
-  python3 -I - "$tree/BUILD-VERSION" "$NDDEV_SEMVER_PATTERN" <<'PY'
+# destructive remove or restore. Schema 0/1 remains readable for recovery;
+# schema 2 binds every newly installed tree to its selected setup.
+nddev::stamp_metadata() {
+  local tree=$1 output=${2:-version}
+  python3 -I - "$tree/BUILD-VERSION" "$NDDEV_SEMVER_PATTERN" "$output" <<'PY'
 import datetime as dt
 import json
 import re
 import sys
 
-path, semver_pattern = sys.argv[1:]
+path, semver_pattern, output = sys.argv[1:]
 semver = re.compile(semver_pattern)
 try:
     with open(path, encoding="utf-8") as stream:
@@ -571,10 +572,24 @@ except (OSError, json.JSONDecodeError) as exc:
 if not isinstance(data, dict):
     raise SystemExit("BUILD-VERSION must be a JSON object")
 # Schema 0 is the fully populated legacy 2.0.0 stamp (no explicit schema key).
-# New stamps are schema 1; every other version fails closed.
+# Schema 1 is the legacy explicit stamp. New stamps are schema 2; every other
+# version fails closed.
 schema = data.get("schema", 0)
-if isinstance(schema, bool) or schema not in {0, 1}:
+if isinstance(schema, bool) or schema not in {0, 1, 2}:
     raise SystemExit("unsupported BUILD-VERSION schema")
+base_keys = {
+    "build_version",
+    "zcode_app_version",
+    "zcode_cli_version",
+    "zcode_runtime",
+    "platform",
+    "installed_at",
+}
+expected_keys = base_keys if schema == 0 else base_keys | {"schema"}
+if schema == 2:
+    expected_keys |= {"setup_id"}
+if set(data) != expected_keys:
+    raise SystemExit("BUILD-VERSION keys do not match its schema")
 for key in ("build_version", "zcode_app_version", "zcode_cli_version"):
     value = data.get(key)
     if not isinstance(value, str) or not semver.fullmatch(value):
@@ -593,8 +608,45 @@ except ValueError as exc:
     raise SystemExit("BUILD-VERSION.installed_at is invalid") from exc
 if parsed.tzinfo is None or parsed.utcoffset() != dt.timedelta(0):
     raise SystemExit("BUILD-VERSION.installed_at must include UTC timezone")
-print(data["build_version"])
+setup_id = data.get("setup_id")
+if schema == 2 and (
+    not isinstance(setup_id, str)
+    or re.fullmatch(r"[a-z0-9][a-z0-9-]*", setup_id) is None
+):
+    raise SystemExit("BUILD-VERSION.setup_id must be kebab-case")
+
+if output == "version":
+    print(data["build_version"])
+elif output == "setup-id":
+    print(setup_id or "")
+elif output == "status-json":
+    print(
+        json.dumps(
+            {
+                "stamp_schema": schema,
+                "setup_id": setup_id,
+                "build_version": data["build_version"],
+                "zcode_app_version": data["zcode_app_version"],
+                "zcode_cli_version": data["zcode_cli_version"],
+                "zcode_runtime": data["zcode_runtime"],
+                "platform": data["platform"],
+                "installed_at": installed_at,
+            },
+            separators=(",", ":"),
+            sort_keys=True,
+        )
+    )
+else:
+    raise SystemExit("unsupported BUILD-VERSION output mode")
 PY
+}
+
+nddev::stamp_version() {
+  nddev::stamp_metadata "$1" version
+}
+
+nddev::stamp_setup_id() {
+  nddev::stamp_metadata "$1" setup-id
 }
 
 nddev::current_version() {

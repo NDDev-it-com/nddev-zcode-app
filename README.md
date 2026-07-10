@@ -2,13 +2,13 @@
 
 `nddev-zcode-app` is a reusable build system and installer for complete,
 version-stamped ZCode setups. It recreates `~/.zcode` from a selected local
-marketplace on macOS or Ubuntu, backs up the previous installation, and
+setup catalog entry on macOS or Ubuntu, backs up the previous installation, and
 selectively restores runtime state so sessions and credentials survive setup
 changes.
 
 - **Author:** Danil Silantyev (github:rldyourmnd), CEO NDDev
 - **License:** AGPL-3.0-or-later
-- **Build version:** 2.0.2
+- **Build version:** 2.1.0
 - **Verified ZCode runtime:** app 3.3.3, CLI 0.15.0, model GLM-5.2
 
 ## What this repository contains
@@ -47,8 +47,11 @@ cli-tools/scripts/install.sh bootstrap --apply
 
 # Inspect and install a setup.
 cli-tools/scripts/install.sh list
-cli-tools/scripts/install.sh install --marketplace nddev-builder --plan
-cli-tools/scripts/install.sh install --marketplace nddev-builder --apply
+cli-tools/scripts/install.sh list --json
+cli-tools/scripts/install.sh install --setup nddev-builder --plan
+cli-tools/scripts/install.sh install --setup nddev-builder --apply
+cli-tools/scripts/install.sh status
+cli-tools/scripts/install.sh status --json
 ```
 
 Plan mode performs no writes and does not invoke a locally installed `zcode`
@@ -77,8 +80,11 @@ hooks, MCP servers, or user-scope components. They take project-specific tools
 and policy from the active workspace, which keeps the profiles portable and
 their permanent context surface small.
 
-The installer copies exactly one selected marketplace into the target ZCode
-home. Marketplace content is ordinary source and can be adapted independently.
+The installer copies exactly one selected setup into the target ZCode home.
+`--setup` is the public selector; `--marketplace` remains a compatibility alias
+for the underlying ZCode-native storage format. Every new `BUILD-VERSION`
+schema-2 stamp records the selected `setup_id`, and `status` validates and
+reports it. Setup content is ordinary source and can be adapted independently.
 
 ## Backup and restore contract
 

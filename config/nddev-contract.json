@@ -1,5 +1,5 @@
 {
-  "contract_version": 2,
+  "contract_version": 3,
   "product_name": "nddev-zcode-app",
   "display_name": "NDDev ZCode App",
   "description": "Build system and installer that recreates a complete, version-stamped ZCode home from a selected portable setup on macOS or Ubuntu.",
@@ -15,7 +15,18 @@
   "version_ref": "build/version.json",
   "manifest_ref": "build/manifest.json",
   "source_root": "zcode_tools/marketplaces/",
-  "installer_entry": "cli-tools/scripts/install.sh install --marketplace <name>",
+  "installer_entry": "cli-tools/scripts/install.sh install --setup <id>",
+  "setup_system": {
+    "catalog_root": "zcode_tools/marketplaces/",
+    "identity_source": "<setup>/marketplace.json:name",
+    "selection_option": "--setup <id>",
+    "compatibility_alias": "--marketplace <id>",
+    "list_command": "cli-tools/scripts/install.sh list [--json]",
+    "status_command": "cli-tools/scripts/install.sh status [--target <dir>] [--json]",
+    "stamp_schema": 2,
+    "stamp_setup_key": "setup_id",
+    "readable_legacy_stamp_schemas": [0, 1]
+  },
   "native_format": {
     "marketplace_root": "zcode_tools/marketplaces/<name>/marketplace.json",
     "plugin_manifest": "plugins/<name>/.zcode-plugin/plugin.json",
