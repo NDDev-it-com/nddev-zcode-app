@@ -31,8 +31,11 @@ the primary workflow for changes to ZCode extension sources.
 - `skills/`, `commands/`, and `agents/` hold optional user-scope components.
 - `marketplaces/nddev-builder/` contains the installed marketplace and its
   self-contained plugin bundles.
-- `cli/config.json` contains plugin state, hooks, and MCP server definitions.
-- `v2/config.json` contains explicit API-key providers.
+- `cli/config.json` contains the required secret-free model/provider bootstrap,
+  plugin state, hooks, and MCP server definitions. ZCode supplies the restored
+  OAuth credential at runtime.
+- `v2/config.json` contains optional explicit API-key providers under
+  `custom:*` identities; they never reuse ZCode-owned `builtin:*` identities.
 - `v2/setting.json` contains desktop preferences, including the verified Z.ai
   account OAuth mode.
 - `.env`, provider configs, MCP configuration, `v2/credentials.json`, and

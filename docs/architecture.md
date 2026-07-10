@@ -36,6 +36,13 @@ templates never contain real credentials. Rendered `.env`, provider configs,
 MCP configs, credentials, and backups are runtime secrets and remain private to
 the current user.
 
+Every CLI template declares one explicit `provider/model` main-model reference,
+the matching provider kind and base URL, and the referenced model metadata.
+ZCode CLI 0.15.2 requires that bootstrap contract before it can create a
+desktop agent session. The bootstrap provider entry contains no credential;
+ZCode mounts the restored OAuth credential through its runtime provider
+registry after the CLI adapter has initialized.
+
 The local env file is accepted only when it is a current-user-owned regular
 non-symlink with no group/world permissions. Existing environment variables win
 over file values. No shell expansion occurs; only `ZCODE_TARGET` and
@@ -59,6 +66,8 @@ objects in `v2/config.json` are a separate explicit API-key contract: Z.ai uses
 `https://api.z.ai/api/anthropic`; BigModel uses
 `https://open.bigmodel.cn/api/anthropic`. Both API-key providers are disabled
 by default and must be enabled deliberately after their secret is configured.
+Their `custom:*` identities never reuse ZCode-owned `builtin:*` provider IDs,
+so rendering a setup cannot disable or replace the app-managed OAuth provider.
 
 ### Installer
 
@@ -80,10 +89,11 @@ shared libraries and execute the same lifecycle:
    and selectively restore credentials, certificates, the desktop task index,
    legacy session snapshots, bot definitions, CLI session databases, and
    runtime artifacts into the stage,
-5. reject unresolved placeholders in keys or values across active
-   config/setting/provider/MCP/hook branches, symlinks, special files, and
-   hardlink aliases; normalize private permissions, verify the complete staged
-   result, and fsync it before commit,
+5. reject a missing or inconsistent CLI model/provider bootstrap, reserved
+   `builtin:*` identities on custom providers, unresolved placeholders in keys
+   or values across active config/setting/provider/MCP/hook branches, symlinks,
+   special files, and hardlink aliases; normalize private permissions, verify
+   the complete staged result, and fsync it before commit,
 6. hold any occupied rotation slot, move the previous live target into its
    backup, and atomically rename the verified stage into place,
 7. roll back both the live target and held backup occupant on errors or handled

@@ -1,6 +1,6 @@
 {
   "name": "nddev-zcode-app",
-  "build_version": "2.1.1",
+  "build_version": "2.1.2",
   "source_root": "zcode_tools/marketplaces/",
   "installer": "cli-tools/scripts/install.sh install --setup <id>",
   "layout": {
@@ -54,6 +54,12 @@
     "max_output_bytes": 65536,
     "advisory_failure": "timeout, nonzero exit, excessive output, decode/runtime error, or missing executable becomes unknown/not-installed without aborting install",
     "bootstrap_postcondition": "bootstrap remains strict and rejects an unknown or mismatched CLI version"
+  },
+  "model_provider_policy": {
+    "cli_bootstrap": "every setup declares an explicit provider/model main reference and matching provider kind, options.baseURL, and model metadata",
+    "oauth_boundary": "the CLI bootstrap is secret-free; ZCode supplies restored account OAuth credentials through its runtime provider registry",
+    "custom_provider_identity": "explicit API-key providers use custom:* identities and never reuse ZCode-owned builtin:* ids",
+    "validation": "plan and apply fail closed on a missing or inconsistent CLI model/provider bootstrap or a reserved builtin:* identity on a custom provider"
   },
   "version_policy": {
     "syntax": "SemVer 2.0.0 for module, runtime, managed-stamp, adopted-envelope, and backup-name versions",

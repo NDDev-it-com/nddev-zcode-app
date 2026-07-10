@@ -277,10 +277,11 @@ you stay logged in. If the auth token expired, re-authenticate in the app.
 
 The verified preference uses Z.ai account OAuth. To use an explicit Z.ai API
 key instead, populate `ZAI_API_KEY`, set that custom provider's `enabled` field
-to `true`, reinstall, and select the provider backed by
+to `true`, reinstall, and select `custom:zai-api-key`, which is backed by
 `https://api.z.ai/api/anthropic`. BigModel API-key access remains a separate,
-disabled-by-default provider backed by `https://open.bigmodel.cn/api/anthropic`;
-enable it only after populating `BIGMODEL_API_KEY`.
+disabled-by-default `custom:bigmodel-api-key` provider backed by
+`https://open.bigmodel.cn/api/anthropic`; enable it only after populating
+`BIGMODEL_API_KEY`.
 
 ### Runtime version probe
 

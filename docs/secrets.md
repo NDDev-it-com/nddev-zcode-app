@@ -36,11 +36,18 @@ Z.ai account authentication and explicit provider API keys are separate:
 - `modelProviderFamilyModes.zai: oauth` in `v2/setting.json` is the verified
   ZCode 3.3.4 default for account login. It does not require `ZAI_API_KEY`.
 - `ZAI_API_KEY` configures the explicit custom Z.ai provider at
-  `https://api.z.ai/api/anthropic`. That provider is disabled by default; set
-  its `enabled` field to `true` only after supplying the key.
+  `https://api.z.ai/api/anthropic` under `custom:zai-api-key`. That provider is
+  disabled by default; set its `enabled` field to `true` only after supplying
+  the key.
 - `BIGMODEL_API_KEY` configures the separate BigModel provider at
-  `https://open.bigmodel.cn/api/anthropic`; that provider is also disabled by
-  default and must be enabled deliberately after supplying the key.
+  `https://open.bigmodel.cn/api/anthropic` under
+  `custom:bigmodel-api-key`; that provider is also disabled by default and must
+  be enabled deliberately after supplying the key.
+
+The secret-free `builtin:zai-coding-plan` entry in `cli/config.json` is only the
+explicit provider/model bootstrap required by CLI 0.15.2. It does not contain
+an API key and must not be repurposed as a custom provider. ZCode owns that
+identity and supplies the restored OAuth credential at runtime.
 
 Provider secrets are rendered into `v2/config.json`. MCP secrets referenced in
 `mcp.json` are rendered before their entries are merged into `cli/config.json`.

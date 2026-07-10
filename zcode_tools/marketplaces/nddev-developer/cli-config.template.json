@@ -1,5 +1,24 @@
 {
-  "_comment": "This portable profile intentionally enables no global plugins, hooks, or MCP servers; language and project tooling belongs to the active workspace. Event placeholders retain the ZCode hooks.events.<Event> shape and hooks.enabled contract.",
+  "_comment": "This portable profile intentionally enables no global plugins, hooks, or MCP servers; language and project tooling belongs to the active workspace. ZCode CLI 0.15.2 requires an explicit model reference and matching secret-free provider bootstrap; ZCode mounts the restored Z.ai OAuth credential at runtime.",
+  "model": "builtin:zai-coding-plan/GLM-5.2",
+  "provider": {
+    "builtin:zai-coding-plan": {
+      "name": "Z.ai - Coding Plan",
+      "kind": "anthropic",
+      "options": {
+        "baseURL": "https://api.z.ai/api/anthropic"
+      },
+      "models": {
+        "GLM-5.2": {
+          "limit": { "context": 1000000 },
+          "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+          }
+        }
+      }
+    }
+  },
   "plugins": {
     "enabled": true,
     "enabledPlugins": {}
