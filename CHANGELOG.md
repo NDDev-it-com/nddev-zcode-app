@@ -6,6 +6,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-07-11
+
+### Changed
+
+- Updated the verified runtime baseline to ZCode 3.3.4 (build 3.3.4.2877) and
+  CLI 0.15.2. Repinned all six macOS and Linux artifacts by exact filename,
+  byte size, SHA-512 digest, native architecture, package identity, bundle
+  identity, Developer ID team, and notarization evidence.
+- Bumped the public build and `nddev-builder/core` component to 2.1.1 without
+  changing the product-contract or installed-stamp schema.
+
+### Fixed
+
+- Preserved `v2/tasks-index.sqlite` together with `cli/db/` during setup
+  installation and switching, preventing the desktop task index from becoming
+  detached from the restored CLI session database.
+- Preserved legacy `v2/sessions/` snapshots when present so ZCode's supported
+  session-migration path remains available after setup changes.
+- Preserved current and legacy bot definition state while continuing to omit
+  derived bot-model, coding-plan, telemetry, log, crash, rollout, and execution
+  caches from newly rendered setups.
+- Refused apply-mode install, switch, remove, and restore operations while the
+  task/session databases are open or SQLite recovery sidecars are present,
+  preventing inconsistent cross-store snapshots of a running ZCode instance.
+
 ## [2.1.0] - 2026-07-10
 
 ### Added
