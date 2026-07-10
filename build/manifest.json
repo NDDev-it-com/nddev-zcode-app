@@ -1,6 +1,6 @@
 {
   "name": "nddev-zcode-app",
-  "build_version": "2.0.1",
+  "build_version": "2.0.2",
   "source_root": "zcode_tools/marketplaces/",
   "installer": "cli-tools/scripts/install.sh --marketplace <name>",
   "layout": {

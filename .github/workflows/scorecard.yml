@@ -19,4 +19,4 @@ jobs:
       contents: read
       actions: read # Inspect workflow metadata for Scorecard checks.
       id-token: write # Obtain OIDC identity for the Scorecard artifact.
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard-json.yml@d1bb39730a45bae1e8c507477bb15c5e05a2b412 # 0.5.0
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/public-scorecard-json.yml@ac4d1f469f5974741c7449305ffcbd5f05a5a47f # 0.5.1

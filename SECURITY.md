@@ -15,7 +15,7 @@ Only the current exact numeric release tag receives security fixes.
 
 | Version | Supported |
 | --- | --- |
-| Current exact tag `2.0.1` | yes |
+| Current exact tag `2.0.2` | yes |
 | Older tags | no; upgrade to the current exact tag |
 
 ## Reporting a vulnerability
@@ -60,8 +60,8 @@ accepted report within 30 business days. These targets are best-effort.
   title and an empty generated body. Branch updates are allowed, merged branches
   are deleted automatically, and unused wiki/projects surfaces are disabled.
 - Repository-level release immutability is enabled; numeric releases publish
-  checksums, an SPDX SBOM, build provenance, and an SBOM attestation through the
-  SHA-pinned shared supply-chain workflow.
+  checksum-bound canonical release notes, an SPDX SBOM, build provenance, and
+  an SBOM attestation through the SHA-pinned shared supply-chain workflow.
 - Release verification requires strict SemVer equality across the tag, module
   build contracts, and both core-plugin version sources. The tagged commit must
   also be an ancestor of a freshly fetched `origin/main`.
@@ -81,8 +81,8 @@ accepted report within 30 business days. These targets are best-effort.
 - The installed target and backups are private to the current user; rendered
   secret-bearing files and restored credentials use owner-only permissions.
 - Downloaded ZCode artifacts are verified against pinned byte sizes and SHA-512
-  digests before platform-native package or signing identity checks. The 2.0.1
-  pins were revalidated against repeated current CDN downloads; a digest
+  digests before platform-native package or signing identity checks. The
+  current pins were revalidated against repeated current CDN downloads; a digest
   mismatch is fatal even when the byte size still matches.
 - Bootstrap requires the exact canonical CDN base, locks each installer-managed
   app endpoint and user launcher, and retains rollback state until strict

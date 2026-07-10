@@ -1,6 +1,6 @@
 {
   "name": "core",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Reusable ZCode toolkit: skills, slash commands, and a reviewer subagent for building plugins, managing MCP servers and providers, authoring skills, and listing or removing components.",
   "author": {
     "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev",

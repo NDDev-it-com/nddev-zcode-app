@@ -7,8 +7,8 @@ against a pinned submodule revision.
 
 Reusable workflows are sourced from
 [`NDDev-it-com/nddev-ci-workflows`](https://github.com/NDDev-it-com/nddev-ci-workflows)
-release `0.5.0`, pinned to commit
-`d1bb39730a45bae1e8c507477bb15c5e05a2b412`.
+release `0.5.1`, pinned to commit
+`ac4d1f469f5974741c7449305ffcbd5f05a5a47f`.
 
 ## Workflows
 
@@ -30,8 +30,9 @@ release `0.5.0`, pinned to commit
   contract, and both core-plugin version sources. The tagged commit must be an
   ancestor of freshly fetched `origin/main`. It then calls the shared
   supply-chain workflow to publish one immutable release with a deterministic
-  source archive (including the root secret-boundary `.gitignore`), checksums,
-  SPDX SBOM, build provenance, and SBOM attestation.
+  source archive (including the root secret-boundary `.gitignore`), canonical
+  checksum-bound release notes, SPDX SBOM, build provenance, and SBOM
+  attestation.
 - **`labeler.yml`** labels pull requests from `.github/labeler.yml` without
   checking out contributor code. Its hardened runner uses minimal egress and
   per-pull-request concurrency.
