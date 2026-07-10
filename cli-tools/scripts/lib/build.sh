@@ -1216,7 +1216,7 @@ nddev::verify_managed_tree() {
 }
 
 nddev::verify_build() {
-  local target=$1 mp_name errors=0
+  local target=$1 mp_name stamped_setup errors=0
   mp_name="$(basename "$SOURCE_DIR")"
   nddev::section "Verify staged build"
   if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
@@ -1224,6 +1224,13 @@ nddev::verify_build() {
     return 0
   fi
   nddev::verify_managed_tree "$target" || errors=$((errors + 1))
+  if ! stamped_setup="$(nddev::stamp_setup_id "$target")"; then
+    nddev::log "missing" "BUILD-VERSION setup identity is invalid"
+    errors=$((errors + 1))
+  elif [ "$stamped_setup" != "$mp_name" ]; then
+    nddev::log "missing" "BUILD-VERSION setup identity does not match selected setup"
+    errors=$((errors + 1))
+  fi
   if [ ! -f "$target/AGENTS.md" ]; then
     nddev::log "missing" "AGENTS.md not found"
     errors=$((errors + 1))
@@ -1258,7 +1265,7 @@ PY
 # --- Public orchestration --------------------------------------------------
 
 nddev::install_sequence() {
-  local platform=$1 current_version had_target=0 adoption_mode=managed
+  local platform=$1 current_version setup_id had_target=0 adoption_mode=managed
   nddev::prepare_paths || return
   nddev::log "info" "target: $ZCODE_HOME"
   nddev::begin_transaction || return
@@ -1287,7 +1294,8 @@ nddev::install_sequence() {
   nddev::create_stage || return
   nddev::check_runtime_version || return
   nddev::build_clean "$NDDEV_STAGE_PATH" || return
-  nddev::write_version_stamp "$NDDEV_STAGE_PATH" "$platform" || return
+  setup_id="$(basename "$SOURCE_DIR")"
+  nddev::write_version_stamp "$NDDEV_STAGE_PATH" "$platform" "$setup_id" || return
   if [ "$had_target" -eq 1 ]; then
     nddev::restore_runtime "$ZCODE_HOME" "$NDDEV_STAGE_PATH" "$adoption_mode" || return
   fi

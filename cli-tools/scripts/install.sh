@@ -1,20 +1,21 @@
 #!/usr/bin/env bash
 #
 # nddev-zcode-app installer — manages a complete, version-stamped ~/.zcode
-# built from ONE selected marketplace. Supports bootstrap, install, update,
-# switch, backup inspection, restore, and removal on macOS or Ubuntu.
+# built from ONE selected setup. Supports bootstrap, install, update, switch,
+# status, backup inspection, restore, and removal on macOS or Ubuntu.
 #
 # Usage:
 #   cli-tools/scripts/install.sh <command> [options]
 #
 # Commands:
 #   bootstrap           Download and install the pinned ZCode app and CLI.
-#   install (default)   Build ~/.zcode from a marketplace (backup → build → restore).
+#   install (default)   Build ~/.zcode from a setup (backup → build → restore).
 #   remove              Back up and delete the installed ~/.zcode.
 #   restore             Restore ~/.zcode from a numbered backup slot.
-#   list                List available marketplaces or backups.
+#   list                List available setups or backups.
+#   status              Report the installed setup and version stamp.
 #
-# Each marketplace is a self-contained setup (its own AGENTS.md, config
+# Each native marketplace directory is a self-contained setup (its own AGENTS.md, config
 # templates, skills/commands/agents, and plugins). The installer selects one
 # and builds a clean ~/.zcode entirely from it.
 #
@@ -49,24 +50,28 @@ SEEN_ADOPT=0
 SEEN_RELOCATION=0
 SEEN_BACKUPS=0
 SEEN_LIST=0
+SEEN_JSON=0
+OUTPUT_JSON=0
 
 usage() {
   cat <<'EOF'
-Usage: cli-tools/scripts/install.sh [bootstrap|install|remove|restore|list] [options]
+Usage: cli-tools/scripts/install.sh [bootstrap|install|remove|restore|list|status] [options]
 
 Commands:
   bootstrap             Download and install the ZCode desktop app + CLI (from zero).
-  install (default)     Build ~/.zcode from a marketplace.
+  install (default)     Build ~/.zcode from a setup.
   remove                Back up and delete the installed ~/.zcode.
   restore               Restore ~/.zcode from a backup slot (0-9).
-  list                  List available marketplaces (and backups with --backups).
+  list                  List available setups (and backups with --backups).
+  status                Show the installed setup and validated version stamp.
 
 Options (bootstrap):
   --platform macos|ubuntu   Target platform (default: auto-detect from uname).
   --apply                   Execute the download + install (default is --plan).
 
 Options (install):
-  --marketplace <name>      Which marketplace/setup to build from (required for install).
+  --setup <id>              Which setup to build from (required for install).
+  --marketplace <id>        Backward-compatible alias for --setup.
   --target <dir>            Install directory (default: ~/.zcode, or ZCODE_TARGET in .env).
   --platform macos|ubuntu   Target platform (default: auto-detect from uname).
   --apply                   Execute (default is --plan / dry-run).
@@ -86,7 +91,11 @@ Options (restore):
                             explicitly selected --target.
   --apply                   Execute the restore (default is --plan).
 
-Target resolution (install/remove/restore):
+Options (list/status):
+  --json                    Emit stable machine-readable JSON.
+  --target <dir>            Status target (default: ~/.zcode, or ZCODE_TARGET in .env).
+
+Target resolution (install/remove/restore/status):
   --target flag > ZCODE_TARGET (build/.env) > ~/.zcode
 
 Backup convention:
@@ -94,47 +103,121 @@ Backup convention:
 EOF
 }
 
-list_marketplaces() {
-  local root
+list_setups() {
+  local output=$1 root
   root="$(nddev::repo_root)/zcode_tools/marketplaces"
-  nddev::section "Available marketplaces"
-  if [ ! -d "$root" ]; then
-    nddev::log "info" "no marketplaces directory: $root"
-    return
+  if [ "$output" = "human" ]; then
+    nddev::section "Available setups"
   fi
-  local d
-  for d in "$root"/*/; do
-    [ -d "$d" ] && [ ! -L "$d" ] || continue
-    local name desc
-    name="$(basename "$d")"
-    printf '%s\n' "$name" | grep -qE '^[a-z0-9][a-z0-9-]*$' || continue
-    if ! desc="$(python3 -I - "${d}marketplace.json" <<'PY'
+  python3 -I - "$root" "$output" <<'PY'
 import json
 import os
+import re
 import stat
 import sys
 
-path = sys.argv[1]
-metadata = os.lstat(path)
-if stat.S_ISLNK(metadata.st_mode) or not stat.S_ISREG(metadata.st_mode):
-    raise SystemExit(1)
-with open(path, encoding="utf-8") as stream:
-    description = json.load(stream).get("description", "")
-if not isinstance(description, str) or any(ord(char) < 32 or ord(char) == 127 for char in description):
-    raise SystemExit(1)
-print(description)
+root, output = sys.argv[1:]
+if output not in {"human", "json"}:
+    raise SystemExit("unsupported setup-list output mode")
+if not os.path.lexists(root):
+    setups = []
+else:
+    root_metadata = os.lstat(root)
+    if stat.S_ISLNK(root_metadata.st_mode) or not stat.S_ISDIR(root_metadata.st_mode):
+        raise SystemExit("setup catalog root must be a real directory")
+    setups = []
+    for entry in sorted(os.scandir(root), key=lambda candidate: candidate.name):
+        if re.fullmatch(r"[a-z0-9][a-z0-9-]*", entry.name) is None:
+            continue
+        if not entry.is_dir(follow_symlinks=False):
+            raise SystemExit(f"unsafe setup catalog entry: {entry.name}")
+        manifest_path = os.path.join(entry.path, "marketplace.json")
+        try:
+            manifest_metadata = os.lstat(manifest_path)
+            if stat.S_ISLNK(manifest_metadata.st_mode) or not stat.S_ISREG(manifest_metadata.st_mode):
+                raise SystemExit(f"unsafe setup manifest: {entry.name}")
+            with open(manifest_path, encoding="utf-8") as stream:
+                manifest = json.load(stream)
+        except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+            raise SystemExit(f"cannot read setup manifest: {entry.name}") from exc
+        if not isinstance(manifest, dict) or manifest.get("name") != entry.name:
+            raise SystemExit(f"setup manifest identity mismatch: {entry.name}")
+        description = manifest.get("description", "")
+        plugins = manifest.get("plugins")
+        if (
+            not isinstance(description, str)
+            or any(ord(char) < 32 or ord(char) == 127 for char in description)
+            or not isinstance(plugins, list)
+        ):
+            raise SystemExit(f"invalid setup manifest summary: {entry.name}")
+        setups.append(
+            {"id": entry.name, "description": description, "plugin_count": len(plugins)}
+        )
+if output == "json":
+    print(json.dumps({"schema_version": 1, "setups": setups}, separators=(",", ":")))
+elif not setups:
+    print("  no setups found")
+else:
+    for setup in setups:
+        print(f"  {setup['id']:<24} {setup['description']}")
 PY
-)"; then
-      desc=""
+}
+
+show_status() {
+  local target=$1 output=$2 metadata setup_label
+  if [ ! -e "$target" ] && [ ! -L "$target" ]; then
+    if [ "$output" = "json" ]; then
+      printf '{"schema_version":1,"state":"missing"}\n'
+    else
+      nddev::section "Installation status"
+      printf '  state: missing\n'
     fi
-    printf '  %-24s %s\n' "$name" "$desc"
-  done
+    return 0
+  fi
+  if [ ! -e "$target/BUILD-VERSION" ] && [ ! -L "$target/BUILD-VERSION" ]; then
+    if [ "$output" = "json" ]; then
+      printf '{"schema_version":1,"state":"unmanaged"}\n'
+    else
+      nddev::section "Installation status"
+      printf '  state: unmanaged\n'
+    fi
+    return 0
+  fi
+  if [ -L "$target/BUILD-VERSION" ] || [ ! -f "$target/BUILD-VERSION" ]; then
+    nddev::log "error" "BUILD-VERSION must be a regular non-symlink file"
+    return 1
+  fi
+  metadata="$(nddev::stamp_metadata "$target" status-json)" || return 1
+  if [ "$output" = "json" ]; then
+    python3 -I - "$metadata" <<'PY'
+import json
+import sys
+
+stamp = json.loads(sys.argv[1])
+print(json.dumps({"schema_version": 1, "state": "managed", **stamp}, separators=(",", ":")))
+PY
+    return 0
+  fi
+  setup_label="$(nddev::stamp_setup_id "$target")" || return 1
+  [ -n "$setup_label" ] || setup_label="unknown (legacy stamp)"
+  nddev::section "Installation status"
+  python3 -I - "$metadata" "$setup_label" <<'PY'
+import json
+import sys
+
+stamp = json.loads(sys.argv[1])
+print("  state: managed")
+print(f"  setup: {sys.argv[2]}")
+print(f"  build: {stamp['build_version']}")
+print(f"  platform: {stamp['platform']}")
+print(f"  installed: {stamp['installed_at']}")
+PY
 }
 
 # ─── Parse command (first positional, if present) ────────────────────────
 if [ "$#" -gt 0 ]; then
   case "$1" in
-    bootstrap|install|remove|restore|list)
+    bootstrap|install|remove|restore|list|status)
       COMMAND="$1"
       COMMAND_EXPLICIT=1
       shift
@@ -151,7 +234,7 @@ fi
 # ─── Parse flags ─────────────────────────────────────────────────────────
 while [ "$#" -gt 0 ]; do
   case "$1" in
-    --marketplace)
+    --setup | --marketplace)
       nddev::require_option_once "$SEEN_MARKETPLACE" "$1" || exit 2
       nddev::require_option_value "$1" "${2-}" || exit 2
       MARKETPLACE="$2"
@@ -215,6 +298,12 @@ while [ "$#" -gt 0 ]; do
       SEEN_BACKUPS=1
       shift
       ;;
+    --json)
+      nddev::require_option_once "$SEEN_JSON" "$1" || exit 2
+      OUTPUT_JSON=1
+      SEEN_JSON=1
+      shift
+      ;;
     -l | --list)
       nddev::require_option_once "$SEEN_LIST" "$1" || exit 2
       if [ "$COMMAND_EXPLICIT" -eq 1 ] && [ "$COMMAND" != "list" ]; then
@@ -255,37 +344,41 @@ fi
 
 case "$COMMAND" in
   bootstrap)
-    nddev::reject_seen_option "$SEEN_MARKETPLACE" --marketplace
+    nddev::reject_seen_option "$SEEN_MARKETPLACE" --setup/--marketplace
     nddev::reject_seen_option "$SEEN_TARGET" --target
     nddev::reject_seen_option "$SEEN_KEEP_BACKUP" --keep-backup
     nddev::reject_seen_option "$SEEN_SLOT" --slot
     nddev::reject_seen_option "$SEEN_ADOPT" --adopt-unmanaged
     nddev::reject_seen_option "$SEEN_RELOCATION" --allow-target-relocation
     nddev::reject_seen_option "$SEEN_BACKUPS" --backups
+    nddev::reject_seen_option "$SEEN_JSON" --json
     ;;
   install)
     nddev::reject_seen_option "$SEEN_KEEP_BACKUP" --keep-backup
     nddev::reject_seen_option "$SEEN_SLOT" --slot
     nddev::reject_seen_option "$SEEN_RELOCATION" --allow-target-relocation
     nddev::reject_seen_option "$SEEN_BACKUPS" --backups
+    nddev::reject_seen_option "$SEEN_JSON" --json
     ;;
   remove)
-    nddev::reject_seen_option "$SEEN_MARKETPLACE" --marketplace
+    nddev::reject_seen_option "$SEEN_MARKETPLACE" --setup/--marketplace
     nddev::reject_seen_option "$SEEN_PLATFORM" --platform
     nddev::reject_seen_option "$SEEN_SLOT" --slot
     nddev::reject_seen_option "$SEEN_ADOPT" --adopt-unmanaged
     nddev::reject_seen_option "$SEEN_RELOCATION" --allow-target-relocation
     nddev::reject_seen_option "$SEEN_BACKUPS" --backups
+    nddev::reject_seen_option "$SEEN_JSON" --json
     ;;
   restore)
-    nddev::reject_seen_option "$SEEN_MARKETPLACE" --marketplace
+    nddev::reject_seen_option "$SEEN_MARKETPLACE" --setup/--marketplace
     nddev::reject_seen_option "$SEEN_PLATFORM" --platform
     nddev::reject_seen_option "$SEEN_KEEP_BACKUP" --keep-backup
     nddev::reject_seen_option "$SEEN_ADOPT" --adopt-unmanaged
     nddev::reject_seen_option "$SEEN_BACKUPS" --backups
+    nddev::reject_seen_option "$SEEN_JSON" --json
     ;;
   list)
-    nddev::reject_seen_option "$SEEN_MARKETPLACE" --marketplace
+    nddev::reject_seen_option "$SEEN_MARKETPLACE" --setup/--marketplace
     nddev::reject_seen_option "$SEEN_TARGET" --target
     nddev::reject_seen_option "$SEEN_PLATFORM" --platform
     nddev::reject_seen_option "$SEEN_APPLY" --apply
@@ -295,12 +388,27 @@ case "$COMMAND" in
     nddev::reject_seen_option "$SEEN_ADOPT" --adopt-unmanaged
     nddev::reject_seen_option "$SEEN_RELOCATION" --allow-target-relocation
     ;;
+  status)
+    nddev::reject_seen_option "$SEEN_MARKETPLACE" --setup/--marketplace
+    nddev::reject_seen_option "$SEEN_PLATFORM" --platform
+    nddev::reject_seen_option "$SEEN_APPLY" --apply
+    nddev::reject_seen_option "$SEEN_PLAN" --plan/--dry-run
+    nddev::reject_seen_option "$SEEN_KEEP_BACKUP" --keep-backup
+    nddev::reject_seen_option "$SEEN_SLOT" --slot
+    nddev::reject_seen_option "$SEEN_ADOPT" --adopt-unmanaged
+    nddev::reject_seen_option "$SEEN_RELOCATION" --allow-target-relocation
+    nddev::reject_seen_option "$SEEN_BACKUPS" --backups
+    ;;
 esac
 if [ -n "$INVALID_OPTIONS" ]; then
   nddev::log "error" "option(s) not valid for '$COMMAND': $INVALID_OPTIONS"
   exit 2
 fi
 if [ "$COMMAND" = "list" ] && [ "$SEEN_BACKUPS" -eq 1 ]; then
+  if [ "$OUTPUT_JSON" -eq 1 ]; then
+    nddev::log "error" "--json is not valid with list --backups"
+    exit 2
+  fi
   COMMAND="list-backups"
 fi
 
@@ -326,11 +434,11 @@ fi
 case "$COMMAND" in
   install)
     if [ -z "$MARKETPLACE" ]; then
-      nddev::log "error" "install requires --marketplace <name> (use 'list' to see options)"
+      nddev::log "error" "install requires --setup <id> (use 'list' to see options)"
       exit 2
     fi
     if ! printf '%s\n' "$MARKETPLACE" | grep -qE '^[a-z0-9][a-z0-9-]*$'; then
-      nddev::log "error" "invalid marketplace name"
+      nddev::log "error" "invalid setup id"
       exit 2
     fi
     case "$PLATFORM" in auto | macos | ubuntu) ;; *) nddev::log "error" "unsupported platform (expected macos|ubuntu)"; exit 2 ;; esac
@@ -359,12 +467,20 @@ if [ "$COMMAND" = "bootstrap" ]; then
   exec "$BOOTSTRAP" "${bootstrap_args[@]}"
 fi
 
-# Every remaining command uses isolated Python helpers. Plain marketplace
+# Every remaining command uses isolated Python helpers. Plain setup
 # listing needs no build/.env; target-mutating and backup-listing commands load
 # only the two documented path keys at this layer.
-nddev::require_cmd python3 required || exit 1
+if [ "$OUTPUT_JSON" -eq 1 ]; then
+  nddev::require_cmd python3 required >/dev/null || exit 1
+else
+  nddev::require_cmd python3 required || exit 1
+fi
 if [ "$COMMAND" = "list" ]; then
-  list_marketplaces
+  if [ "$OUTPUT_JSON" -eq 1 ]; then
+    list_setups json
+  else
+    list_setups human
+  fi
   exit 0
 fi
 nddev::load_env paths-only || exit 1
@@ -379,6 +495,18 @@ if [ -n "$TARGET_OVERRIDE" ]; then
   export NDDEV_TARGET="$TARGET_OVERRIDE"
 elif [ -n "${ZCODE_TARGET:-}" ]; then
   export NDDEV_TARGET="$ZCODE_TARGET"
+fi
+
+# ─── Handle read-only status command ─────────────────────────────────────
+if [ "$COMMAND" = "status" ]; then
+  status_target="${NDDEV_TARGET:-$HOME/.zcode}"
+  status_target="$(nddev::validate_directory_endpoint "install target" "$status_target")" || exit 2
+  if [ "$OUTPUT_JSON" -eq 1 ]; then
+    show_status "$status_target" json
+  else
+    show_status "$status_target" human
+  fi
+  exit $?
 fi
 
 # ─── Handle 'list-backups' command ───────────────────────────────────────

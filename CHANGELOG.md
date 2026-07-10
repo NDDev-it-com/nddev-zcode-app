@@ -6,6 +6,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-07-10
+
+### Added
+
+- Added `--setup <id>` as the canonical setup selector while preserving
+  `--marketplace <id>` as a backward-compatible native-format alias.
+- Added stable `list --json` setup discovery and `status [--target] [--json]`
+  inspection for missing, unmanaged, legacy-managed, and setup-aware managed
+  installations.
+- Added `BUILD-VERSION` schema 2 with a required `setup_id`, so installed and
+  backed-up trees retain the exact setup identity used to build them.
+
+### Changed
+
+- Upgraded the public product contract to version 3 and documented the setup
+  catalog, setup-selection aliases, machine-readable interfaces, and stamp
+  compatibility policy.
+- Made staged-build verification fail closed unless the schema-2 stamp setup
+  identity matches the selected setup. Legacy schema 0 and 1 stamps remain
+  readable for safe recovery operations and report an unknown setup identity.
+- Bumped the public build and `nddev-builder/core` component to 2.1.0. ZCode
+  application, CLI, runtime, and artifact identity pins are unchanged.
+
 ## [2.0.2] - 2026-07-10
 
 ### Security

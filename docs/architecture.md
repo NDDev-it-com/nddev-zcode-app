@@ -8,15 +8,17 @@ backup and restore operations.
 ## Implementation layers
 
 ```text
-zcode_tools/   SOURCE: self-contained marketplace setups
-cli-tools/     INSTALLER: lifecycle and rendering for macOS and Ubuntu
+zcode_tools/   SOURCE: self-contained setup catalog in ZCode-native marketplaces
+cli-tools/     SETUP MANAGER: discovery, status, lifecycle, and rendering
 build/         CONTRACT: versions, artifact integrity, manifest, secret template
 ```
 
 ### Marketplace sources
 
 Each `zcode_tools/marketplaces/<name>/` directory is a complete setup. The
-installer selects exactly one marketplace and builds the target from it.
+installer selects exactly one setup and builds the target from its native
+marketplace representation. `--setup` is canonical and `--marketplace` is a
+backward-compatible alias.
 
 | Marketplace source | Installed target | Treatment |
 | --- | --- | --- |
@@ -72,7 +74,8 @@ shared libraries and execute the same lifecycle:
 3. create a private same-filesystem sibling stage and check the live ZCode
    runtime in apply mode through one canonical executable, a 3-second timeout,
    and a 64 KiB output cap,
-4. copy source, structurally render JSON and MCP inputs, write `BUILD-VERSION`,
+4. copy source, structurally render JSON and MCP inputs, write a schema-2
+   `BUILD-VERSION` bound to the selected `setup_id`,
    and selectively restore runtime state into the stage,
 5. reject unresolved placeholders in keys or values across active
    config/setting/provider/MCP/hook branches, symlinks, special files, and
@@ -99,7 +102,7 @@ Shared implementation:
   private permissions, safe dry-run operations, and structured template
   rendering.
 - `lib/version.sh` owns the public build/runtime version contract and installed
-  stamp.
+  stamp, including setup identity and legacy schema compatibility.
 - `lib/build.sh` owns selection, two-root locking, staging, backup rotation,
   fsync durability, rollback, build, restore, verification, and orchestration.
 - `restore.sh` applies the explicit per-path restore modes.
@@ -162,7 +165,9 @@ Plugin manifests are metadata, not component registries. User-scope components
 live directly under `<target>/{skills,commands,agents}/`. Hooks and MCP servers
 are installed into `<target>/cli/config.json`.
 
-The public product contract is `config/nddev-contract.json` version 2. It keeps
+The public product contract is `config/nddev-contract.json` version 3. It
+defines setup discovery, selection, status, stamp identity, and legacy recovery
+compatibility. It also keeps
 the two MCP namespaces explicit: plugin `.mcp.json` inputs use `mcpServers`,
 while the installed CLI configuration uses `mcp.servers`. The installer remains
 independent of this descriptive metadata and implements the same mapping

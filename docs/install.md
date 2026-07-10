@@ -6,7 +6,7 @@
    installs the desktop app and embedded CLI, and atomically writes the local
    `zcode` launcher. macOS uses a DMG; Ubuntu uses a DEB when the complete dpkg
    toolchain is available and a locally extracted AppImage otherwise.
-2. **`install`** — builds a clean `~/.zcode` from a marketplace (config, plugins,
+2. **`install`** — builds a clean `~/.zcode` from a setup (config, plugins,
    skills). Backs up the current one first.
 
 Both work on macOS (desktop) and Ubuntu (desktop/server).
@@ -40,10 +40,10 @@ $EDITOR build/.env
 cli-tools/scripts/install.sh bootstrap --plan     # dry-run first
 cli-tools/scripts/install.sh bootstrap --apply
 
-# 4. Configure ~/.zcode from a marketplace:
+# 4. Configure ~/.zcode from a setup:
 cli-tools/scripts/install.sh list
-cli-tools/scripts/install.sh install --marketplace nddev-builder --plan
-cli-tools/scripts/install.sh install --marketplace nddev-builder --apply
+cli-tools/scripts/install.sh install --setup nddev-builder --plan
+cli-tools/scripts/install.sh install --setup nddev-builder --apply
 ```
 
 After step 3, ZCode is installed and the `zcode` command is on PATH. After
@@ -105,22 +105,27 @@ root can be changed with `NDDEV_APPLICATIONS_DIR` for isolated environments.
 ## Usage
 
 ```bash
-# List available setups (marketplaces):
+# List available setups for people or automation:
 cli-tools/scripts/install.sh list
+cli-tools/scripts/install.sh list --json
 
 # Install — plan (dry-run) first, then apply:
-cli-tools/scripts/install.sh install --marketplace nddev-builder --plan
-cli-tools/scripts/install.sh install --marketplace nddev-builder --apply
+cli-tools/scripts/install.sh install --setup nddev-builder --plan
+cli-tools/scripts/install.sh install --setup nddev-builder --apply
+
+# Inspect the selected setup and validated installed-state stamp:
+cli-tools/scripts/install.sh status
+cli-tools/scripts/install.sh status --json
 
 # Explicitly adopt an existing unstamped ZCode home for the first time.
 # Both --adopt-unmanaged and an explicit existing --target are required:
-cli-tools/scripts/install.sh install --marketplace nddev-builder \
+cli-tools/scripts/install.sh install --setup nddev-builder \
   --target "$HOME/.zcode" --adopt-unmanaged --plan
-cli-tools/scripts/install.sh install --marketplace nddev-builder \
+cli-tools/scripts/install.sh install --setup nddev-builder \
   --target "$HOME/.zcode" --adopt-unmanaged --apply
 
-# Update — re-run install with the same marketplace (old ~/.zcode is backed up).
-# Switch — install a different marketplace (the old setup is backed up).
+# Update — re-run install with the same setup (old ~/.zcode is backed up).
+# Switch — install a different setup (the old setup is backed up).
 # Remove — back up and delete the install:
 cli-tools/scripts/install.sh remove --apply
 
@@ -131,12 +136,12 @@ cli-tools/scripts/install.sh restore --slot 3 --apply
 
 # Custom install directory (default is ~/.zcode):
 cli-tools/scripts/install.sh install \
-  --marketplace nddev-builder --target "$HOME/.zcode-work" --apply
+  --setup nddev-builder --target "$HOME/.zcode-work" --apply
 # ...or set it once in build/.env (ZCODE_TARGET=...) and skip --target.
 
 # Force a platform (otherwise auto-detected from uname):
 cli-tools/scripts/install.sh install \
-  --marketplace nddev-builder --platform macos --apply
+  --setup nddev-builder --platform macos --apply
 ```
 
 ### Commands
@@ -144,10 +149,11 @@ cli-tools/scripts/install.sh install \
 | Command | What it does |
 | --- | --- |
 | `bootstrap` | Install the pinned ZCode app and CLI; defaults to plan mode. |
-| `install` | Back up, build from one marketplace, and restore runtime state. |
+| `install` | Back up, build from one setup, and restore runtime state. |
 | `remove` | Atomically move a stamped target into the backup pool. |
 | `restore` | Restore one backup slot into an empty or stamped target. |
-| `list` | Show marketplaces; add `--backups` to show backup slots. |
+| `list` | Show setups; add `--json` for automation or `--backups` for backup slots. |
+| `status` | Validate and report missing, unmanaged, legacy-managed, or setup-aware managed state. |
 
 ### Command option matrix
 
@@ -155,24 +161,25 @@ The installer rejects unknown options, options that do not apply to the chosen
 command, and simultaneous `--apply` plus `--plan`/`--dry-run`. It never silently
 ignores a recognized flag.
 
-| Option | bootstrap | install | remove | restore | list |
-| --- | --- | --- | --- | --- | --- |
-| `--marketplace` | — | yes | — | — | — |
-| `--target` | — | yes | yes | yes | — |
-| `--platform` | yes | yes | — | — | — |
-| `--apply`, `--plan`, `--dry-run` | yes | yes | yes | yes | — |
-| `--keep-backup` | — | — | yes | — | — |
-| `--slot` | — | — | — | yes | — |
-| `--adopt-unmanaged` | — | yes | — | — | — |
-| `--allow-target-relocation` | — | — | — | yes | — |
-| `--backups` | — | — | — | — | yes |
+| Option | bootstrap | install | remove | restore | list | status |
+| --- | --- | --- | --- | --- | --- | --- |
+| `--setup` (`--marketplace` alias) | — | yes | — | — | — | — |
+| `--target` | — | yes | yes | yes | — | yes |
+| `--platform` | yes | yes | — | — | — | — |
+| `--apply`, `--plan`, `--dry-run` | yes | yes | yes | yes | — | — |
+| `--keep-backup` | — | — | yes | — | — | — |
+| `--slot` | — | — | — | yes | — | — |
+| `--adopt-unmanaged` | — | yes | — | — | — | — |
+| `--allow-target-relocation` | — | — | — | yes | — | — |
+| `--backups` | — | — | — | — | yes | — |
+| `--json` | — | — | — | — | yes (setups only) | yes |
 
 Use `list`, `-l`, or `--list` to select the list command. `-h`/`--help` prints
 usage without executing a command.
 
 ### Target directory resolution
 
-The install, remove, or restore target is resolved in this order:
+The install, remove, restore, or status target is resolved in this order:
 
 1. `--target <dir>` flag (highest precedence)
 2. `ZCODE_TARGET` in `build/.env`
@@ -197,9 +204,9 @@ Every transition backs up the current install first into a rotating pool of
 **10 slots** (`0-<VERSION>-old.zcode` … `9-<VERSION>-old.zcode`), so the total
 never grows beyond 10 directories:
 
-- **Install** — fresh build from a marketplace.
-- **Update** — re-run `install` with the same marketplace (source changed).
-- **Switch** — `install` with a different `--marketplace`.
+- **Install** — fresh build from a setup.
+- **Update** — re-run `install` with the same setup (source changed).
+- **Switch** — `install` with a different `--setup`.
 - **Remove** — `remove` backs up and deletes.
 
 Slot selection: the lowest free slot (0–9). When all 10 are full, the **oldest**
@@ -230,15 +237,17 @@ original canonical target.
      JSON-escaped. Placeholder-bearing object keys are rejected. Rendered MCP
      entries are merged into `cli/config.json`.
    - Empty runtime directories ZCode expects are created.
-3. **Version stamp** — `BUILD-VERSION` records the build version, ZCode
-   runtime baseline, platform, and timestamp.
+3. **Version stamp** — schema-2 `BUILD-VERSION` records the selected `setup_id`,
+   build version, ZCode runtime baseline, platform, and timestamp. Legacy
+   schema 0/1 stamps remain readable for recovery, but their setup identity is
+   reported as unknown.
 4. **Restore into stage** — selected runtime state is copied from the current
    target before any live replacement:
    - **Always restored**: `v2/credentials.json`, `v2/certs/`, `cli/agents/`
      (sessions), `cli/db/`, `cli/artifacts/`.
    - **Never restored** (regenerated by ZCode): `cli/log/`, `v2/logs/`,
      `v2/crash/`, `cli/plugins/cache/`.
-5. **Verify** — managed stamp and JSON schemas, marketplace presence,
+5. **Verify** — managed stamp and JSON schemas, exact stamp/setup identity, marketplace presence,
    unresolved active config/setting/provider/MCP/hook placeholders in keys or
    values,
    symlink/special-file/hardlink absence, and private permissions are checked;

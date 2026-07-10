@@ -10,7 +10,7 @@
       "name": "core",
       "source": "./plugins/core",
       "description": "Reusable toolkit: skills, slash commands, and a reviewer subagent for building plugins, managing MCP servers and providers, authoring skills, and listing or removing components.",
-      "version": "2.0.2",
+      "version": "2.1.0",
       "author": {
         "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev"
       },
