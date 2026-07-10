@@ -8,7 +8,7 @@ changes.
 
 - **Author:** Danil Silantyev (github:rldyourmnd), CEO NDDev
 - **License:** AGPL-3.0-or-later
-- **Build version:** 2.1.1
+- **Build version:** 2.1.2
 - **Verified ZCode runtime:** app 3.3.4, CLI 0.15.2, model GLM-5.2
 
 ## What this repository contains
@@ -57,10 +57,11 @@ cli-tools/scripts/install.sh status --json
 
 Plan mode performs no writes and does not invoke a locally installed `zcode`
 binary. It still parses and merges config, setting, provider, MCP, and hook
-inputs and rejects unresolved active placeholders in keys or values. Setup
-installation in apply mode performs a bounded live runtime probe and rejects
-open task/session databases or SQLite recovery sidecars before it changes the
-target.
+inputs, requires the explicit CLI model/provider bootstrap expected by ZCode
+0.15.2, rejects custom providers that reuse reserved `builtin:*` identities,
+and rejects unresolved active placeholders in keys or values. Setup installation
+in apply mode performs a bounded live runtime probe and rejects open
+task/session databases or SQLite recovery sidecars before it changes the target.
 See [docs/install.md](docs/install.md) for install, update, switch, backup,
 restore, remove, and custom-target usage.
 

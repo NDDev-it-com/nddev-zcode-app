@@ -6,6 +6,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.1.2] - 2026-07-10
+
+### Fixed
+
+- Added the explicit `provider/model` bootstrap and matching secret-free
+  provider definition required by ZCode CLI 0.15.2, so every rendered setup can
+  create a desktop agent session before ZCode mounts the restored OAuth
+  credential.
+- Moved optional API-key providers to distinct `custom:*` identities instead
+  of shadowing ZCode-owned `builtin:*` providers. Restored Z.ai OAuth state can
+  now reactivate its app-managed coding-plan provider without inheriting a
+  template-level `enabled: false` override.
+- Made plan and apply fail closed when a setup omits its main model reference,
+  the referenced provider/base URL/model declaration, or assigns a custom
+  provider a reserved `builtin:*` identity.
+
+### Changed
+
+- Bumped the public build and `nddev-builder/core` component to 2.1.2. The
+  verified ZCode 3.3.4 application, CLI 0.15.2, runtime model, and native
+  artifact identity pins are unchanged.
+
 ## [2.1.1] - 2026-07-10
 
 ### Changed

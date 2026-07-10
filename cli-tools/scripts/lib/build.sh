@@ -1021,6 +1021,66 @@ def unresolved_values(value, path):
             failures.extend(unresolved_values(item, child_path(path, key)))
     return failures
 
+def validate_cli_model_provider(value):
+    model = value.get("model")
+    if isinstance(model, str):
+        main = model.strip()
+    elif isinstance(model, dict) and isinstance(model.get("main"), str):
+        main = model["main"].strip()
+    else:
+        raise SystemExit("cli.model must declare an explicit main provider/model reference")
+
+    provider_id, separator, model_id = main.partition("/")
+    if not separator or not provider_id.strip() or not model_id.strip():
+        raise SystemExit("cli.model main reference must use provider/model format")
+
+    provider_map = value.get("provider")
+    if not isinstance(provider_map, dict):
+        raise SystemExit("cli.provider must be a JSON object")
+    provider = provider_map.get(provider_id)
+    if not isinstance(provider, dict):
+        raise SystemExit(f"cli.provider is missing the configured model provider: {provider_id}")
+
+    kind = provider.get("kind")
+    if kind not in {"anthropic", "openai", "openai-compatible"}:
+        raise SystemExit(f"cli.provider.{provider_id}.kind is unsupported")
+    options = provider.get("options")
+    if not isinstance(options, dict) or not isinstance(options.get("baseURL"), str):
+        raise SystemExit(f"cli.provider.{provider_id}.options.baseURL is required")
+    if not options["baseURL"].strip():
+        raise SystemExit(f"cli.provider.{provider_id}.options.baseURL must not be empty")
+
+    models = provider.get("models")
+    if not isinstance(models, dict):
+        raise SystemExit(f"cli.provider.{provider_id}.models must be a JSON object")
+    declared = models.get(model_id)
+    if declared is None:
+        declared = next(
+            (
+                item
+                for item in models.values()
+                if isinstance(item, dict) and item.get("id") == model_id
+            ),
+            None,
+        )
+    if not isinstance(declared, dict):
+        raise SystemExit(
+            f"cli.provider.{provider_id}.models does not declare the configured model: {model_id}"
+        )
+
+def validate_custom_provider_identities(value):
+    provider_map = value.get("provider")
+    if not isinstance(provider_map, dict):
+        raise SystemExit("provider-config.provider must be a JSON object")
+    for provider_id, provider in provider_map.items():
+        if not isinstance(provider, dict):
+            raise SystemExit(f"provider-config.provider.{provider_id} must be a JSON object")
+        if provider.get("source") == "custom" and provider_id.startswith("builtin:"):
+            raise SystemExit(
+                "custom provider identities must not reuse ZCode-owned builtin:* ids: "
+                + provider_id
+            )
+
 cli = substitute(load("cli-config.template.json"))
 providers = substitute(load("v2-config.template.json"))
 settings = substitute(load("v2-setting.template.json"))
@@ -1050,6 +1110,9 @@ if mcp is not None:
     if not isinstance(configured, dict):
         raise SystemExit("mcp.servers must be a JSON object")
     configured.update(servers)
+
+validate_cli_model_provider(cli)
+validate_custom_provider_identities(providers)
 
 failures = []
 for root_name, value in (

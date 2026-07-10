@@ -12,9 +12,12 @@ Follow the `add-marketplace` skill exactly:
    - `marketplace.json` → set `name` and `description`.
    - `AGENTS.md` → set the `<!-- <name>:begin -->` marker and write substantive,
      purpose-specific operating instructions.
-   - Keep `recentProjects: []`; update providers and enabled plugins
-     deliberately. Empty plugins/hooks/MCP are valid only when the profile
-     documents why workspace-specific tooling is intentional.
+   - Retain an explicit CLI `provider/model` bootstrap with a matching
+     secret-free provider/base URL/model declaration.
+   - Keep `recentProjects: []`; define optional API-key providers only under
+     `custom:*` identities, and update enabled plugins deliberately. Empty
+     plugins/hooks/MCP are valid only when the profile documents why
+     workspace-specific tooling is intentional.
 4. Validate by running: `cli-tools/scripts/install.sh install --marketplace <name> --plan` — it must pass `validate_marketplace`.
 5. Confirm it appears in `install.sh list`.
 6. Remind to bump the build version if this is a release change.

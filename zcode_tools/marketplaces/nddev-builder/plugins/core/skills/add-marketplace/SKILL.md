@@ -44,8 +44,13 @@ the installer merges them into `cli/config.json` if present):
    is a clean, minimal starting point) and edit the marketplace-specific values:
    - `marketplace.json` → set `name` to `<name>`, write a one-sentence `description`.
    - `AGENTS.md` → set the `<!-- <name>:begin -->` marker and describe this setup.
-   - `cli-config.template.json` → keep the default (plugins/hooks/mcp skeleton).
-   - `v2-config.template.json` → set the provider definitions (default: Z.ai GLM-5.2).
+   - `cli-config.template.json` → keep an explicit `provider/model` main-model
+     reference, the matching secret-free provider/base URL/model declaration,
+     and the plugins/hooks/MCP skeleton. ZCode CLI 0.15.2 will not create a
+     desktop session without this bootstrap.
+   - `v2-config.template.json` → define only optional explicit API-key
+     providers under `custom:*` identities. Never reuse app-owned `builtin:*`
+     identities; the default Z.ai OAuth provider is managed by ZCode.
    - `v2-setting.template.json` → set portable preferences; start
      `recentProjects` as `[]` and let ZCode populate device-local paths.
    - `mcp.json`, `hooks.json` → start empty (with the `_comment` key).
@@ -74,6 +79,10 @@ the installer merges them into `cli/config.json` if present):
 
 - Every marketplace is self-contained — it owns its AGENTS.md and all config
   templates, not shared at the `zcode_tools/` root.
+- Every CLI template owns a valid main model reference and matching provider
+  definition. OAuth credentials remain restored runtime state, not template
+  values.
+- Custom API-key providers never use ZCode-owned `builtin:*` identities.
 - The marketplace name must match its directory name.
 - Empty `skills/`/`commands/`/`agents/`/`plugins/` are valid only for a
   deliberately minimal profile whose `AGENTS.md` and marketplace description

@@ -1,8 +1,8 @@
 {
-  "_comment": "Disabled-by-default explicit API-key provider definitions for nddev-designer. Z.ai API-key access uses the custom api.z.ai endpoint; enable it only after supplying the key. The verified Z.ai account preference remains OAuth in v2/setting.json and is independent of this entry. API keys are injected from build/.env; credentials.json contains restored account auth tokens and is never templated.",
+  "_comment": "Disabled-by-default explicit API-key provider for nddev-designer. Its custom identity never reuses a ZCode-owned builtin:* ID, so restored Z.ai OAuth remains app-managed. Enable it only after supplying ZAI_API_KEY through build/.env; credentials.json is restored runtime state and is never templated.",
   "provider": {
-    "builtin:zai-coding-plan": {
-      "name": "Z.ai - Coding Plan",
+    "custom:zai-api-key": {
+      "name": "Z.ai - API Key",
       "kind": "anthropic",
       "options": {
         "apiKey": "${ZAI_API_KEY}",

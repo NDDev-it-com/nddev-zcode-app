@@ -36,6 +36,7 @@ Adds a model provider definition to `v2-config.template.json`.
 
 - **`<provider-key>`** — unique key. Use the repository's established key when
   updating an existing provider; use `custom:<name>` for a new API-key provider.
+  A custom provider must never reuse a ZCode-owned `builtin:*` identity.
 - **`name`** — human-readable display name.
 - **`kind`** — `"anthropic"` (Anthropic-compatible API) or `"openai"`
   (OpenAI-compatible API). Determines the request format ZCode uses.
@@ -51,7 +52,7 @@ Adds a model provider definition to `v2-config.template.json`.
   (`"text"`, `"image"`). Optional model fields: `limit.output` (max output
   tokens), `name` (upstream API model id if it differs from the map key),
   `reasoning` (`{enabled, variants, defaultVariant}` for reasoning-capable
-  models — see `builtin:bigmodel-coding-plan` → `GLM-5-Turbo` in the builder
+  models — see `custom:bigmodel-api-key` → `GLM-5-Turbo` in the builder
   template for a real example).
 
 ## Procedure
@@ -70,9 +71,12 @@ Adds a model provider definition to `v2-config.template.json`.
 3. Add the provider entry to the `provider` object.
 
    For an explicit Z.ai API-key provider, use kind `anthropic`, source
-   `custom`, and base URL `https://api.z.ai/api/anthropic`. Do not replace the
-   separate `modelProviderFamilyModes.zai: oauth` account preference. BigModel
-   API-key providers use `https://open.bigmodel.cn/api/anthropic`.
+   `custom`, an identity such as `custom:zai-api-key`, and base URL
+   `https://api.z.ai/api/anthropic`. Do not replace the separate
+   `modelProviderFamilyModes.zai: oauth` account preference or the secret-free
+   `builtin:zai-coding-plan` bootstrap in `cli-config.template.json`. BigModel
+   API-key providers use an identity such as `custom:bigmodel-api-key` and base
+   URL `https://open.bigmodel.cn/api/anthropic`.
 
 4. Add the secret placeholder to `build/.env.example`:
 
@@ -103,6 +107,11 @@ Adds a model provider definition to `v2-config.template.json`.
 - API key is ALWAYS a `${VAR}` placeholder — never a real value in the template.
 - The env var name must be uppercase (`[A-Z0-9_]`).
 - Add the matching key to `build/.env.example` (committed, empty value).
+- Custom API-key providers use `custom:*` identities and never shadow
+  ZCode-owned `builtin:*` providers.
+- `cli-config.template.json` must retain an explicit `provider/model` main
+  model reference plus a matching secret-free provider/base-URL/model
+  declaration; OAuth credentials are mounted by ZCode at runtime.
 - `credentials.json` contains account auth tokens and is restored from backup,
   not templated. Treat it as a secret.
 - English only.
