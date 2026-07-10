@@ -54,7 +54,7 @@ prefix.
   tools come from the active workspace.
 
 All preference templates keep `modelProviderFamilyModes.zai` set to `oauth`,
-which is the verified ZCode 3.3.3 account-authentication mode. The provider
+which is the verified ZCode 3.3.4 account-authentication mode. The provider
 objects in `v2/config.json` are a separate explicit API-key contract: Z.ai uses
 `https://api.z.ai/api/anthropic`; BigModel uses
 `https://open.bigmodel.cn/api/anthropic`. Both API-key providers are disabled
@@ -71,12 +71,15 @@ shared libraries and execute the same lifecycle:
    directory,
 2. validate the selected marketplace and acquire an exclusive target lock plus
    an exclusive lock for the shared backup pool in deterministic order,
-3. create a private same-filesystem sibling stage and check the live ZCode
+3. reject open task/session databases or SQLite recovery sidecars in apply mode,
+   then create a private same-filesystem sibling stage and check the live ZCode
    runtime in apply mode through one canonical executable, a 3-second timeout,
    and a 64 KiB output cap,
 4. copy source, structurally render JSON and MCP inputs, write a schema-2
    `BUILD-VERSION` bound to the selected `setup_id`,
-   and selectively restore runtime state into the stage,
+   and selectively restore credentials, certificates, the desktop task index,
+   legacy session snapshots, bot definitions, CLI session databases, and
+   runtime artifacts into the stage,
 5. reject unresolved placeholders in keys or values across active
    config/setting/provider/MCP/hook branches, symlinks, special files, and
    hardlink aliases; normalize private permissions, verify the complete staged

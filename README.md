@@ -8,8 +8,8 @@ changes.
 
 - **Author:** Danil Silantyev (github:rldyourmnd), CEO NDDev
 - **License:** AGPL-3.0-or-later
-- **Build version:** 2.1.0
-- **Verified ZCode runtime:** app 3.3.3, CLI 0.15.0, model GLM-5.2
+- **Build version:** 2.1.1
+- **Verified ZCode runtime:** app 3.3.4, CLI 0.15.2, model GLM-5.2
 
 ## What this repository contains
 
@@ -49,6 +49,7 @@ cli-tools/scripts/install.sh bootstrap --apply
 cli-tools/scripts/install.sh list
 cli-tools/scripts/install.sh list --json
 cli-tools/scripts/install.sh install --setup nddev-builder --plan
+# Quit the ZCode desktop app before apply-mode target changes.
 cli-tools/scripts/install.sh install --setup nddev-builder --apply
 cli-tools/scripts/install.sh status
 cli-tools/scripts/install.sh status --json
@@ -57,8 +58,9 @@ cli-tools/scripts/install.sh status --json
 Plan mode performs no writes and does not invoke a locally installed `zcode`
 binary. It still parses and merges config, setting, provider, MCP, and hook
 inputs and rejects unresolved active placeholders in keys or values. Setup
-installation in apply mode performs a bounded live runtime probe before it
-changes the target.
+installation in apply mode performs a bounded live runtime probe and rejects
+open task/session databases or SQLite recovery sidecars before it changes the
+target.
 See [docs/install.md](docs/install.md) for install, update, switch, backup,
 restore, remove, and custom-target usage.
 
@@ -94,10 +96,12 @@ Apply operations rotate at most 10 backups under `~/.zcode-backups/`:
 <N>-<VERSION>-old.zcode    N = 0..9
 ```
 
-Credentials, certificates, sessions, databases, and runtime artifacts are
-selectively restored during an update or switch. Logs, crash data, and plugin
-caches are regenerated. Destructive restore/remove operations refuse targets
-that are not marked by this installer with `BUILD-VERSION`.
+Credentials, certificates, the desktop task index and legacy session snapshots,
+bot definitions, CLI session databases, and runtime artifacts are selectively
+restored during an update or switch. Logs, crash data, transient execution
+data, model I/O rollouts, telemetry, and caches are regenerated. Destructive
+restore/remove operations refuse targets that are not marked by this installer
+with `BUILD-VERSION`.
 
 Install also refuses an existing unstamped target unless the user supplies both
 `--adopt-unmanaged` and an explicit existing `--target`. Adoption stores the

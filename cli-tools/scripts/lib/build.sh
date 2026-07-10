@@ -1173,6 +1173,40 @@ nddev::build_clean() {
   nddev::render_env "$target" || return 1
 }
 
+nddev::assert_runtime_state_quiescent() {
+  local target=$1 database suffix inspector=""
+  if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ] || [ ! -d "$target" ]; then
+    return 0
+  fi
+
+  if command -v lsof >/dev/null 2>&1; then
+    inspector="lsof"
+  elif command -v fuser >/dev/null 2>&1; then
+    inspector="fuser"
+  fi
+
+  for database in "$target/v2/tasks-index.sqlite" "$target/cli/db/db.sqlite"; do
+    for suffix in -wal -shm -journal; do
+      if [ -e "${database}${suffix}" ] || [ -L "${database}${suffix}" ]; then
+        nddev::log "error" "runtime database has an active recovery sidecar: ${database}${suffix}"
+        nddev::log "error" "quit ZCode cleanly before changing the managed setup"
+        return 1
+      fi
+    done
+    [ -f "$database" ] || continue
+    if [ "$inspector" = lsof ] && lsof -t -- "$database" >/dev/null 2>&1; then
+      nddev::log "error" "runtime database is open: $database"
+      nddev::log "error" "quit ZCode cleanly before changing the managed setup"
+      return 1
+    fi
+    if [ "$inspector" = fuser ] && fuser "$database" >/dev/null 2>&1; then
+      nddev::log "error" "runtime database is open: $database"
+      nddev::log "error" "quit ZCode cleanly before changing the managed setup"
+      return 1
+    fi
+  done
+}
+
 nddev::restore_runtime() {
   local source=$1 target=$2 managed=${3:-managed}
   if [ ! -d "$source" ]; then
@@ -1291,6 +1325,9 @@ nddev::install_sequence() {
     fi
   fi
 
+  if [ "$had_target" -eq 1 ]; then
+    nddev::assert_runtime_state_quiescent "$ZCODE_HOME" || return
+  fi
   nddev::create_stage || return
   nddev::check_runtime_version || return
   nddev::build_clean "$NDDEV_STAGE_PATH" || return
@@ -1324,6 +1361,7 @@ nddev::remove_managed_target() {
     nddev::log "error" "refusing to remove a managed tree containing unsafe filesystem entries"
     return 1
   }
+  nddev::assert_runtime_state_quiescent "$ZCODE_HOME" || return
   NDDEV_ORIGINAL_TARGET_IDENTITY="$(nddev::path_identity "$ZCODE_HOME" directory)" || return 1
   nddev::prepare_backup_destination "$current_version" || return
   if [ "${NDDEV_DRY_RUN:-1}" -eq 1 ]; then
@@ -1396,6 +1434,7 @@ nddev::restore_backup_slot() {
       nddev::log "error" "refusing to replace a managed target containing unsafe filesystem entries"
       return 1
     }
+    nddev::assert_runtime_state_quiescent "$ZCODE_HOME" || return
     NDDEV_ORIGINAL_TARGET_IDENTITY="$(nddev::path_identity "$ZCODE_HOME" directory)" || return 1
   fi
 

@@ -1,11 +1,11 @@
 {
   "baseline_version": 1,
-  "_comment": "ZCode runtime baseline for this build. The app and CLI versions are pinned in build/version.json and verified by the installer at install time. Account-mode Z.ai authentication uses the verified OAuth preference; explicit API-key providers are separate custom provider entries. Update verified_date and versions when the baseline changes.",
+  "_comment": "ZCode runtime baseline for this build. The app and CLI versions are pinned in build/version.json, compared during setup installation, and enforced as strict bootstrap postconditions. Account-mode Z.ai authentication uses the verified OAuth preference; explicit API-key providers are separate custom provider entries. Update verified_date and versions when the baseline changes.",
   "zcode": {
-    "app_version": "3.3.3",
-    "app_build": "3.3.3.2657",
-    "linux_deb_package_version": "3.3.3-2657",
-    "cli_version": "0.15.0",
+    "app_version": "3.3.4",
+    "app_build": "3.3.4.2877",
+    "linux_deb_package_version": "3.3.4-2877",
+    "cli_version": "0.15.2",
     "app_bundle_id": "dev.zcode.app",
     "macos_team_id": "8A5X4JJ39T",
     "runtime_model": "GLM-5.2",
@@ -24,7 +24,11 @@
     "hooks_enabled_flag_required": true,
     "mcp_config_key": "mcp.servers",
     "mcp_plugin_file": ".mcp.json",
-    "mcp_plugin_key": "mcpServers"
+    "mcp_plugin_key": "mcpServers",
+    "task_index_file": "~/.zcode/v2/tasks-index.sqlite",
+    "legacy_session_dir": "~/.zcode/v2/sessions/",
+    "cli_session_database": "~/.zcode/cli/db/db.sqlite",
+    "bot_state_file": "~/.zcode/v2/bot-state.v2.json"
   },
   "evidence": {
     "official_install_documentation": "https://zcode.z.ai/en/docs/install",
@@ -32,6 +36,6 @@
     "official_distribution_base": "https://cdn-zcode.z.ai/zcode/electron/releases",
     "artifact_contract": "build/version.json:zcode_download_artifacts"
   },
-  "verified_date": "2026-07-10",
-  "verified_against": "ZCode app 3.3.3 (build 3.3.3.2657) and CLI 0.15.0 runtime state"
+  "verified_date": "2026-07-11",
+  "verified_against": "ZCode app 3.3.4 (build 3.3.4.2877), CLI 0.15.2, all six native distribution artifacts, and the task/session storage layout"
 }

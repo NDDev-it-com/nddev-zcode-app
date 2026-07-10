@@ -1,53 +1,53 @@
 {
-  "build_version": "2.1.0",
-  "zcode_app_version": "3.3.3",
-  "zcode_cli_version": "0.15.0",
+  "build_version": "2.1.1",
+  "zcode_app_version": "3.3.4",
+  "zcode_cli_version": "0.15.2",
   "zcode_runtime": "GLM-5.2",
   "zcode_cdn_base": "https://cdn-zcode.z.ai/zcode/electron/releases",
   "zcode_download_artifacts": {
     "macos-arm64": {
-      "filename": "ZCode-3.3.3-mac-arm64.dmg",
-      "size_bytes": 161495574,
-      "sha512": "5434a525bc03adc274672ad2c9f83d6ebde67ec596ff55d1be0adc426c87731e657a0bf1db637000192491befee37fd34237eaa1b136f8c91b7da38b30fd7078",
+      "filename": "ZCode-3.3.4-mac-arm64.dmg",
+      "size_bytes": 161523919,
+      "sha512": "41d4d7bba64d7db8a12c5dbc8808cc44cefc67c43b84c8d7622d32a132bbbefac4af08724427223b807ad202f12863f3d310b01f1c2c12200ba6ff463db6513c",
       "team_id": "8A5X4JJ39T",
       "bundle_id": "dev.zcode.app",
-      "app_version": "3.3.3",
-      "bundle_version": "3.3.3.2657"
+      "app_version": "3.3.4",
+      "bundle_version": "3.3.4.2877"
     },
     "macos-x64": {
-      "filename": "ZCode-3.3.3-mac-x64.dmg",
-      "size_bytes": 169792747,
-      "sha512": "22a179a23573fdcca08bc2a483ad4ab6df652d6e4af7b51a2ba79b101aad3f4e59aa894617c1bb9cd8a96cce0b93c0d123780400a6bd1d80126b99f83526846a",
+      "filename": "ZCode-3.3.4-mac-x64.dmg",
+      "size_bytes": 169797960,
+      "sha512": "8e20c7d9534ac34775a027252b492ef854b62a30ba83d63d677028476d76e07be4159ea3792e1fe2300384a32d0f500ef4d23955b1202cc661df41a03ac1fe96",
       "team_id": "8A5X4JJ39T",
       "bundle_id": "dev.zcode.app",
-      "app_version": "3.3.3",
-      "bundle_version": "3.3.3.2657"
+      "app_version": "3.3.4",
+      "bundle_version": "3.3.4.2877"
     },
     "linux-x64-appimage": {
-      "filename": "ZCode-3.3.3-linux-x64.AppImage",
-      "size_bytes": 153884701,
-      "sha512": "be02e2f39c3cb1347c32e14ccc1888fc6e9937893d55f712ce95e44fdea077bda427a317ae12315c4043fa8a5d0af3e3c4c0263bcb6b8eae5b3a6acf02dfb870"
+      "filename": "ZCode-3.3.4-linux-x64.AppImage",
+      "size_bytes": 153909304,
+      "sha512": "5dcc5c0e948ca558f653410a3dfc1f08766b688cace98c671492690b0a7d9e1293900465ab0714ca73d6ea37cea56b05302191344679b95c1da49c322c9aeb31"
     },
     "linux-x64-deb": {
-      "filename": "ZCode-3.3.3-linux-x64.deb",
-      "size_bytes": 113767364,
-      "sha512": "f71517c2af540cfe884f3417e2be8af72507f9a45cc75e5e3b10436606bba38510d838362721202d701c8cb00d33a2f8869d52d1d1c6097028de9f3843a9a407",
+      "filename": "ZCode-3.3.4-linux-x64.deb",
+      "size_bytes": 113797900,
+      "sha512": "5e26ded32c9f2fdc5da70805bd68f78588e48c6dcc785fec276a75d4f2a6a6b2423b93f880889eba36e2a6e60bd97e0c07039db230c769804b65ace09e6fe905",
       "package_name": "zcode",
       "package_arch": "amd64",
-      "package_version": "3.3.3-2657"
+      "package_version": "3.3.4-2877"
     },
     "linux-arm64-appimage": {
-      "filename": "ZCode-3.3.3-linux-arm64.AppImage",
-      "size_bytes": 153820859,
-      "sha512": "ea60d899b88c56ec0740cca4af65317fbb0cdf9a12d12dd7bdf52c3ad2a5dd67aaf6f9299ee4ae90adc4541b9e669db014715054799150dd106f6c2b05cc6647"
+      "filename": "ZCode-3.3.4-linux-arm64.AppImage",
+      "size_bytes": 153841311,
+      "sha512": "a1c8c759cad74f0f0be5ce491ce234cdb6db03a476ebadc2a8ca1c6d72a5490603686e207fe2eb14930d6fadda3c4c1f311b62d0da6ad09265e86459c38c8734"
     },
     "linux-arm64-deb": {
-      "filename": "ZCode-3.3.3-linux-arm64.deb",
-      "size_bytes": 107978832,
-      "sha512": "e36280ecb95edc71df69c5e84f109bacf2fb82aaaa0949666e2268206c7eb3b79af1c0e90afa633c050457326e578f679f4068809f92af307c724952f79bb045",
+      "filename": "ZCode-3.3.4-linux-arm64.deb",
+      "size_bytes": 108009364,
+      "sha512": "bab1fa5ab17dc58a6b386151c2ce7682ef06ffaa74723f8dc2a3987b15e3874da0643ee59b9fbe0986115f510962f9535f92e06232ae64ce51018e9d56e57954",
       "package_name": "zcode",
       "package_arch": "arm64",
-      "package_version": "3.3.3-2657"
+      "package_version": "3.3.4-2877"
     }
   },
   "zcode_cli_launcher": {

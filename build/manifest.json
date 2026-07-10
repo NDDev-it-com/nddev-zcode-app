@@ -1,6 +1,6 @@
 {
   "name": "nddev-zcode-app",
-  "build_version": "2.1.0",
+  "build_version": "2.1.1",
   "source_root": "zcode_tools/marketplaces/",
   "installer": "cli-tools/scripts/install.sh install --setup <id>",
   "layout": {
@@ -78,6 +78,7 @@
     "path_boundaries": "canonical non-root target and backup roots must be disjoint absent-or-real-directory endpoints on one filesystem",
     "safe_tree": "managed inputs reject symlinks, special files, and multiply-linked regular files",
     "locking": "exclusive target lock and exclusive lock for the shared backup pool, acquired in deterministic order",
+    "runtime_quiescence": "apply-mode target mutations reject open task/session databases and SQLite recovery sidecars; ZCode must be quit cleanly before setup changes",
     "staging": "render, restore selected state, normalize permissions, verify, and fsync a same-filesystem sibling stage before live replacement",
     "commit": "identity-bind and hold an occupied backup slot, move the previous target into its backup, then atomically rename the verified stage without replacement",
     "rollback": "restore only identity-matched previous-target and held-slot state if commit, a handled signal, or pre-commit finalization fails; identity mismatch preserves foreign state, recovery paths, and locks; post-commit housekeeping failure is reported without discarding committed state",
@@ -92,15 +93,26 @@
     "always_restore": [
       "v2/credentials.json",
       "v2/certs/",
+      "v2/tasks-index.sqlite",
+      "v2/sessions/",
+      "v2/bot-config.json",
+      "v2/bot-state.json",
+      "v2/bot-state.v2.json",
       "cli/agents/",
       "cli/db/",
       "cli/artifacts/"
     ],
     "never_restore": [
       "cli/log/",
+      "cli/exec/",
+      "cli/rollout/",
       "v2/logs/",
       "v2/crash/",
-      "cli/plugins/cache/"
+      "cli/plugins/cache/",
+      "v2/bots-model-cache.json",
+      "v2/bots-model-cache.v2.json",
+      "v2/coding-plan-cache.json",
+      "v2/telemetry-state.json"
     ]
   },
   "secrets": {
