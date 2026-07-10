@@ -6,6 +6,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.0.2] - 2026-07-10
+
+### Security
+
+- Upgraded every reusable workflow caller to the immutable
+  `nddev-ci-workflows` 0.5.1 commit. Numeric releases now publish canonical
+  `release-notes.md` inside the exact manifest and checksum closure, preserving
+  note integrity independently of GitHub's editable release body.
+
+### Changed
+
+- Bumped the public build and `nddev-builder/core` component to 2.0.2. Runtime
+  behavior, supported ZCode versions, and native artifact identity pins are
+  unchanged from 2.0.1.
+
 ## [2.0.1] - 2026-07-10
 
 ### Security
