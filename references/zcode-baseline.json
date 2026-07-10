@@ -36,6 +36,6 @@
     "official_distribution_base": "https://cdn-zcode.z.ai/zcode/electron/releases",
     "artifact_contract": "build/version.json:zcode_download_artifacts"
   },
-  "verified_date": "2026-07-11",
+  "verified_date": "2026-07-10",
   "verified_against": "ZCode app 3.3.4 (build 3.3.4.2877), CLI 0.15.2, all six native distribution artifacts, and the task/session storage layout"
 }
