@@ -21,7 +21,7 @@ jobs:
     permissions:
       contents: read
       security-events: write # Publish workflow-analysis results to code scanning.
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/zizmor-sarif.yml@eda8ff7eb970c05a219238b6e5fb7faad8f67c40 # 0.7.0
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/zizmor-sarif.yml@8b8e3ea6321c912b68eec831c2072a0173203433 # 0.8.1
     with:
       persona: pedantic
       min_severity: low
