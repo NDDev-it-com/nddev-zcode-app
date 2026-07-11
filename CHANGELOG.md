@@ -13,6 +13,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   general-availability download and Ubuntu is NDDev-supported on top of the
   vendor Linux beta channel, each with an explicit verified/expiry freshness
   window.
+- A tracked `build/release-evidence.json` bundle binding a release to the
+  validated harness commit and a content digest of the exact module setup; the
+  release workflow refuses to publish without a present, consistent bundle.
+- A declared minimal `runtime_bundle` path set in `build/manifest.json`: the
+  install-required tracked paths (installer, catalogs, build and runtime
+  metadata, license) excluding governance, CI, and source-level documentation.
 
 ## [2.1.2] - 2026-07-10
 

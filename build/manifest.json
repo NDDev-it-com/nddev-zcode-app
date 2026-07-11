@@ -12,6 +12,20 @@
     "docs/": "public installation, architecture, and secrets documentation",
     ".github/": "public security, release, and repository-automation workflows"
   },
+  "runtime_bundle": {
+    "_comment": "Minimal runtime distribution closure: the tracked paths required to install ZCode from a selected setup, excluding governance, CI, and source-level documentation. A release may publish this as a second, attested bundle distinct from the full source archive.",
+    "paths": [
+      "VERSION",
+      "LICENSE",
+      "NOTICE",
+      "README.md",
+      "build",
+      "cli-tools",
+      "config",
+      "references",
+      "zcode_tools"
+    ]
+  },
   "artifact_integrity_policy": {
     "metadata_source": "build/version.json:zcode_download_artifacts",
     "canonical_cdn_base": "https://cdn-zcode.z.ai/zcode/electron/releases",
