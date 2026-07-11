@@ -131,6 +131,47 @@ jobs:
           fi
           echo "ok: tagged commit $tag_commit is an ancestor of fetched origin/main"
 
+      - name: Verify release-evidence bundle
+        run: |
+          set -euo pipefail
+          python3 -I <<'BUNDLE'
+          import json
+          import pathlib
+          import re
+          import sys
+
+          def fail(message):
+              print(f"::error::{message}", file=sys.stderr)
+              raise SystemExit(1)
+
+          try:
+              evidence = json.loads(
+                  pathlib.Path("build/release-evidence.json").read_text(encoding="utf-8")
+              )
+          except (OSError, json.JSONDecodeError) as exc:
+              fail(f"cannot read build/release-evidence.json: {exc}")
+          if not isinstance(evidence, dict):
+              fail("release-evidence must be a JSON object")
+          if evidence.get("schema_version") != 1:
+              fail("release-evidence schema_version must be 1")
+          module = evidence.get("module")
+          if not isinstance(module, dict) or module.get("repository") != "NDDev-it-com/nddev-zcode-app":
+              fail("release-evidence.module.repository must be this repository")
+          digest = module.get("setup_digest")
+          if not isinstance(digest, str) or re.fullmatch(r"sha256:[0-9a-f]{64}", digest) is None:
+              fail("release-evidence.module.setup_digest must be a sha256 content digest")
+          harness = evidence.get("harness")
+          if not isinstance(harness, dict) or re.fullmatch(r"[0-9a-f]{40}", str(harness.get("commit"))) is None:
+              fail("release-evidence.harness.commit must be a full harness commit SHA")
+          adapter = evidence.get("adapter")
+          version_file = pathlib.Path("VERSION").read_text(encoding="utf-8").strip()
+          if not isinstance(adapter, dict) or adapter.get("version") != version_file:
+              fail("release-evidence.adapter.version must equal VERSION")
+          if evidence.get("promotion", {}).get("decision") != "approved":
+              fail("release-evidence.promotion.decision must be approved")
+          print(f"ok: release-evidence bundle present and consistent for {version_file}")
+          BUNDLE
+
   publish:
     name: Publish attested immutable release
     needs: verify
