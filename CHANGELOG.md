@@ -20,6 +20,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   install-required tracked paths (installer, catalogs, build and runtime
   metadata, license) excluding governance, CI, and source-level documentation.
 
+### Changed
+
+- The release workflow now publishes the minimal `runtime_bundle` as a second,
+  attested release asset (`runtime_paths`) alongside the full source archive,
+  and pins the shared supply-chain workflow to `0.7.0`.
+
 ## [2.1.2] - 2026-07-10
 
 ### Fixed
