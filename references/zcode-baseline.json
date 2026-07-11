@@ -41,6 +41,25 @@
     "official_distribution_base": "https://cdn-zcode.z.ai/zcode/electron/releases",
     "artifact_contract": "build/version.json:zcode_download_artifacts"
   },
+  "platform_support": {
+    "_comment": "Explicit vendor and NDDev support tiers per installer platform with a freshness window. macOS is a vendor general-availability download; upstream ZCode Linux ships only through the vendor Linux beta group, so Ubuntu is NDDev-supported on top of a vendor beta. Re-verify the vendor tiers and refresh verified_at_utc/expires_at_utc before expiry.",
+    "verified_at_utc": "2026-07-10T00:00:00Z",
+    "expires_at_utc": "2027-01-06T00:00:00Z",
+    "platforms": {
+      "macos": {
+        "vendor_support_tier": "stable",
+        "vendor_distribution_channel": "general-download",
+        "nddev_support_tier": "supported",
+        "artifact_prefix": "macos"
+      },
+      "ubuntu": {
+        "vendor_support_tier": "beta",
+        "vendor_distribution_channel": "linux-beta-group",
+        "nddev_support_tier": "supported",
+        "artifact_prefix": "linux"
+      }
+    }
+  },
   "verified_date": "2026-07-10",
   "verified_against": "ZCode app 3.3.4 (build 3.3.4.2877), CLI 0.15.2 config parser and desktop model-selection adapter, all six native distribution artifacts, and the task/session storage layout"
 }

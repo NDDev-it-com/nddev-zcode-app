@@ -6,6 +6,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Machine-readable per-platform support tiers in
+  `references/zcode-baseline.json:platform_support`: macOS is a vendor
+  general-availability download and Ubuntu is NDDev-supported on top of the
+  vendor Linux beta channel, each with an explicit verified/expiry freshness
+  window.
+
 ## [2.1.2] - 2026-07-10
 
 ### Fixed
