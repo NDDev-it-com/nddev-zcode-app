@@ -179,7 +179,7 @@ jobs:
       contents: write # Create the immutable release and its exact assets.
       id-token: write # Exchange workflow identity for attestations.
       attestations: write # Publish provenance and SBOM attestations.
-    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/release-supply-chain.yml@ac4d1f469f5974741c7449305ffcbd5f05a5a47f # 0.5.1
+    uses: NDDev-it-com/nddev-ci-workflows/.github/workflows/release-supply-chain.yml@eda8ff7eb970c05a219238b6e5fb7faad8f67c40 # 0.7.0
     with:
       version: ${{ github.ref_name }}
       package_name: nddev-zcode-app
@@ -187,3 +187,6 @@ jobs:
         README.md LICENSE NOTICE VERSION CHANGELOG.md SECURITY.md SUPPORT.md
         CODE_OF_CONDUCT.md CONTRIBUTING.md .gitignore .github build cli-tools
         config docs references zcode_tools
+      runtime_paths: >-
+        VERSION LICENSE NOTICE README.md build cli-tools config references
+        zcode_tools
