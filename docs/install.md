@@ -9,7 +9,12 @@
 2. **`install`** — builds a clean `~/.zcode` from a setup (config, plugins,
    skills). Backs up the current one first.
 
-Both work on macOS (desktop) and Ubuntu (desktop/server).
+Both work on macOS (desktop) and Ubuntu (desktop/server). Upstream ZCode
+distributes macOS as a general-availability download and Linux only through the
+vendor Linux beta group, so NDDev supports the Ubuntu build on top of a vendor
+beta channel. The machine-readable per-platform support tiers and their
+freshness window are recorded in
+`references/zcode-baseline.json:platform_support`.
 
 ## Prerequisites
 
