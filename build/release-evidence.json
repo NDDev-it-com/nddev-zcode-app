@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "module": {
+    "repository": "NDDev-it-com/nddev-zcode-app",
+    "setup_digest": "sha256:a37371e22ca4b4bb711cb5e59a1b017382d5034856c100ed7d273f8c0fcf4a7b"
+  },
+  "harness": {
+    "repository": "NDDev-it-com/nddev-harnesses",
+    "commit": "7d9239d673eaebbbd172a1bb7d906eee82d730e2"
+  },
+  "adapter": {
+    "id": "zcode",
+    "version": "2.1.2"
+  },
+  "vendor": {
+    "app_version": "3.3.4",
+    "cli_version": "0.15.2",
+    "runtime_model": "GLM-5.2"
+  },
+  "platforms": [
+    {
+      "platform": "macos",
+      "vendor_support_tier": "stable",
+      "nddev_support_tier": "supported"
+    },
+    {
+      "platform": "ubuntu",
+      "vendor_support_tier": "beta",
+      "nddev_support_tier": "supported"
+    }
+  ],
+  "checks": [
+    "fast",
+    "release",
+    "platform:macos",
+    "platform:ubuntu",
+    "benchmark:macos",
+    "benchmark:ubuntu"
+  ],
+  "generated_at_utc": "2026-07-11T18:04:36Z",
+  "expires_at_utc": "2027-01-07T18:04:36Z",
+  "promotion": {
+    "decision": "approved"
+  }
+}
