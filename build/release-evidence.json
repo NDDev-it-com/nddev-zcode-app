@@ -2,11 +2,11 @@
   "schema_version": 1,
   "module": {
     "repository": "NDDev-it-com/nddev-zcode-app",
-    "setup_digest": "sha256:1868c8955f0656cf02522ee177d04c53f08aa2a8d6cdb62d7b1610bcfe9ce54c"
+    "setup_digest": "sha256:cce7d277383831cbf002ab9ac3a75e0e03c31740b9e0c549f39d3fe13fec7a69"
   },
   "harness": {
     "repository": "NDDev-it-com/nddev-harnesses",
-    "commit": "e17e5f403914a248a3b7d53a251ee5136d94f449"
+    "commit": "04ad9fedff4d9dbc8c3cd2991dc4c944fb7fd7c6"
   },
   "adapter": {
     "id": "zcode",
@@ -37,8 +37,8 @@
     "benchmark:macos",
     "benchmark:ubuntu"
   ],
-  "generated_at_utc": "2026-07-11T22:04:47Z",
-  "expires_at_utc": "2027-01-07T22:04:47Z",
+  "generated_at_utc": "2026-07-12T00:14:03Z",
+  "expires_at_utc": "2027-01-08T00:14:03Z",
   "promotion": {
     "decision": "approved"
   }

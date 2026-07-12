@@ -3,6 +3,9 @@ name: release
 on:
   push:
     tags:
+      # Stable numeric releases only. Prerelease tags (X.Y.Z-*) stay ruleset-
+      # protected but are cut manually: the shared supply-chain workflow
+      # publishes as the "latest" release without prerelease marking.
       - "[0-9]+.[0-9]+.[0-9]+"
 
 permissions: {}
