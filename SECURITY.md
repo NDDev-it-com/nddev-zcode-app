@@ -15,8 +15,8 @@ Only the current exact numeric release tag receives security fixes.
 
 | Version | Supported |
 | --- | --- |
-| Current exact tag `2.0.2` | yes |
-| Older tags | no; upgrade to the current exact tag |
+| Latest numeric release tag | yes |
+| Older tags | no; upgrade to the latest release |
 
 ## Reporting a vulnerability
 
