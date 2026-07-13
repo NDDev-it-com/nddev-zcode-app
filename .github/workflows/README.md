@@ -7,8 +7,8 @@ against a pinned submodule revision.
 
 Reusable workflows are sourced from
 [`NDDev-it-com/nddev-ci-workflows`](https://github.com/NDDev-it-com/nddev-ci-workflows)
-release `0.8.1`, pinned to commit
-`8b8e3ea6321c912b68eec831c2072a0173203433`.
+release `0.10.0`, pinned to commit
+`eb7bd953dc9741e559cb9e357c2d36c9b4de5a88`.
 
 ## Workflows
 
