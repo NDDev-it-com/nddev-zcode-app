@@ -2,9 +2,9 @@
 GENERATED FILE - DO NOT EDIT DIRECTLY
 generator: gds
 bundle: 0.1.0-dev
-source-commit: 06dd4355b03d600bbf40eee21e86fb9e424d42c5
-input-digest: sha256:229eda43354f1690ccec8d8070eb8392b3072c1ab9ff80b451ce500a5d8867cb
-output-digest: sha256:e88382bea884b0476e6a65f5568a98aec71c43dc0544eecd2c2d882843fc6b18
+source-commit: 7120d79f77124632c6cf355bca27598c120c1182
+input-digest: sha256:24879f858628a87b9316a2f7a91d090c53b39723491abc207f8dec44d4eaab95
+output-digest: sha256:e105b92a1cbdf280afc3902b666ffc347b1fa864a7644b85ffe5796d1de5c7b9
 edit-source:
   - .gds/repository.yaml
   - policies/base/repository-default.yaml
@@ -40,7 +40,7 @@ edit-source:
 
 ## Development
 
-- No repository-owned verification command is declared; report it as `NOT_PROVEN`.
+- Test: `python3 cli-tools/validate_public_contracts.py`.
 
 ## Agent routing
 
