@@ -9,7 +9,7 @@ changes.
 - **Author:** Danil Silantyev (github:rldyourmnd), CEO NDDev
 - **License:** AGPL-3.0-or-later
 - **Build version:** 2.1.2
-- **Verified ZCode runtime:** app 3.3.4, CLI 0.15.2, model GLM-5.2
+- **Verified ZCode runtime:** app 3.3.5, CLI 0.15.2, model GLM-5.2
 
 ## What this repository contains
 

@@ -6,6 +6,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.1.3] - 2026-07-14
+
+### Changed
+
+- Verified ZCode runtime advanced to the official app 3.3.5 (build 3.3.5.3027,
+  released 2026-07-13): all six download artifacts re-pinned by independently
+  derived filename, byte size, and SHA-512; macOS bundle identity, Developer ID
+  signature, and notarization re-verified; Debian package version 3.3.5-3027;
+  embedded CLI remains 0.15.2 (rebuilt bundle, byte-identical across all six
+  artifacts).
+- `build/release-evidence.json` upgraded to execution-bound schema version 2:
+  promotion starts as `pending` and becomes `approved` only from real per-lane
+  CI result records plus a vendor-currentness observation; approval is never a
+  default.
+
+### Added
+
+- `cli-tools/validate_public_contracts.py`: repository-owned public fast
+  verification (version lockstep, artifact identity shape, baseline
+  cross-references, marketplace/plugin catalog integrity) declared in
+  `.gds/repository.yaml` as the required test command.
+- GDS generated projections (`AGENTS.md`, `.claude/CLAUDE.md`,
+  `.gds/bundle.lock.yaml`, `.gds/compiled-policy.json`) refreshed from bundle
+  source 7120d79.
+
 ### Added
 
 - Machine-readable per-platform support tiers in
