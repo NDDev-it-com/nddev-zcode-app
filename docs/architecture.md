@@ -61,7 +61,7 @@ prefix.
   tools come from the active workspace.
 
 All preference templates keep `modelProviderFamilyModes.zai` set to `oauth`,
-which is the verified ZCode 3.3.4 account-authentication mode. The provider
+which is the verified ZCode 3.3.5 account-authentication mode. The provider
 objects in `v2/config.json` are a separate explicit API-key contract: Z.ai uses
 `https://api.z.ai/api/anthropic`; BigModel uses
 `https://open.bigmodel.cn/api/anthropic`. Both API-key providers are disabled
