@@ -2,9 +2,9 @@
   "baseline_version": 2,
   "_comment": "ZCode runtime baseline for this build. The app and CLI versions are pinned in build/version.json, compared during setup installation, and enforced as strict bootstrap postconditions. CLI 0.15.2 requires an explicit provider/model reference and matching provider base URL before desktop session creation. Account-mode Z.ai authentication uses the verified OAuth preference; explicit API-key providers are separate custom provider entries. Update verified_date and versions when the baseline changes.",
   "zcode": {
-    "app_version": "3.3.5",
-    "app_build": "3.3.5.3027",
-    "linux_deb_package_version": "3.3.5-3027",
+    "app_version": "3.3.6",
+    "app_build": "3.3.6.3198",
+    "linux_deb_package_version": "3.3.6-3198",
     "cli_version": "0.15.2",
     "app_bundle_id": "dev.zcode.app",
     "macos_team_id": "8A5X4JJ39T",
@@ -43,8 +43,8 @@
   },
   "platform_support": {
     "_comment": "Explicit vendor and NDDev support tiers per installer platform with a freshness window. macOS is a vendor general-availability download; upstream ZCode Linux ships only through the vendor Linux beta group, so Ubuntu is NDDev-supported on top of a vendor beta. Re-verify the vendor tiers and refresh verified_at_utc/expires_at_utc before expiry.",
-    "verified_at_utc": "2026-07-14T00:00:00Z",
-    "expires_at_utc": "2027-01-10T00:00:00Z",
+    "verified_at_utc": "2026-07-16T00:00:00Z",
+    "expires_at_utc": "2027-01-12T00:00:00Z",
     "platforms": {
       "macos": {
         "vendor_support_tier": "stable",
@@ -60,6 +60,6 @@
       }
     }
   },
-  "verified_date": "2026-07-14",
-  "verified_against": "ZCode app 3.3.5 (build 3.3.5.3027), CLI 0.15.2 config parser and desktop model-selection adapter, all six native distribution artifacts, and the task/session storage layout"
+  "verified_date": "2026-07-16",
+  "verified_against": "ZCode app 3.3.6 (build 3.3.6.3198), CLI 0.15.2 config parser and desktop model-selection adapter, all six native distribution artifacts, and the task/session storage layout"
 }

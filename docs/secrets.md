@@ -34,7 +34,7 @@ $EDITOR build/.env
 Z.ai account authentication and explicit provider API keys are separate:
 
 - `modelProviderFamilyModes.zai: oauth` in `v2/setting.json` is the verified
-  ZCode 3.3.5 default for account login. It does not require `ZAI_API_KEY`.
+  ZCode 3.3.6 default for account login. It does not require `ZAI_API_KEY`.
 - `ZAI_API_KEY` configures the explicit custom Z.ai provider at
   `https://api.z.ai/api/anthropic` under `custom:zai-api-key`. That provider is
   disabled by default; set its `enabled` field to `true` only after supplying

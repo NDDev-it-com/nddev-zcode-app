@@ -52,6 +52,28 @@ def parse_utc(value: object) -> dt.datetime | None:
         return None
 
 
+def check_readme(version: dict, errors: list[str]) -> None:
+    path = ROOT / "README.md"
+    if not path.is_file():
+        errors.append("missing README.md")
+        return
+    try:
+        content = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        errors.append(f"README.md: unreadable: {exc}")
+        return
+    expected_lines = (
+        f"- **Build version:** {version.get('build_version')}",
+        "- **Verified ZCode runtime:** "
+        f"app {version.get('zcode_app_version')}, "
+        f"CLI {version.get('zcode_cli_version')}, "
+        f"model {version.get('zcode_runtime')}",
+    )
+    for expected in expected_lines:
+        if content.count(expected) != 1:
+            errors.append(f"README.md: expected exactly one metadata line: {expected}")
+
+
 def check_artifacts(version: dict, errors: list[str]) -> None:
     app = str(version.get("zcode_app_version", ""))
     artifacts = version.get("zcode_download_artifacts")
@@ -204,6 +226,7 @@ def main() -> int:
                 "VERSION and build/version.json:build_version disagree: "
                 f"{declared!r} != {version.get('build_version')!r}"
             )
+        check_readme(version, errors)
         check_artifacts(version, errors)
         if baseline is not None:
             check_baseline(version, baseline, errors)

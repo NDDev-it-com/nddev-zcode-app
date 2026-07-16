@@ -6,6 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.1.4] - 2026-07-16
+
+### Changed
+
+- Advanced the verified runtime to official ZCode 3.3.6 (build 3.3.6.3198,
+  released 2026-07-15). All six native artifacts were independently re-pinned
+  by filename, byte size, and SHA-512; macOS signature, Team ID, bundle
+  identity, and notarization were re-verified; Debian package identity is
+  3.3.6-3198; the embedded CLI remains byte-identical 0.15.2 across all six
+  distributions.
+- Corrected the README build/runtime summary and made the public contract
+  validator enforce exact README parity with the canonical version metadata.
+
 ## [2.1.3] - 2026-07-14
 
 ### Changed
