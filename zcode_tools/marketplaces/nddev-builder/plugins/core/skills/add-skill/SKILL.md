@@ -1,6 +1,6 @@
 ---
 name: add-skill
-description: Author a new ZCode skill (SKILL.md with YAML frontmatter) in the correct location — either inside a plugin bundle or at user scope. Covers frontmatter requirements, discovery order, and naming. Use when adding a skill, command, or subagent to the nddev-zcode-app setup.
+description: Author a new ZCode skill (SKILL.md with YAML frontmatter) in the correct location — either inside a plugin bundle or at user scope. Covers frontmatter requirements, discovery order, and naming. Use when adding a skill to the nddev-zcode-app setup; use add-command for a slash command and add-agent for a subagent.
 ---
 
 # add-skill
@@ -17,7 +17,8 @@ Authors a new ZCode skill in the correct place.
 Prefer **plugin-scoped** for anything tied to a plugin's domain; user-scoped only for
 personal cross-project skills.
 
-Commands live at `commands/<name>.md` and agents at `agents/<name>.md` (same scope rules).
+Slash commands and subagents are different component types with their own
+frontmatter contracts: use `add-command` and `add-agent` respectively.
 
 ## Skill anatomy
 
@@ -86,5 +87,6 @@ So a user-scope skill shadows a plugin skill of the same name. Pick unique names
 
 - English only — including the `description`.
 - One subfolder per skill; the folder name == the `name` field.
-- Commands are flat `.md` files; agents are flat `.md` files.
+- A skill is a folder; a command and a subagent are flat `.md` files with their
+  own required frontmatter (see `add-command` and `add-agent`).
 - Don't declare skills in `plugin.json` — they are convention-discovered.
