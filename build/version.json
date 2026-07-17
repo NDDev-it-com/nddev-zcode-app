@@ -7,6 +7,7 @@
   "zcode_download_artifacts": {
     "macos-arm64": {
       "filename": "ZCode-3.3.6-mac-arm64.dmg",
+      "cdn_subpath": "macos-arm64",
       "size_bytes": 161814493,
       "sha512": "a469d3d9645efd92987727e39c1c04d7061d8ae38b105c1675896c1d0cbb5c193c1f9441d4abaf3f02b8df244cc6f66f05744b0830ee9edbb35ad1ebd7e9613b",
       "team_id": "8A5X4JJ39T",
@@ -16,6 +17,7 @@
     },
     "macos-x64": {
       "filename": "ZCode-3.3.6-mac-x64.dmg",
+      "cdn_subpath": "macos-x64",
       "size_bytes": 170109451,
       "sha512": "39b99df6c3efb1e41454c07d103d29273e45798f87579691bc6526b4da9a60da5f17252cc7e53ffa663a22ce703a6e180312abe747b0e27e86ce1e19c60a77dc",
       "team_id": "8A5X4JJ39T",
@@ -25,11 +27,13 @@
     },
     "linux-x64-appimage": {
       "filename": "ZCode-3.3.6-linux-x64.AppImage",
+      "cdn_subpath": "linux-x64",
       "size_bytes": 154199981,
       "sha512": "bf4e6c283b93aae3a474b06f872098e22fa4385183cbc7f4d13ec7d73119821c9c46362c06fa26fe6d9ef21f577c7981b7c2875f25b3e9ae042038a41853d549"
     },
     "linux-x64-deb": {
       "filename": "ZCode-3.3.6-linux-x64.deb",
+      "cdn_subpath": "linux-x64",
       "size_bytes": 114251860,
       "sha512": "3704334817fe439151dd55b00044147802c747d8ef0e3453ecf24b550e222cec93c4f9bb2edf243106d05c8ecc27fc040d0d042b71410632505652620b82a0b3",
       "package_name": "zcode",
@@ -38,11 +42,13 @@
     },
     "linux-arm64-appimage": {
       "filename": "ZCode-3.3.6-linux-arm64.AppImage",
+      "cdn_subpath": "linux-arm64",
       "size_bytes": 154132032,
       "sha512": "44c6979a141556a35ee890bbfde8f4bc0c979983dbb0499b51240334edfb02703a74f7657a6c9415c1ed5eae07a3c22be40ce4895d801ee81636e5a5f08d3ee9"
     },
     "linux-arm64-deb": {
       "filename": "ZCode-3.3.6-linux-arm64.deb",
+      "cdn_subpath": "linux-arm64",
       "size_bytes": 108462636,
       "sha512": "b5da4d16210e17597f02d508a1ed583b3a5e6b1ce169bb2b8a75f8885626311b86f8d8638199869235ea870b1e91b63ef851c063a86b086806de6be9640d0589",
       "package_name": "zcode",
@@ -57,5 +63,5 @@
     "wrapper_target": "${HOME}/.local/bin/zcode"
   },
   "schema": 2,
-  "_comment": "build_version is the semantic version of this nddev-zcode-app build. zcode_app_version and zcode_cli_version pin the exact ZCode desktop app and CLI versions this build was verified against. Every downloadable artifact is pinned by filename, byte size, and SHA-512; platform-native identity metadata is verified before installation where available. The CLI is the zcode.cjs inside the verified app bundle, launched via node through a wrapper script."
+  "_comment": "build_version is the semantic version of this nddev-zcode-app build. zcode_app_version and zcode_cli_version pin the exact ZCode desktop app and CLI versions this build was verified against. Every downloadable artifact is pinned by filename, byte size, and SHA-512; platform-native identity metadata is verified before installation where available. cdn_subpath is the exact per-artifact directory segment the official CDN serves the file under, between the version and the filename (macOS uses the platform-arch key; the two Linux formats share one linux-<arch> directory), so it is declared per artifact rather than derived from the key. The CLI is the zcode.cjs inside the verified app bundle, launched via node through a wrapper script."
 }

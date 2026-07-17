@@ -102,6 +102,19 @@ def check_artifacts(version: dict, errors: list[str]) -> None:
         digest = str(entry.get("sha512", ""))
         if _SHA512.fullmatch(digest) is None:
             errors.append(f"{context}: sha512 must be 128 hex characters")
+        # The CDN serves each file under a per-artifact directory segment between
+        # the version and the filename. macOS uses the platform-arch key; the two
+        # Linux formats share one linux-<arch> directory. Pin the exact expected
+        # segment so a wrong path (the 404 this field exists to prevent) fails
+        # closed instead of only surfacing at download time.
+        expected_subpath = key[: -len("-appimage")] if key.endswith("-appimage") else key
+        expected_subpath = (
+            expected_subpath[: -len("-deb")]
+            if expected_subpath.endswith("-deb")
+            else expected_subpath
+        )
+        if entry.get("cdn_subpath") != expected_subpath:
+            errors.append(f"{context}: cdn_subpath must be {expected_subpath!r}")
         if key.startswith("macos"):
             if entry.get("app_version") != app:
                 errors.append(f"{context}: app_version must equal zcode_app_version")

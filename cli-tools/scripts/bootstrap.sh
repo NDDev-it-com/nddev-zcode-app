@@ -191,6 +191,12 @@ if not isinstance(filename, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._+-
     raise SystemExit(f"invalid artifact filename: {key}")
 if "/" in filename or "\\" in filename or any(ord(char) < 32 for char in filename):
     raise SystemExit(f"artifact filename must be a basename: {key}")
+cdn_subpath = artifact.get("cdn_subpath")
+# A single lowercase path segment (e.g. macos-arm64, linux-x64). It sits between
+# the version and the filename in the artifact URL, so it must not smuggle in
+# extra path structure or traversal.
+if not isinstance(cdn_subpath, str) or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", cdn_subpath):
+    raise SystemExit(f"artifact cdn_subpath must be a lowercase path segment: {key}")
 if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-fA-F]{128}", digest):
     raise SystemExit(f"artifact sha512 must be 128 hexadecimal characters: {key}")
 if not isinstance(size, int) or isinstance(size, bool) or not 1 <= size <= 2 * 1024**3:
@@ -232,7 +238,7 @@ if launcher != expected_launcher:
     raise SystemExit("zcode_cli_launcher must match the verified launcher contract exactly")
 
 fields = (
-    base.rstrip("/"), filename, digest.lower(), str(size), team_id, bundle_id,
+    base.rstrip("/"), cdn_subpath, filename, digest.lower(), str(size), team_id, bundle_id,
     bundle_version, package_name, package_arch, package_version,
     launcher["linux_deb_entry"],
 )
@@ -241,8 +247,8 @@ if any("|" in field or "\n" in field or "\r" in field for field in fields):
 print("|".join(fields))
 PY
 )" || exit 1
-IFS='|' read -r CDN_BASE artifact expected_sha512 expected_size TEAM_ID BUNDLE_ID BUNDLE_VERSION PACKAGE_NAME PACKAGE_ARCH PACKAGE_VERSION DEB_CLI_ENTRY <<< "$artifact_record"
-url="${CDN_BASE}/${APP_VERSION}/${artifact}"
+IFS='|' read -r CDN_BASE CDN_SUBPATH artifact expected_sha512 expected_size TEAM_ID BUNDLE_ID BUNDLE_VERSION PACKAGE_NAME PACKAGE_ARCH PACKAGE_VERSION DEB_CLI_ENTRY <<< "$artifact_record"
+url="${CDN_BASE}/${APP_VERSION}/${CDN_SUBPATH}/${artifact}"
 
 python3 -I - "$url" <<'PY'
 import sys

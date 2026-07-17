@@ -148,7 +148,21 @@ import tempfile
 
 command = sys.argv[1:]
 limit = 64 * 1024
-timeout = 3
+# The postcondition probes the CLI immediately after install, so its 9 MB
+# bundle is read cold from disk: measured cold start is 2-13 s (warm: <1 s),
+# and a 3 s bound killed it mid-start, returning "unknown". Default to 30 s of
+# headroom; allow an override for a slower host or a fast enforcement test,
+# clamped so it can neither hang unbounded nor drop below a usable floor.
+DEFAULT_TIMEOUT = 30
+timeout = DEFAULT_TIMEOUT
+_override = os.environ.get("NDDEV_ZCODE_PROBE_TIMEOUT_SECONDS")
+if _override:
+    try:
+        _parsed = int(_override)
+    except ValueError:
+        _parsed = 0
+    if 1 <= _parsed <= 120:
+        timeout = _parsed
 
 def constrain_output():
     resource.setrlimit(resource.RLIMIT_FSIZE, (limit, limit))
