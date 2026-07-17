@@ -6,7 +6,7 @@
   },
   "harness": {
     "repository": "NDDev-it-com/nddev-harnesses",
-    "commit": "489648ecab29e000683ab02c4d33fec00af05a98"
+    "commit": "a598102aff438239c8efcd2c790cd31356278267"
   },
   "adapter": {
     "id": "zcode",
@@ -30,8 +30,8 @@
     }
   ],
   "lanes": [],
-  "generated_at_utc": "2026-07-17T15:23:49Z",
-  "expires_at_utc": "2027-01-13T15:23:49Z",
+  "generated_at_utc": "2026-07-17T17:12:37Z",
+  "expires_at_utc": "2027-01-13T17:12:37Z",
   "promotion": {
     "decision": "pending",
     "waivers": []
