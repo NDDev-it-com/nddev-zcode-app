@@ -1209,6 +1209,40 @@ nddev::render_env() {
   nddev::parse_env_file "$src_env" "$NDDEV_ENV_DIGEST" "$target/.env" >/dev/null || return 1
 }
 
+nddev::flatten_plugin_components() {
+  # ZCode loads user-scope skills, commands, and agents from ~/.zcode/skills,
+  # ~/.zcode/commands, and ~/.zcode/agents -- never from
+  # marketplaces/<mp>/plugins/. Surface each installed plugin's components at
+  # user scope so a headless install is actually loaded by the client, while the
+  # marketplace tree stays intact for the plugin/marketplace model and any later
+  # UI-managed installation. A name collision between two plugins, or between a
+  # plugin and a direct user-scope component, fails closed rather than silently
+  # shadowing one -- important as setups grow to many plugins.
+  local target=$1 mp_name plugins_root plugin component source entry name dest
+  mp_name="$(basename "$SOURCE_DIR")"
+  plugins_root="$target/marketplaces/$mp_name/plugins"
+  [ -d "$plugins_root" ] || return 0
+  for plugin in "$plugins_root"/*/; do
+    [ -d "$plugin" ] || continue
+    for component in skills commands agents; do
+      source="$plugin$component"
+      [ -d "$source" ] || continue
+      nddev::ensure_dir "$target/$component" || return 1
+      for entry in "$source"/*; do
+        [ -e "$entry" ] || continue
+        name="$(basename "$entry")"
+        [ "$name" = ".gitkeep" ] && continue
+        dest="$target/$component/$name"
+        if [ -e "$dest" ] && [ "${NDDEV_DRY_RUN:-1}" -eq 0 ]; then
+          nddev::log "error" "user-scope $component name collision: $name"
+          return 1
+        fi
+        nddev::copy "$entry" "$dest" || return 1
+      done
+    done
+  done
+}
+
 nddev::copy_source_tree() {
   local target=$1 mp_name directory
   mp_name="$(basename "$SOURCE_DIR")"
@@ -1222,6 +1256,7 @@ nddev::copy_source_tree() {
       nddev::copy "$SOURCE_DIR/$directory/." "$target/$directory/" || return 1
     fi
   done
+  nddev::flatten_plugin_components "$target" || return 1
 }
 
 nddev::build_clean() {
