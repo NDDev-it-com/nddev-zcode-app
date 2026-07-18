@@ -1,6 +1,6 @@
 ---
 name: add-agent
-description: Author a new ZCode subagent (agents/<name>.md with name + model frontmatter) in the correct location inside the active marketplace. Covers role definition, model pinning, and output contracts. Use when adding a subagent (reviewer, researcher, worker) to the nddev-builder or any marketplace.
+description: Authors a ZCode subagent as agents/<name>.md in a marketplace. Use when adding, defining, or configuring a subagent — a reviewer, researcher, or worker the main agent can delegate to. For a slash command use add-command; for a SKILL.md use add-skill.
 ---
 
 # add-agent

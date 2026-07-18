@@ -1,6 +1,6 @@
 ---
 name: add-skill
-description: Author a new ZCode skill (SKILL.md with YAML frontmatter) in the correct location — either inside a plugin bundle or at user scope. Covers frontmatter requirements, discovery order, and naming. Use when adding a skill to the nddev-zcode-app setup; use add-command for a slash command and add-agent for a subagent.
+description: Authors a ZCode skill (SKILL.md) inside a plugin bundle or at user scope. Use when adding a skill or teaching the agent a reusable workflow. For a slash command use add-command; for a subagent use add-agent.
 ---
 
 # add-skill

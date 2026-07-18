@@ -1,6 +1,6 @@
 ---
 name: add-tool
-description: Add a CLI tool (non-MCP) to a plugin bundle. Creates a tools directory with an executable script and a README, plus optionally a companion skill that teaches the agent how to invoke the tool. Covers the CLI+skill pattern as a small-baseline, on-demand alternative to MCP servers that is more composable but less constrained. Use when adding a linter, formatter, utility script, or any command-line tool the agent should be able to run.
+description: Adds a CLI tool — a non-MCP executable script plus an optional companion skill — to a plugin bundle. Use when adding a linter, formatter, utility script, or any command-line tool the agent should run. For a classic MCP server use add-mcp-server.
 ---
 
 # add-tool

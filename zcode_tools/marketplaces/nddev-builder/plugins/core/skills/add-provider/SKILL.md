@@ -1,6 +1,6 @@
 ---
 name: add-provider
-description: Add a model provider to a marketplace's v2-config template. Covers the provider shape (name, kind, options.apiKey, options.baseURL, enabled, source, models), secret placeholder handling, and both anthropic and openai-style providers. Use when adding a new LLM provider (e.g. OpenAI, Anthropic, a custom endpoint) to a ZCode setup.
+description: Adds a model provider to a marketplace's config template. Use when adding or configuring an LLM provider — OpenAI, Anthropic, or a custom OpenAI-compatible endpoint — or wiring provider models, base URL, or API-key placeholders into a ZCode setup.
 ---
 
 # add-provider

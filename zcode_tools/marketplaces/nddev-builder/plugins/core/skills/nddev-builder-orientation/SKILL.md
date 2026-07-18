@@ -1,6 +1,6 @@
 ---
 name: nddev-builder-orientation
-description: Orient in the nddev-builder toolkit and in how ZCode 3.3.6 actually discovers and loads extensions. Use when asking how nddev-builder is structured, how ZCode loads skills/commands/agents, where components go and why, why an installed skill is not loading, what the installer does (flatten to user scope), or the install/remove/switch lifecycle. Read this first before authoring or debugging a marketplace.
+description: Orients you in the nddev-builder toolkit and in how ZCode 3.3.6 discovers and loads extensions. Use when asking how nddev-builder is structured, how ZCode loads skills/commands/agents, where components go and why, why an installed skill is not loading, what the installer does (flatten to user scope), or the install/remove/switch lifecycle. Read this first before authoring or debugging a marketplace.
 ---
 
 # nddev-builder orientation

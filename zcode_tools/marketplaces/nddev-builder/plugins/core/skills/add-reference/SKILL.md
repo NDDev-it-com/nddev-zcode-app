@@ -1,6 +1,6 @@
 ---
 name: add-reference
-description: Add a reference documentation file to a plugin bundle. Reference docs live under plugins/<plugin>/references/ and are Markdown files that provide context the agent reads alongside skills and commands. Not a component type — just documentation. Use when adding a spec, format reference, or design doc that plugin skills and commands should be able to cite.
+description: Adds a reference documentation file — a spec, format reference, or design doc — under a plugin's references/ directory. Use when adding background documentation that plugin skills and commands should cite. Reference docs are plain Markdown, not a loadable component type.
 ---
 
 # add-reference

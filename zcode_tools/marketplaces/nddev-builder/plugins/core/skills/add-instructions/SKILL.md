@@ -1,6 +1,6 @@
 ---
 name: add-instructions
-description: Author or maintain ZCode AGENTS.md instruction files at user or workspace scope. Use when adding default agent instructions, editing AGENTS.md, deciding user-vs-workspace scope, or understanding the load and merge order of instruction files in ZCode.
+description: Authors and maintains ZCode AGENTS.md instruction files at user or workspace scope. Use when adding default agent instructions, editing AGENTS.md, deciding user-vs-workspace scope, or reasoning about the load and merge order of instruction files in ZCode.
 ---
 
 # Add or maintain AGENTS.md instructions

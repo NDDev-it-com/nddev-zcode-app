@@ -1,6 +1,6 @@
 ---
 name: enable-plugin
-description: Enable or disable a plugin in a marketplace's cli-config template by populating the enabledPlugins map. Explains the plugin enable key format (name@marketplace) and the enabled/disabled semantics. Use when a marketplace has plugins registered in marketplace.json but they are not enabled in the config template, or when you need to toggle a plugin on or off.
+description: Enables or disables a registered plugin in a marketplace's config template. Use when a plugin is registered in marketplace.json but not active, or when toggling a plugin on or off for a setup.
 ---
 
 # enable-plugin
