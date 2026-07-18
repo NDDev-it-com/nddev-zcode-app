@@ -32,11 +32,17 @@ description: <English. What this agent does and when to delegate to it.>
 
 ## Frontmatter rules
 
-- `name` (required) — must match the filename (without `.md`).
-- `model` (required) — pin the model. Use `GLM-5.2` (the ZCode runtime baseline)
-  unless there is a deliberate reason for a different model.
-- `description` (recommended) — English, trigger-rich. Explains WHEN to delegate.
-- No other fields.
+- `name` — must match the filename (without `.md`).
+- `model` — pin the model; this toolkit's house rule is `GLM-5.2` (the ZCode
+  runtime baseline). ZCode publishes no subagent file schema, so treat `model`
+  as our convention, not a documented ZCode requirement.
+- `description` — English, trigger-rich. Explains WHEN to delegate; also drives
+  automatic selection.
+
+Keep the frontmatter minimal and consistent across the marketplace. A subagent
+loads only after the installer flattens it to `~/.zcode/agents/`, so its
+basename must be unique across every plugin (the flatten fails closed on a
+collision).
 
 ## Body: the system prompt
 

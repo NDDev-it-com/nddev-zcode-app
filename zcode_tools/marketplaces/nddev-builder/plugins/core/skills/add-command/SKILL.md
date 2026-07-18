@@ -53,9 +53,12 @@ Recognized keys (all **hyphenated**, NOT snake_case):
 - `allowed-tools` (optional) — inline comma list, e.g. `Read, Bash`. NOT multi-line.
 - `model` (optional) — model override.
 - `skills` (optional) — auto-mounted skills.
+- `disable-noninteractive` (optional) — hide the command from headless/
+  non-interactive runs.
 
 **Do NOT use snake_case** (`allowed_tools`, `argument_hint`) — they are silently
-ignored. No `version`, `name`, or `tags`.
+ignored. No `version`, `name`, or `tags`. A command whose name collides with a
+built-in reserved name is filtered from the live `/` menu.
 
 ## Argument substitution
 

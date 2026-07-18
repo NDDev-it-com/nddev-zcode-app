@@ -100,10 +100,16 @@ a command hook but 500ms (half a second) for a process hook. Default is 60000ms
 
 ### Output and exit codes
 
-- **stdout** is parsed as **strict JSON** — any extra/unknown key fails validation.
-  Use the documented keys only (e.g. `{"decision": "block", "reason": "..."}`).
-- **exit codes**: `0` = pass, `2` = block (deny for PreToolUse/PermissionRequest),
-  any other non-zero = error. Non-JSON stdout is shown to the model as context.
+- **stdout** is parsed as **strict JSON** — any extra/unknown key fails validation
+  (the effect is discarded and the run marked failed). Emit only the recognized
+  keys, or emit nothing and rely on exit codes. The documented keys are:
+  `additionalContext` (injected into the conversation, any event); for
+  `PreToolUse`, a permission **decision** of `allow` / `ask` / `deny`; for
+  `Stop`, a continuation request. `decision: "block"` is **not** a recognized
+  key — use exit code `2` or a `deny` decision to block.
+- **exit codes**: `0` = pass, `2` = block (a deny for
+  `PreToolUse`/`PermissionRequest`), any other non-zero = error. Empty stdout is
+  fine.
 
 ## Procedure
 
@@ -111,7 +117,11 @@ a command hook but 500ms (half a second) for a process hook. Default is 60000ms
 2. Write the hook command — a shell one-liner or a script path. If the logic is
    non-trivial, put it in a script under the marketplace (e.g.
    `zcode_tools/marketplaces/<marketplace>/scripts/<name>.sh`) and reference it
-   by path.
+   by its **absolute installed path**
+   `~/.zcode/marketplaces/<marketplace>/scripts/<name>.sh`. A config-file hook is
+   merged into `~/.zcode/cli/config.json`; it does not run from the marketplace
+   directory and does not expand `${CLAUDE_PLUGIN_ROOT}` (that is plugin-hook
+   only), so a relative path silently fails to resolve.
 3. Open `hooks.json` in the active marketplace and add the entry to the matching
    event array. Strip the `_comment` key mentally — the installer drops it at
    merge time.
@@ -129,7 +139,7 @@ a command hook but 500ms (half a second) for a process hook. Default is 60000ms
     {
       "matcher": "Bash",
       "hooks": [
-        { "type": "command", "command": "scripts/block-dangerous.sh" }
+        { "type": "command", "command": "~/.zcode/marketplaces/<marketplace>/scripts/block-dangerous.sh" }
       ]
     }
   ]

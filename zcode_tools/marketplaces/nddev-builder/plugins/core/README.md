@@ -38,9 +38,14 @@ the private `nddev-harnesses` control plane.
 
 ## Install
 
-Add the local `nddev-builder` marketplace in ZCode Plugin Management, or use the
-repository installer to place it under
-`~/.zcode/marketplaces/nddev-builder/plugins/core/`.
+Install with the repository installer (`install.sh install --setup nddev-builder`).
+It places the marketplace under `~/.zcode/marketplaces/nddev-builder/` **and**
+flattens each plugin's `skills/`, `commands/`, and `agents/` into
+`~/.zcode/{skills,commands,agents}` — the flattened copy is what ZCode 3.3.6
+loads, because it never reads the `marketplaces/.../plugins/` tree on a headless
+install. Adding the marketplace through the ZCode UI (Plugin Management) is the
+alternative that registers it as a live plugin.
 
-Plugin manifests are metadata-only; ZCode discovers skills, commands, agents,
-references, and tools by convention.
+Plugin manifests are metadata-only. `references/` and `tools/` are authoring
+material and are not flattened. See the `nddev-builder-orientation` skill for the
+full loading model.
