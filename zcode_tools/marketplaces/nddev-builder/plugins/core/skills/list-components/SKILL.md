@@ -1,6 +1,6 @@
 ---
 name: list-components
-description: List all plugins, skills, commands, agents, hooks, and MCP servers in a marketplace. Scans the directory tree and reads marketplace.json to report counts and paths. Read-only — no file changes. Use when you need to see what a marketplace contains, inspect its structure, or check what components exist before adding or removing one.
+description: Lists the plugins, skills, commands, agents, hooks, and MCP servers in a marketplace. Read-only — makes no changes. Use when inspecting what a marketplace contains, or checking existing components before adding or removing one.
 ---
 
 # list-components

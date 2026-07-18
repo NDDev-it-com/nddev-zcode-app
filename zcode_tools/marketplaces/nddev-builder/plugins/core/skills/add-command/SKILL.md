@@ -1,6 +1,6 @@
 ---
 name: add-command
-description: Author a new ZCode slash command (commands/<name>.md with YAML frontmatter) in the correct location inside the active marketplace. Covers frontmatter requirements, naming, and nested-command colon syntax. Use when adding a new slash command to the nddev-builder or any marketplace.
+description: Authors a ZCode slash command as commands/<name>.md in a marketplace. Use when adding or defining a slash (/) command, including nested colon-separated commands. For a SKILL.md use add-skill; for a subagent use add-agent.
 ---
 
 # add-command

@@ -1,6 +1,6 @@
 ---
 name: add-marketplace
-description: Scaffold a new self-contained marketplace (a complete ~/.zcode setup) under zcode_tools/marketplaces/. Creates all required files (AGENTS.md, marketplace.json, config templates, mcp/hooks, empty skills/commands/agents/plugins dirs) so the installer's validation passes. Use when creating a brand-new setup like nddev-builder or nddev-designer.
+description: Scaffolds a new self-contained ZCode marketplace — a complete ~/.zcode setup — under zcode_tools/marketplaces/. Use when creating a brand-new setup or profile such as nddev-builder or nddev-designer, or bootstrapping a marketplace directory from scratch.
 ---
 
 # add-marketplace

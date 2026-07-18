@@ -1,6 +1,6 @@
 ---
 name: add-plugin
-description: Scaffold a new self-contained ZCode plugin bundle inside a marketplace. Creates the .zcode-plugin/plugin.json manifest (metadata-only), the convention directories (skills/, commands/, agents/), a README, and registers the plugin in that marketplace's marketplace.json. Use when adding a new plugin to any nddev marketplace.
+description: Scaffolds a new self-contained plugin bundle inside a ZCode marketplace and registers it in marketplace.json. Use when adding a plugin to a marketplace, or grouping skills, commands, and agents into one installable bundle.
 ---
 
 # add-plugin

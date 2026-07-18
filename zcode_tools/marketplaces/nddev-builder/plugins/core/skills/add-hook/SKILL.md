@@ -1,6 +1,6 @@
 ---
 name: add-hook
-description: Register a lifecycle hook in the active marketplace's hooks.json and wire its command script. Covers the seven ZCode hook events, the matcher + command shape, the hooks.enabled flag, and how the installer merges hooks into cli/config.json. Use when adding a SessionStart, UserPromptSubmit, PreToolUse, PermissionRequest, PostToolUse, PostToolUseFailure, or Stop hook.
+description: Registers a ZCode lifecycle hook in a marketplace's hooks.json. Use when adding or configuring a SessionStart, UserPromptSubmit, PreToolUse, PermissionRequest, PostToolUse, PostToolUseFailure, or Stop hook, or wiring a hook matcher, command, or timeout.
 ---
 
 # add-hook

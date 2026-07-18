@@ -1,6 +1,6 @@
 ---
 name: add-mcp-server
-description: Register a tool integration for the agent — either a classic MCP server OR a CLI+skill alternative. Covers the MCP vs CLI trade-off (token cost, composability), both registration paths, and secrets handling. Use when adding any external tool, API, or data source the agent should be able to call.
+description: Registers a tool integration for the agent — a classic MCP server or a lean CLI+skill alternative. Use when adding any external tool, API, or data source the agent should call, or choosing between an MCP server and a CLI tool. For a plain CLI tool use add-tool.
 ---
 
 # add-mcp-server

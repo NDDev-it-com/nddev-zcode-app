@@ -1,6 +1,6 @@
 ---
 name: validate-components
-description: Statically pre-check a marketplace's components before install so an authoring mistake fails at author time, not install time. Use before installing or shipping a marketplace, or when a skill/command/agent is rejected — checks frontmatter, name patterns, description length, JSON validity, and the cross-plugin basename collision that makes the installer fail closed.
+description: Validates a marketplace's components statically before install, so an authoring mistake fails at author time instead of install time. Use before installing or shipping a marketplace, or when a skill, command, or agent is being rejected or silently dropped.
 ---
 
 # Validate marketplace components

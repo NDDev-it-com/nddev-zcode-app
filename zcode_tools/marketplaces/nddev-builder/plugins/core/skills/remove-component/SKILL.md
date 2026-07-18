@@ -1,6 +1,6 @@
 ---
 name: remove-component
-description: Safely remove a component (plugin, skill, command, agent, reference, or CLI tool) from a marketplace. Checks for references in other files before deletion, updates marketplace.json if removing a plugin, and validates JSON after changes. Refuses if the component is referenced elsewhere unless the user confirms. Use when cleaning up, refactoring, or deleting a component that is no longer needed.
+description: Removes a component — a plugin, skill, command, agent, reference, or CLI tool — from a marketplace safely, refusing when it is still referenced elsewhere. Use when cleaning up, refactoring, or deleting a component that is no longer needed.
 ---
 
 # remove-component
