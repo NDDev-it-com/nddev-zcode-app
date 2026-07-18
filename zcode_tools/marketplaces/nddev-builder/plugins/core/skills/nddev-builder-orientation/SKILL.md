@@ -60,6 +60,16 @@ each, a component **basename must be unique across every plugin in the
 marketplace**. A cross-plugin clash makes the install **fail closed**, not
 shadow one silently.
 
+## Fields ZCode records but never executes
+
+Only `commands`, `skills`, `hooks`, and `mcpServers` execute on the pinned ZCode
+3.3.6 runtime (plus `agents`, via the user-scope flatten above). The
+plugin-manifest fields **`lspServers` (LSP/language servers), `outputStyles`,
+`channels`, and `settings` are recorded but not executed** — authoring them
+produces dead config. There is **no sixth "LSP component"** to add, so this
+toolkit ships no skill for one by design. See
+`references/zcode-native-format.md` for the full execution model.
+
 ## Lifecycle
 
 - **install** — backup → build clean `~/.zcode` from the setup → flatten to user

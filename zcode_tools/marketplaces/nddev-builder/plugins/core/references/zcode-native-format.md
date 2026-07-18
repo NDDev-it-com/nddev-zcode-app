@@ -1,8 +1,8 @@
 # ZCode native format reference
 
 A condensed reference for the rules every component in this repository must follow.
-Authoritative source: the `repo-orientation` skill and the `zcode-configuration-guide`
-skill (official ZCode docs).
+Authoritative source: the `nddev-builder-orientation` skill and the built-in
+`zcode-configuration-guide` / `diagnosing-plugins` skills (the ZCode runtime's own guide).
 
 ## Marketplaces and plugin bundles
 
@@ -38,7 +38,29 @@ marketplaces/<marketplace>/
 | `keywords` | no | English tags |
 | `dependencies` | no | other plugin names this one requires |
 
-Never add: `commands`, `skills`, `hooks`, `mcpServers`, `agents` arrays.
+Never add component arrays (`commands`, `skills`, `hooks`, `mcpServers`, `agents`)
+or the inert fields listed below — the manifest is metadata-only and discovery is
+by convention.
+
+## Component execution model (ZCode 3.3.6)
+
+The pinned ZCode 3.3.6 runtime **executes only four plugin-manifest component
+fields** — `commands`, `skills`, `hooks`, `mcpServers` — plus `agents`, which
+execute only from user scope (which is why the installer flattens `agents/` into
+`~/.zcode/agents/` instead of trusting a plugin.json `agents` field).
+
+**Recorded but NOT executed** as plugin.json fields (declaring them has no
+runtime effect, so never author them expecting behavior): `channels`,
+`lspServers`, `outputStyles`, `settings`. In particular an
+`lspServers` / `.lsp.json` block is **inert** on this runtime — there is **no
+loadable LSP component**, so this toolkit ships no `add-lsp` skill by design.
+(The desktop `v2-setting` file this repo renders is a different surface: it is
+the ZCode app's own settings, written directly to `~/.zcode/v2/`, not the inert
+plugin.json `settings` field.) If a future pinned runtime executes these fields,
+this reference and the runtime pin move together.
+
+Authoritative source: the built-in `zcode-guide` plugin
+(`zcode-configuration-guide`, `diagnosing-plugins`).
 
 ## Skills
 
