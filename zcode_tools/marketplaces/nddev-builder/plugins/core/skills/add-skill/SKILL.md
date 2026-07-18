@@ -9,13 +9,27 @@ Authors a new ZCode skill in the correct place.
 
 ## Where skills live
 
-| Scope | Location (source) | Installed to |
-|---|---|---|
-| Plugin-scoped | `zcode_tools/marketplaces/<marketplace>/plugins/<plugin>/skills/<skill>/SKILL.md` | `~/.zcode/marketplaces/<marketplace>/plugins/<plugin>/skills/<skill>/` |
-| User-scoped | `zcode_tools/marketplaces/<marketplace>/skills/<skill>/SKILL.md` | `~/.zcode/skills/<skill>/` |
+Author a skill inside a plugin bundle; the installer is what makes ZCode load
+it. **ZCode 3.3.6 never loads skills from `~/.zcode/marketplaces/.../plugins/`** —
+it loads user-scope skills only from `~/.zcode/skills/` (and `~/.agents/skills/`).
+So the installer **flattens** every plugin's `skills/` into `~/.zcode/skills/`
+(`cli-tools/scripts/lib/build.sh`, `flatten_plugin_components`); that flattened
+copy is what actually loads.
 
-Prefer **plugin-scoped** for anything tied to a plugin's domain; user-scoped only for
-personal cross-project skills.
+| Scope | Location (source) | What ZCode loads |
+|---|---|---|
+| Plugin-scoped | `.../plugins/<plugin>/skills/<skill>/SKILL.md` | `~/.zcode/skills/<skill>/` (installer-flattened) |
+| User-scoped | `.../<marketplace>/skills/<skill>/SKILL.md` | `~/.zcode/skills/<skill>/` (copied as-is) |
+
+Prefer **plugin-scoped** so the skill travels with its plugin's domain;
+user-scoped only for personal cross-project skills. Either way the loaded copy
+lands in `~/.zcode/skills/`.
+
+> **Global uniqueness is mandatory.** Because the flatten collapses every
+> plugin's `skills/` into one `~/.zcode/skills/`, a skill basename must be unique
+> across *every plugin in the marketplace*, not just within its plugin. A
+> cross-plugin name clash makes the install **fail closed** (see the collision
+> guard in `flatten_plugin_components`), not silently shadow one.
 
 Slash commands and subagents are different component types with their own
 frontmatter contracts: use `add-command` and `add-agent` respectively.
@@ -71,7 +85,11 @@ ZCode scans in this order; the first same-named skill wins:
 4. workspace `.zcode/skills` (deeper cwd location wins) →
 5. workspace `.agents/skills` → 6. enabled **plugin** roots.
 
-So a user-scope skill shadows a plugin skill of the same name. Pick unique names.
+The installer delivers our skills to level 2 (`~/.zcode/skills`). Level 6
+(plugin roots) is reached **only** by marketplaces added through the ZCode UI —
+a headless file-install never populates it, which is exactly why the installer
+flattens to user scope instead. A user-scope skill shadows any same-named skill
+below it, so keep basenames unique.
 
 ## Procedure
 

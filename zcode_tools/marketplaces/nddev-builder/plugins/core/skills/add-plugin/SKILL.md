@@ -10,8 +10,18 @@ Scaffolds a new ZCode-native plugin bundle inside a marketplace in this reposito
 ## ZCode plugin format (the rules this skill enforces)
 
 Plugins live **inside a marketplace directory** under
-`zcode_tools/marketplaces/<marketplace>/plugins/<name>/`. ZCode discovers components
-**by convention** — the manifest is metadata-only and does not list components.
+`zcode_tools/marketplaces/<marketplace>/plugins/<name>/`, with a metadata-only
+manifest and components under convention directories (`skills/`, `commands/`,
+`agents/`).
+
+> **How the components actually load.** Convention-discovery from a plugin root
+> applies only to marketplaces **added through the ZCode UI**. For this repo's
+> headless file-install, ZCode never reads `~/.zcode/marketplaces/.../plugins/`;
+> the installer **flattens** each plugin's `skills/`, `commands/`, and `agents/`
+> into `~/.zcode/{skills,commands,agents}`, and that flattened copy is what
+> loads. `references/` and `tools/` are **not** flattened. Read
+> `nddev-builder-orientation` for the full model, and keep component basenames
+> unique across every plugin (the flatten fails closed on a collision).
 
 ```
 zcode_tools/marketplaces/<marketplace>/

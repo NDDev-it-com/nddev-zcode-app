@@ -49,6 +49,13 @@ skills/<name>/SKILL.md
 Frontmatter: `name` (matches dir), `description` (English, trigger-rich). Body is markdown.
 The first same-named skill in discovery order wins (user > workspace > plugin).
 
+**Loading reality (ZCode 3.3.6):** ZCode loads skills/commands/agents only from
+user scope (`~/.zcode/{skills,commands,agents}`, `~/.agents/skills`), never from
+`~/.zcode/marketplaces/.../plugins/`. The installer flattens each plugin's
+`skills/`, `commands/`, and `agents/` into user scope; basenames must be unique
+across every plugin (the flatten fails closed on a collision). `references/` and
+`tools/` are not flattened.
+
 ## Commands
 
 ```

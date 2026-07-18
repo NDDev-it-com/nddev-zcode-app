@@ -111,9 +111,10 @@ demand.
 
 CLI tools live **inside the plugin** in a `tools/` directory. The installer
 copies the whole marketplace (including plugins) into `~/.zcode/marketplaces/`,
-so tools arrive automatically. At runtime, the agent references them via
-`${CLAUDE_PLUGIN_ROOT}/tools/<name>/<script>` (expanded by ZCode for plugin
-context) or by their absolute installed path.
+so tools arrive there — but `tools/` is **not** flattened to user scope, and
+`${CLAUDE_PLUGIN_ROOT}` is unset for a file-installed marketplace. At runtime the
+companion skill must reference the tool by its **absolute installed path**,
+`~/.zcode/marketplaces/<mp>/plugins/<plugin>/tools/<name>/<script>`.
 
 ```text
 zcode_tools/marketplaces/<marketplace>/plugins/<plugin>/
