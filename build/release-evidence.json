@@ -2,15 +2,15 @@
   "schema_version": 2,
   "module": {
     "repository": "NDDev-it-com/nddev-zcode-app",
-    "setup_digest": "sha256:51f95a940c545ea1c590d8613a7bd018815dbef6864acdfc974f7e4dd0fb689a"
+    "setup_digest": "sha256:7da756e9cd3e22080d2ac0d44ae9a55bfbcef7f248877058eb1e13898ae2ed0a"
   },
   "harness": {
     "repository": "NDDev-it-com/nddev-harnesses",
-    "commit": "f00fc21cc43b1510b33160e5026a743a6591d890"
+    "commit": "3fa150a3215943e32778f956282d75e4cbc0af32"
   },
   "adapter": {
     "id": "zcode",
-    "version": "2.1.4"
+    "version": "2.1.5"
   },
   "vendor": {
     "app_version": "3.3.6",
@@ -30,8 +30,8 @@
     }
   ],
   "lanes": [],
-  "generated_at_utc": "2026-07-19T02:11:35Z",
-  "expires_at_utc": "2027-01-15T02:11:35Z",
+  "generated_at_utc": "2026-07-19T08:34:26Z",
+  "expires_at_utc": "2027-01-15T08:34:26Z",
   "promotion": {
     "decision": "pending",
     "waivers": []

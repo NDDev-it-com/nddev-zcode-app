@@ -6,6 +6,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.1.5] - 2026-07-19
+
+### Added
+
+- The `nddev-builder` `core` toolkit gains three workflow skills (and matching
+  slash commands) on top of the `add-*` set: `scaffold-plugin` composes a whole
+  plugin from an intent, `devtest-plugin` runs an isolated install-and-verify
+  loop in throwaway `HOME`/`ZCODE_HOME`, and `release-review` gates a whole
+  marketplace for release readiness. These stay within the ZCode 3.3.6 surface
+  (flatten-to-user-scope; no `plugin add`, cache, or dev-mode), so no publish,
+  managed-requirements, or remote-marketplace-source features were added. The
+  toolkit is now 19 skills / 19 slash commands.
+
 ## [2.1.4] - 2026-07-16
 
 ### Changed

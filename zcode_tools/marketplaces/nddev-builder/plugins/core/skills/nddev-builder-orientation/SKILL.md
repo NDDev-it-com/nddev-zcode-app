@@ -95,3 +95,9 @@ Author with the dedicated skills; each now documents the flatten reality:
 `add-provider`, `add-plugin`, `add-marketplace`, `add-reference`, `add-tool`,
 `add-instructions`; inspect with `list-components`, remove with
 `remove-component`, pre-check with `validate-components`.
+
+For whole-plugin and whole-marketplace work, three workflow skills sit on top of
+the `add-*` set: `scaffold-plugin` composes a complete bundle from an intent,
+`devtest-plugin` runs an isolated install-and-verify loop in throwaway
+`HOME`/`ZCODE_HOME`, and `release-review` gates the whole marketplace for release
+readiness before shipping.
