@@ -6,6 +6,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.1.6] - 2026-07-19
+
+### Added
+
+- Two new `nddev-builder` workflow skills (plus matching commands):
+  `publish-marketplace` (distribute a marketplace via a GitHub repo, Git URL, or
+  ZIP URL for install through the ZCode Marketplace tab) and
+  `orchestrate-subagents` (design multi-subagent workflows within ZCode 3.3.6's
+  limits: user-scope, foreground, parallel-yes/background-no). Toolkit is now 21
+  skills / 21 slash commands.
+
+### Changed
+
+- Enriched the builder against the verified current ZCode 3.3.6 / CLI 0.15.2
+  surface (3.3.6 is the latest release, so no version-pin change): remote
+  marketplace distribution (GitHub/Git/ZIP-URL via the Marketplace tab and
+  `{"source":"github","repo":...}` entries), the engine-verified
+  `${ZCODE_PLUGIN_ROOT}` plugin-root variable, MCP transports (stdio/http/sse)
+  with OAuth (3.3.2) and cross-agent import and strict-schema rules, the expanded
+  provider matrix, dual `.zcode-plugin`/`.claude-plugin` manifest portability, and
+  richer `validate-components` checks (hook and MCP schema, placeholder integrity,
+  inert-field warnings). No publish-portal, managed-requirements, or npm sources
+  were added — those do not exist on this runtime.
+
 ## [2.1.5] - 2026-07-19
 
 ### Added

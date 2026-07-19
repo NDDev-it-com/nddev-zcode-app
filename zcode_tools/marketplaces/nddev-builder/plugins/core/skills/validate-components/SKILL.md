@@ -32,6 +32,28 @@ build. Run these checks against a marketplace source tree.
 5. **JSON validity** — `marketplace.json`, every `.zcode-plugin/plugin.json`,
    and the `*.template.json` / `mcp.json` / `hooks.json` files parse; each
    `plugins[].source` is a relative path that exists.
+6. **Hook schema** — every authored hook (in `hooks.json` or the rendered
+   `hooks` block) names one of the **seven** supported events — `SessionStart`,
+   `UserPromptSubmit`, `PreToolUse`, `PermissionRequest`, `PostToolUse`,
+   `PostToolUseFailure`, `Stop` — and keeps its handler fields pure: a
+   `type:"command"` handler carries `timeout` (**seconds**), a `type:"process"`
+   handler carries `timeoutMs` (**milliseconds**); never mix the two on one
+   handler.
+7. **MCP strict schema** — in every `.mcp.json`, each server's `command` is a
+   **string, not an array**, there are **no unknown top-level keys** per server,
+   and the field names are exactly `env` / `headers` / `enabled`. Getting these
+   wrong drops the server silently or crashes the parser.
+8. **Placeholder integrity** — every `${VAR}` referenced in the setup's
+   templates (`*.template.json`, `mcp.json`, `hooks.json`) must appear in
+   `build/.env.example`. An undeclared placeholder has no source value at render
+   time, leaving that field empty in the rendered config.
+9. **Inert-field warning (WARN, not fail)** — warn if any
+   `.zcode-plugin/plugin.json` authors `lspServers`, `outputStyles`, `channels`,
+   or `settings`: ZCode 3.3.6 records but never executes them, so they are dead
+   config, not an install-blocking error.
+
+Checks 6-9 encode the ZCode-native execution model, hook, and MCP-schema rules;
+see `../../references/zcode-native-format.md` for the authoritative detail.
 
 ## Procedure
 
@@ -39,6 +61,9 @@ build. Run these checks against a marketplace source tree.
 2. Apply checks 1-3 per component; report each failure with its file.
 3. Apply check 4 across all plugins; report any duplicate basename as a
    **blocking** error (the install would fail closed).
-4. Apply check 5 to every JSON file.
+4. Apply check 5 (JSON validity) to every JSON file, then the schema checks —
+   6 (hook events and handler purity), 7 (`.mcp.json` strict schema), and 8
+   (placeholder integrity against `build/.env.example`) — as blocking failures,
+   and check 9 (inert `plugin.json` fields) as a **warning** only.
 5. As a final gate, run `install.sh install --setup <mp> --plan` — the planner
    re-runs the staged verification without mutating anything.

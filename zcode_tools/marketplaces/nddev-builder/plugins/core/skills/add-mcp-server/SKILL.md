@@ -72,6 +72,16 @@ http server:
 }
 ```
 
+sse server (long-lived event stream):
+
+```json
+{
+  "mcpServers": {
+    "<name>": { "type": "sse", "url": "https://...", "headers": {}, "timeoutMs": 30000 }
+  }
+}
+```
+
 ### Strict schema rules (violations silently drop the server)
 
 - **`command` MUST be a string** (not an array). `command: ["npx", "..."]` crashes
@@ -95,10 +105,23 @@ the installer resolves them, not ZCode.
 For reference (if editing `cli/config.json` directly, bypassing the installer):
 config-file servers do NOT expand `${...}` — use absolute values or env vars
 read by the server process itself. Plugin `.mcp.json` servers (inside a plugin
-directory) DO expand `${CLAUDE_PLUGIN_ROOT}`, `${ZCODE_PROJECT_DIR}`, etc.
+directory) DO expand `${ZCODE_PLUGIN_ROOT}` (the engine-verified ZCode-native
+plugin-root variable; `${CLAUDE_PLUGIN_ROOT}` may be a compat alias — confirm with
+`devtest-plugin`), `${ZCODE_PROJECT_DIR}`, etc.
 
 Add the matching `VAR=` key (empty) to `build/.env.example` (committed) and
 `build/.env` (gitignored real value).
+
+### Remote auth, OAuth, and cross-agent import
+
+- A remote (http/sse) server authenticates with a `headers` `Authorization`
+  entry. For local development, ZCode supports **MCP OAuth** (since 3.3.2) — the
+  runtime drives the OAuth flow, so never hard-code a token.
+- ZCode can **import** MCP servers already configured for other tools instead of
+  duplicating them: Claude Code (`~/.claude/settings.json`), Codex, OpenCode, and
+  a generic `~/.agents/mcp.json`.
+- Local MCP config can **sync to an SSH remote** (since 3.3.0) for multi-machine
+  authoring.
 
 ## Path B: CLI + skill (the lean alternative)
 
@@ -111,8 +134,9 @@ demand.
 
 CLI tools live **inside the plugin** in a `tools/` directory. The installer
 copies the whole marketplace (including plugins) into `~/.zcode/marketplaces/`,
-so tools arrive there — but `tools/` is **not** flattened to user scope, and
-`${CLAUDE_PLUGIN_ROOT}` is unset for a file-installed marketplace. At runtime the
+so tools arrive there — but `tools/` is **not** flattened to user scope, and a
+plugin-root variable (`${ZCODE_PLUGIN_ROOT}`) is unset for a file-installed
+marketplace. At runtime the
 companion skill must reference the tool by its **absolute installed path**,
 `~/.zcode/marketplaces/<mp>/plugins/<plugin>/tools/<name>/<script>`.
 
