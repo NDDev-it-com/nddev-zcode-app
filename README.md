@@ -8,7 +8,7 @@ changes.
 
 - **Author:** Danil Silantyev (github:rldyourmnd), CEO NDDev
 - **License:** AGPL-3.0-or-later
-- **Build version:** 2.1.6
+- **Build version:** 2.1.7
 - **Verified ZCode runtime:** app 3.3.6, CLI 0.15.2, model GLM-5.2
 
 ## What this repository contains
@@ -69,7 +69,7 @@ restore, remove, and custom-target usage.
 
 Each directory under `zcode_tools/marketplaces/` is a complete setup:
 
-- `nddev-builder` enables its reusable 21-skill, 21-command `core` toolkit for
+- `nddev-builder` enables its reusable 22-skill, 22-command `core` toolkit for
   creating and managing ZCode marketplaces, plugins, and components.
 - `nddev-designer` is a deliberately lean product-design profile focused on
   design-system consistency, accessibility, responsive states, and
