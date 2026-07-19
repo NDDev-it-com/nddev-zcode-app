@@ -250,6 +250,22 @@ def main() -> int:
             errors.append(
                 "nddev-builder core plugin version disagrees with build/version.json:build_version"
             )
+        marketplace = load_json(
+            "zcode_tools/marketplaces/nddev-builder/marketplace.json", errors
+        )
+        if marketplace is not None:
+            core_entries = [
+                entry
+                for entry in marketplace.get("plugins", [])
+                if isinstance(entry, dict) and entry.get("name") == "core"
+            ]
+            if len(core_entries) == 1 and core_entries[0].get("version") != version.get(
+                "build_version"
+            ):
+                errors.append(
+                    "nddev-builder marketplace core plugin version disagrees with "
+                    "build/version.json:build_version"
+                )
 
     if manifest is not None and version is not None:
         if manifest.get("build_version") != version.get("build_version"):

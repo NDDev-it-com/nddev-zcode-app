@@ -69,7 +69,7 @@ restore, remove, and custom-target usage.
 
 Each directory under `zcode_tools/marketplaces/` is a complete setup:
 
-- `nddev-builder` enables its reusable 13-skill, 13-command `core` toolkit for
+- `nddev-builder` enables its reusable 16-skill, 16-command `core` toolkit for
   creating and managing ZCode marketplaces, plugins, and components.
 - `nddev-designer` is a deliberately lean product-design profile focused on
   design-system consistency, accessibility, responsive states, and
