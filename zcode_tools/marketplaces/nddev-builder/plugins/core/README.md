@@ -3,16 +3,18 @@
 The `core` plugin is a reusable ZCode-native toolkit for creating and managing
 marketplaces, plugins, and convention-discovered components.
 
-- **16 skills**: `add-marketplace`, `add-plugin`, `add-skill`, `add-command`,
+- **19 skills**: `add-marketplace`, `add-plugin`, `add-skill`, `add-command`,
   `add-agent`, `add-hook`, `add-mcp-server`, `add-provider`, `add-reference`,
   `add-tool`, `add-instructions`, `list-components`, `remove-component`,
-  `enable-plugin`, `nddev-builder-orientation`, and `validate-components`.
-- **16 slash commands**: `/nddev-add-marketplace`, `/nddev-add-plugin`,
+  `enable-plugin`, `nddev-builder-orientation`, `validate-components`,
+  `scaffold-plugin`, `devtest-plugin`, and `release-review`.
+- **19 slash commands**: `/nddev-add-marketplace`, `/nddev-add-plugin`,
   `/nddev-add-skill`, `/nddev-add-command`, `/nddev-add-agent`,
   `/nddev-add-hook`, `/nddev-add-mcp`, `/nddev-add-provider`,
   `/nddev-add-reference`, `/nddev-add-tool`, `/nddev-add-instructions`,
-  `/nddev-list`, `/nddev-remove`, `/nddev-enable`, `/nddev-orient`, and
-  `/nddev-validate`.
+  `/nddev-list`, `/nddev-remove`, `/nddev-enable`, `/nddev-orient`,
+  `/nddev-validate`, `/nddev-scaffold`, `/nddev-devtest`, and
+  `/nddev-release-review`.
 - **1 subagent**: `nddev-native-reviewer` (GLM-5.2).
 
 ## Capabilities
@@ -32,6 +34,9 @@ marketplaces, plugins, and convention-discovered components.
 | `list-components` | Inventory marketplace components without mutation |
 | `remove-component` | Remove a component after reference checks |
 | `enable-plugin` | Enable or disable a plugin in the CLI configuration |
+| `scaffold-plugin` | Compose a whole plugin from an intent |
+| `devtest-plugin` | Isolated install-and-verify loop in throwaway state |
+| `release-review` | Gate a whole marketplace for release readiness |
 | `nddev-native-reviewer` | Review ZCode-native format correctness |
 
 Development-only test, benchmark, release, and repository-doctor capabilities
