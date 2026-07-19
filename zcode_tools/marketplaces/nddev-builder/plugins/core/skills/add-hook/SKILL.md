@@ -120,8 +120,10 @@ a command hook but 500ms (half a second) for a process hook. Default is 60000ms
    by its **absolute installed path**
    `~/.zcode/marketplaces/<marketplace>/scripts/<name>.sh`. A config-file hook is
    merged into `~/.zcode/cli/config.json`; it does not run from the marketplace
-   directory and does not expand `${CLAUDE_PLUGIN_ROOT}` (that is plugin-hook
-   only), so a relative path silently fails to resolve.
+   directory and does not expand a plugin-root variable — `${ZCODE_PLUGIN_ROOT}`
+   (the engine-verified ZCode-native plugin-hook variable; `${CLAUDE_PLUGIN_ROOT}`
+   is at most a compat alias, confirm with `devtest-plugin`) resolves only for a
+   UI-installed plugin hook, so here a relative path silently fails to resolve.
 3. Open `hooks.json` in the active marketplace and add the entry to the matching
    event array. Strip the `_comment` key mentally — the installer drops it at
    merge time.

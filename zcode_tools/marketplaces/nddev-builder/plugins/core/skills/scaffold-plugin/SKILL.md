@@ -35,7 +35,8 @@ an existing plugin, use the matching `add-*` skill directly.
    Prefer the smallest set that meets the intent.
 2. **Pick or create the marketplace.** Use `add-marketplace` if none fits, then
    scaffold the empty bundle with `add-plugin` (manifest + directories + README +
-   marketplace entry).
+   marketplace entry). For a bundle that must also run in Claude Code, use
+   `add-plugin`'s optional dual `.zcode-plugin` + `.claude-plugin` manifest.
 3. **Add each component** with its focused skill: `add-skill`, `add-command`,
    `add-agent`, `add-hook`, `add-mcp-server`, `add-instructions`,
    `add-reference`, `add-tool`, `add-provider`. Keep every basename unique across

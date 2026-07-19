@@ -75,6 +75,16 @@ the installer merges them into `cli/config.json` if present):
    marketplace `core` entry, and the core plugin manifest; also update
    `CHANGELOG.md`.
 
+## Distribution
+
+This repo installs a marketplace headlessly (`install.sh install --setup <name>`),
+which requires local `./plugins/<name>` sources on disk. To let others install it,
+ZCode 3.3.6 also supports UI distribution: a user adds the marketplace through
+Plugin Management → Marketplace from a **GitHub repo, Git URL, local path, or ZIP
+URL**, and a plugin `source` may be a remote object
+`{"source":"github","repo":"owner/repo"}` (npm is not a supported source). See the
+`publish-marketplace` skill for the full distribution flow.
+
 ## Rules
 
 - Every marketplace is self-contained — it owns its AGENTS.md and all config

@@ -3,18 +3,19 @@
 The `core` plugin is a reusable ZCode-native toolkit for creating and managing
 marketplaces, plugins, and convention-discovered components.
 
-- **19 skills**: `add-marketplace`, `add-plugin`, `add-skill`, `add-command`,
+- **21 skills**: `add-marketplace`, `add-plugin`, `add-skill`, `add-command`,
   `add-agent`, `add-hook`, `add-mcp-server`, `add-provider`, `add-reference`,
   `add-tool`, `add-instructions`, `list-components`, `remove-component`,
   `enable-plugin`, `nddev-builder-orientation`, `validate-components`,
-  `scaffold-plugin`, `devtest-plugin`, and `release-review`.
-- **19 slash commands**: `/nddev-add-marketplace`, `/nddev-add-plugin`,
+  `scaffold-plugin`, `devtest-plugin`, `release-review`, `publish-marketplace`,
+  and `orchestrate-subagents`.
+- **21 slash commands**: `/nddev-add-marketplace`, `/nddev-add-plugin`,
   `/nddev-add-skill`, `/nddev-add-command`, `/nddev-add-agent`,
   `/nddev-add-hook`, `/nddev-add-mcp`, `/nddev-add-provider`,
   `/nddev-add-reference`, `/nddev-add-tool`, `/nddev-add-instructions`,
   `/nddev-list`, `/nddev-remove`, `/nddev-enable`, `/nddev-orient`,
-  `/nddev-validate`, `/nddev-scaffold`, `/nddev-devtest`, and
-  `/nddev-release-review`.
+  `/nddev-validate`, `/nddev-scaffold`, `/nddev-devtest`,
+  `/nddev-release-review`, `/nddev-publish`, and `/nddev-orchestrate`.
 - **1 subagent**: `nddev-native-reviewer` (GLM-5.2).
 
 ## Capabilities
@@ -37,6 +38,8 @@ marketplaces, plugins, and convention-discovered components.
 | `scaffold-plugin` | Compose a whole plugin from an intent |
 | `devtest-plugin` | Isolated install-and-verify loop in throwaway state |
 | `release-review` | Gate a whole marketplace for release readiness |
+| `publish-marketplace` | Distribute a marketplace via GitHub/Git/ZIP URL for UI install |
+| `orchestrate-subagents` | Design multi-subagent workflows within ZCode limits |
 | `nddev-native-reviewer` | Review ZCode-native format correctness |
 
 Development-only test, benchmark, release, and repository-doctor capabilities

@@ -61,10 +61,11 @@ plugins/<plugin>/
    WHEN to use it). The body should contain: available commands, when to use
    each, examples, output format. **Point it at the absolute installed path**
    `~/.zcode/marketplaces/<mp>/plugins/<plugin>/tools/<name>/<script>` — the
-   `tools/` directory is **not** flattened to user scope, and
-   `${CLAUDE_PLUGIN_ROOT}` is unset for a file-installed marketplace, so a
-   relative or `${CLAUDE_PLUGIN_ROOT}`-based path will not resolve. The skill
-   itself *is* flattened, so it loads and can carry that absolute path.
+   `tools/` directory is **not** flattened to user scope, and a plugin-root
+   variable (`${ZCODE_PLUGIN_ROOT}`, the ZCode-native spelling) is unset for a
+   file-installed marketplace, so a relative or `${ZCODE_PLUGIN_ROOT}`-based path
+   will not resolve. The skill itself *is* flattened, so it loads and can carry
+   that absolute path.
 
 6. **Secrets**: if the tool needs API keys or tokens:
    - Add the supported key to `build/.env.example` with an empty value.

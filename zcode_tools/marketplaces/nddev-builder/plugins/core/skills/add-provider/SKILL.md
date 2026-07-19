@@ -55,6 +55,18 @@ Adds a model provider definition to `v2-config.template.json`.
   models — see `custom:bigmodel-api-key` → `GLM-5-Turbo` in the builder
   template for a real example).
 
+### Documented providers (ZCode 3.3.6)
+
+Beyond OpenAI and Anthropic, ZCode 3.3.6 documents **GLM Coding Plan (Z.ai and
+BigModel), OpenRouter, Moonshot, MiniMax, and Xiaomi MiMo**, plus custom
+Anthropic/OpenAI-compatible endpoints. Author each as a `custom:*` provider with
+the matching `kind` (`anthropic` or `openai`) and its base URL. Verified GLM
+endpoints: Z.ai `https://api.z.ai/api/anthropic`, BigModel
+`https://open.bigmodel.cn/api/anthropic`; models `GLM-5.2` and `GLM-5-Turbo`.
+Account authentication ("Continue with Z.ai / BigModel") uses the OAuth preference
+(`modelProviderFamilyModes.zai: oauth`); explicit API keys are `custom:*`
+providers. Never reuse a ZCode-owned `builtin:*` identity for a custom provider.
+
 ## Procedure
 
 1. Ask the user for:

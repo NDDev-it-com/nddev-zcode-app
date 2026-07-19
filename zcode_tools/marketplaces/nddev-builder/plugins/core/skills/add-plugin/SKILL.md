@@ -78,6 +78,12 @@ zcode_tools/marketplaces/<marketplace>/
    `name@marketplace` strings; cross-marketplace deps require the target marketplace
    listed in the marketplace's `allowCrossMarketplaceDependenciesOn`.
 
+   **Portability (optional):** ZCode resolves a manifest in the order
+   `.zcode-plugin/plugin.json` → `.claude-plugin/plugin.json` →
+   `.codex-plugin/plugin.json`. To make the same bundle also run in Claude Code,
+   you may write an identical `.claude-plugin/plugin.json` alongside the
+   `.zcode-plugin` one. ZCode-only bundles need only `.zcode-plugin`.
+
    **Component path rule (critical):** if you DO declare component paths in the
    manifest (e.g. `"skills": ["./skills"]`), they MUST be **relative and inside
    the plugin root**. An absolute path or one that escapes the plugin root
