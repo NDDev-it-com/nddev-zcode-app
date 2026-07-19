@@ -3,14 +3,16 @@
 The `core` plugin is a reusable ZCode-native toolkit for creating and managing
 marketplaces, plugins, and convention-discovered components.
 
-- **13 skills**: `add-marketplace`, `add-plugin`, `add-skill`, `add-command`,
+- **16 skills**: `add-marketplace`, `add-plugin`, `add-skill`, `add-command`,
   `add-agent`, `add-hook`, `add-mcp-server`, `add-provider`, `add-reference`,
-  `add-tool`, `list-components`, `remove-component`, and `enable-plugin`.
-- **13 slash commands**: `/nddev-add-marketplace`, `/nddev-add-plugin`,
+  `add-tool`, `add-instructions`, `list-components`, `remove-component`,
+  `enable-plugin`, `nddev-builder-orientation`, and `validate-components`.
+- **16 slash commands**: `/nddev-add-marketplace`, `/nddev-add-plugin`,
   `/nddev-add-skill`, `/nddev-add-command`, `/nddev-add-agent`,
   `/nddev-add-hook`, `/nddev-add-mcp`, `/nddev-add-provider`,
-  `/nddev-add-reference`, `/nddev-add-tool`, `/nddev-list`, `/nddev-remove`,
-  and `/nddev-enable`.
+  `/nddev-add-reference`, `/nddev-add-tool`, `/nddev-add-instructions`,
+  `/nddev-list`, `/nddev-remove`, `/nddev-enable`, `/nddev-orient`, and
+  `/nddev-validate`.
 - **1 subagent**: `nddev-native-reviewer` (GLM-5.2).
 
 ## Capabilities

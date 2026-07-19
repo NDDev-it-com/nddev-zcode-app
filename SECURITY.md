@@ -94,7 +94,8 @@ accepted report within 30 business days. These targets are best-effort.
   dpkg-owned path/version and SHA-512 equality with that verified entry are
   required.
 - Runtime CLI probing resolves one canonical executable and limits execution to
-  3 seconds and 64 KiB of output. Normal install treats probe failure as
+  a bounded timeout (30 seconds by default, clamped to at most 120 seconds) and
+  64 KiB of output. Normal install treats probe failure as
   advisory unknown state; bootstrap rejects it as a failed postcondition.
 - Lifecycle mutations use canonical/disjoint path checks, target and backup-pool
   locks, same-filesystem staging, pre-commit verification, atomic rename, and

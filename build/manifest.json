@@ -64,7 +64,7 @@
   },
   "runtime_probe_policy": {
     "resolution": "resolve and canonicalize one executable before invoking it",
-    "timeout_seconds": 3,
+    "timeout_seconds": 30,
     "max_output_bytes": 65536,
     "advisory_failure": "timeout, nonzero exit, excessive output, decode/runtime error, or missing executable becomes unknown/not-installed without aborting install",
     "bootstrap_postcondition": "bootstrap remains strict and rejects an unknown or mismatched CLI version"
