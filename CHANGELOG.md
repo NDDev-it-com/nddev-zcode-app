@@ -6,6 +6,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [2.1.7] - 2026-07-19
+
+### Added
+
+- A `getting-started` onboarding skill (plus `/nddev-start`) that routes a
+  newcomer from zero to a validated ZCode plugin or marketplace: read the loading
+  model, take the path that fits (add one component, compose a whole plugin, or
+  start a new setup), and always finish with `validate-components` and
+  `devtest-plugin`. `nddev-builder-orientation` now points first-timers to it.
+  Toolkit is now 22 skills / 22 slash commands.
+
 ## [2.1.6] - 2026-07-19
 
 ### Added

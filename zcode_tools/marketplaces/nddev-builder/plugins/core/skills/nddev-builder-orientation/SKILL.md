@@ -105,6 +105,10 @@ same-named skill below them.
 
 ## Routing to the authoring skills
 
+New to the toolkit? Start with **`getting-started`** — a guided first run that
+routes you to the right skill for each step (add one component, compose a whole
+plugin, or start a new setup).
+
 Author with the dedicated skills; each now documents the flatten reality:
 `add-skill`, `add-command`, `add-agent`, `add-hook`, `add-mcp-server`,
 `add-provider`, `add-plugin`, `add-marketplace`, `add-reference`, `add-tool`,

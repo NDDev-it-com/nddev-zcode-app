@@ -52,7 +52,7 @@ prefix.
 ### Setup profiles
 
 - `nddev-builder` enables `core@nddev-builder`, a native component-authoring
-  toolkit with 21 skills, 21 matching commands, and one reviewer agent.
+  toolkit with 22 skills, 22 matching commands, and one reviewer agent.
 - `nddev-designer` is a production-ready minimal design profile. Its empty
   extension maps are intentional; project-specific design tools come from the
   active workspace.

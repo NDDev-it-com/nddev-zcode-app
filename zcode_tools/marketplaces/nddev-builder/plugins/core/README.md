@@ -3,15 +3,15 @@
 The `core` plugin is a reusable ZCode-native toolkit for creating and managing
 marketplaces, plugins, and convention-discovered components.
 
-- **21 skills**: `add-marketplace`, `add-plugin`, `add-skill`, `add-command`,
-  `add-agent`, `add-hook`, `add-mcp-server`, `add-provider`, `add-reference`,
-  `add-tool`, `add-instructions`, `list-components`, `remove-component`,
-  `enable-plugin`, `nddev-builder-orientation`, `validate-components`,
-  `scaffold-plugin`, `devtest-plugin`, `release-review`, `publish-marketplace`,
-  and `orchestrate-subagents`.
-- **21 slash commands**: `/nddev-add-marketplace`, `/nddev-add-plugin`,
-  `/nddev-add-skill`, `/nddev-add-command`, `/nddev-add-agent`,
-  `/nddev-add-hook`, `/nddev-add-mcp`, `/nddev-add-provider`,
+- **22 skills**: `getting-started`, `add-marketplace`, `add-plugin`, `add-skill`,
+  `add-command`, `add-agent`, `add-hook`, `add-mcp-server`, `add-provider`,
+  `add-reference`, `add-tool`, `add-instructions`, `list-components`,
+  `remove-component`, `enable-plugin`, `nddev-builder-orientation`,
+  `validate-components`, `scaffold-plugin`, `devtest-plugin`, `release-review`,
+  `publish-marketplace`, and `orchestrate-subagents`.
+- **22 slash commands**: `/nddev-start`, `/nddev-add-marketplace`,
+  `/nddev-add-plugin`, `/nddev-add-skill`, `/nddev-add-command`,
+  `/nddev-add-agent`, `/nddev-add-hook`, `/nddev-add-mcp`, `/nddev-add-provider`,
   `/nddev-add-reference`, `/nddev-add-tool`, `/nddev-add-instructions`,
   `/nddev-list`, `/nddev-remove`, `/nddev-enable`, `/nddev-orient`,
   `/nddev-validate`, `/nddev-scaffold`, `/nddev-devtest`,
@@ -22,6 +22,7 @@ marketplaces, plugins, and convention-discovered components.
 
 | Component | Purpose |
 | --- | --- |
+| `getting-started` | Guided first run — zero to a validated extension |
 | `add-marketplace` | Scaffold a self-contained marketplace |
 | `add-plugin` | Scaffold a plugin bundle inside a marketplace |
 | `add-skill` | Author a plugin- or user-scoped `SKILL.md` |
