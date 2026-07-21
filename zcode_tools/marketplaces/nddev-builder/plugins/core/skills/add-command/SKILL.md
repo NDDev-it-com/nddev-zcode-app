@@ -53,8 +53,11 @@ Recognized keys (all **hyphenated**, NOT snake_case):
 - `allowed-tools` (optional) — inline comma list, e.g. `Read, Bash`. NOT multi-line.
 - `model` (optional) — model override.
 - `skills` (optional) — auto-mounted skills.
-- `disable-noninteractive` (optional) — hide the command from headless/
-  non-interactive runs.
+
+Only the five keys above are accepted by `validate-components`. ZCode is
+Claude-Code-lineage and may accept further keys (e.g. a headless-visibility
+toggle), but none is confirmed on 3.3.6 — probe with `devtest-plugin` before
+authoring one, since an unrecognized key fails validation.
 
 **Do NOT use snake_case** (`allowed_tools`, `argument_hint`) — they are silently
 ignored. No `version`, `name`, or `tags`. A command whose name collides with a

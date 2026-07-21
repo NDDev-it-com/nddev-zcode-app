@@ -60,9 +60,21 @@ Adds a model provider definition to `v2-config.template.json`.
 Beyond OpenAI and Anthropic, ZCode 3.3.6 documents **GLM Coding Plan (Z.ai and
 BigModel), OpenRouter, Moonshot, MiniMax, and Xiaomi MiMo**, plus custom
 Anthropic/OpenAI-compatible endpoints. Author each as a `custom:*` provider with
-the matching `kind` (`anthropic` or `openai`) and its base URL. Verified GLM
-endpoints: Z.ai `https://api.z.ai/api/anthropic`, BigModel
-`https://open.bigmodel.cn/api/anthropic`; models `GLM-5.2` and `GLM-5-Turbo`.
+the matching `kind` (`anthropic` or `openai`) and its base URL. Documented
+endpoints (z.ai Connect-Models docs, verified 3.3.6):
+
+| Provider | `kind` | Base URL |
+| --- | --- | --- |
+| Z.ai (GLM) | `anthropic` | `https://api.z.ai/api/anthropic` |
+| Z.ai (OpenAI coding) | `openai` | `https://api.z.ai/api/coding/paas/v4` |
+| BigModel | `anthropic` | `https://open.bigmodel.cn/api/anthropic` |
+| Moonshot | `anthropic` | `https://api.moonshot.cn/anthropic` |
+| MiniMax | `anthropic` | `https://api.minimaxi.com/anthropic` |
+| Xiaomi MiMo | `openai` | `https://api.xiaomimimo.com/v1` |
+| OpenRouter | `openai` | `https://openrouter.ai/api` |
+
+Models `GLM-5.2` and `GLM-5-Turbo` (the GLM Coding Plan and Resource Package are
+separate purchase tiers, not separate endpoints).
 Account authentication ("Continue with Z.ai / BigModel") uses the OAuth preference
 (`modelProviderFamilyModes.zai: oauth`); explicit API keys are `custom:*`
 providers. Never reuse a ZCode-owned `builtin:*` identity for a custom provider.

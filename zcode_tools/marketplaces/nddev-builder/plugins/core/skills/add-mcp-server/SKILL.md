@@ -33,6 +33,13 @@ permission model.
 
 ## Path A: classic MCP server
 
+### First-party ZCode servers (ready examples)
+
+z.ai documents three maintained MCP servers you can register as-is rather than
+authoring from scratch: **`zai-mcp-server`** (Z.ai platform tools),
+**`web-search-prime`** (search), and **`web-reader`** (page reading). Prefer one
+of these before writing a new stdio server for the same capability.
+
 ### Where
 
 Register in the active marketplace's `mcp.json`:
