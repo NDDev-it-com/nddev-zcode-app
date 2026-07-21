@@ -1209,15 +1209,68 @@ nddev::render_env() {
   nddev::parse_env_file "$src_env" "$NDDEV_ENV_DIGEST" "$target/.env" >/dev/null || return 1
 }
 
+nddev::assert_component_graph() {
+  # Deterministic source->destination materialization check shared by plan and
+  # apply. Every skill/command/agent that copy_source_tree/flatten will project
+  # to user scope -- from the direct source tree and from each installed plugin
+  # -- must map to a unique destination basename per component kind. Two plugins
+  # sharing a skill name, or a plugin colliding with a direct component, would
+  # otherwise pass a dry-run plan (which writes nothing, so the on-disk guard in
+  # flatten_plugin_components never fires) yet fail the real apply. Computing the
+  # collision from the source graph makes --plan predict exactly what apply
+  # rejects. Kept Bash 3.2-safe (no associative arrays): duplicates are found
+  # with awk over "name<TAB>origin" lines.
+  local component plugin entry name plugins_root graph report status=0
+  plugins_root="$SOURCE_DIR/plugins"
+  for component in skills commands agents; do
+    graph=""
+    if [ -d "$SOURCE_DIR/$component" ]; then
+      for entry in "$SOURCE_DIR/$component"/*; do
+        [ -e "$entry" ] || continue
+        name="$(basename "$entry")"
+        [ "$name" = ".gitkeep" ] && continue
+        graph+="$name"$'\t'"direct $component/$name"$'\n'
+      done
+    fi
+    if [ -d "$plugins_root" ]; then
+      for plugin in "$plugins_root"/*/; do
+        [ -d "$plugin$component" ] || continue
+        for entry in "$plugin$component"/*; do
+          [ -e "$entry" ] || continue
+          name="$(basename "$entry")"
+          [ "$name" = ".gitkeep" ] && continue
+          graph+="$name"$'\t'"plugin $(basename "$plugin")/$component/$name"$'\n'
+        done
+      done
+    fi
+    report="$(printf '%s' "$graph" | awk -F'\t' '
+      NF { origins[$1] = origins[$1] "; " $2; count[$1]++ }
+      END { for (key in count) if (count[key] > 1) printf "%s (from %s)\n", key, substr(origins[key], 3) }
+    ' | sort)"
+    if [ -n "$report" ]; then
+      while IFS= read -r line; do
+        [ -n "$line" ] || continue
+        nddev::log "error" "user-scope $component name collision: $line"
+      done <<EOF
+$report
+EOF
+      status=1
+    fi
+  done
+  return "$status"
+}
+
 nddev::flatten_plugin_components() {
   # ZCode loads user-scope skills, commands, and agents from ~/.zcode/skills,
   # ~/.zcode/commands, and ~/.zcode/agents -- never from
   # marketplaces/<mp>/plugins/. Surface each installed plugin's components at
   # user scope so a headless install is actually loaded by the client, while the
   # marketplace tree stays intact for the plugin/marketplace model and any later
-  # UI-managed installation. A name collision between two plugins, or between a
-  # plugin and a direct user-scope component, fails closed rather than silently
-  # shadowing one -- important as setups grow to many plugins.
+  # UI-managed installation. Source-internal collisions (plugin/plugin,
+  # plugin/direct) are already rejected by assert_component_graph for both plan
+  # and apply; the on-disk guard below additionally fails closed if a projected
+  # component would overwrite a file already present in the target (for example
+  # restored user runtime state), which only exists during a real apply.
   local target=$1 mp_name plugins_root plugin component source entry name dest
   mp_name="$(basename "$SOURCE_DIR")"
   plugins_root="$target/marketplaces/$mp_name/plugins"
@@ -1247,6 +1300,7 @@ nddev::copy_source_tree() {
   local target=$1 mp_name directory
   mp_name="$(basename "$SOURCE_DIR")"
   nddev::section "Copy source tree (marketplace: $mp_name)"
+  nddev::assert_component_graph || return 1
   nddev::copy "$SOURCE_DIR/AGENTS.md" "$target/AGENTS.md" || return 1
   nddev::ensure_dir "$target/marketplaces" || return 1
   nddev::copy "$SOURCE_DIR" "$target/marketplaces/$mp_name" || return 1
