@@ -34,7 +34,7 @@
       "exact byte size",
       "SHA-512 digest"
     ],
-    "macos_identity": "hdiutil checksum, exact Team ID/bundle ID/app version/bundle version, deep/strict code signature, and per-artifact Gatekeeper source from build/version.json",
+    "macos_identity": "hdiutil checksum, exact Team ID/bundle ID/app version/bundle version, deep/strict code signature, and per-artifact Gatekeeper source from build/version.json; pinned unnotarized artifacts fail closed unless bootstrap is run with --allow-pinned-unnotarized",
     "debian_identity": "before install: exact package metadata plus one safe /opt/ZCode/resources/glm/zcode.cjs payload entry with the pinned CLI version; after install: exact dpkg-owned path/version and byte-identical CLI SHA-512",
     "appimage_identity": "exact filename, byte size, SHA-512 digest, embedded CLI version, and installed version marker"
   },
@@ -50,7 +50,8 @@
       "--platform",
       "--apply",
       "--plan",
-      "--dry-run"
+      "--dry-run",
+      "--allow-pinned-unnotarized"
     ],
     "install": [
       "--setup",

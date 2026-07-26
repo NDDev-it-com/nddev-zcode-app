@@ -38,6 +38,7 @@ TARGET_OVERRIDE=""
 SLOT=""
 ADOPT_UNMANAGED=0
 ALLOW_TARGET_RELOCATION=0
+ALLOW_PINNED_UNNOTARIZED=0
 COMMAND_EXPLICIT=0
 SEEN_MARKETPLACE=0
 SEEN_TARGET=0
@@ -48,6 +49,7 @@ SEEN_KEEP_BACKUP=0
 SEEN_SLOT=0
 SEEN_ADOPT=0
 SEEN_RELOCATION=0
+SEEN_ALLOW_PINNED_UNNOTARIZED=0
 SEEN_BACKUPS=0
 SEEN_LIST=0
 SEEN_JSON=0
@@ -68,6 +70,9 @@ Commands:
 Options (bootstrap):
   --platform macos|ubuntu   Target platform (default: auto-detect from uname).
   --apply                   Execute the download + install (default is --plan).
+  --allow-pinned-unnotarized
+                            Explicitly accept an exact pinned macOS artifact
+                            whose Gatekeeper source is Unnotarized Developer ID.
 
 Options (install):
   --setup <id>              Which setup to build from (required for install).
@@ -293,6 +298,12 @@ while [ "$#" -gt 0 ]; do
       SEEN_RELOCATION=1
       shift
       ;;
+    --allow-pinned-unnotarized)
+      nddev::require_option_once "$SEEN_ALLOW_PINNED_UNNOTARIZED" "$1" || exit 2
+      ALLOW_PINNED_UNNOTARIZED=1
+      SEEN_ALLOW_PINNED_UNNOTARIZED=1
+      shift
+      ;;
     --backups)
       nddev::require_option_once "$SEEN_BACKUPS" "$1" || exit 2
       SEEN_BACKUPS=1
@@ -357,6 +368,7 @@ case "$COMMAND" in
     nddev::reject_seen_option "$SEEN_KEEP_BACKUP" --keep-backup
     nddev::reject_seen_option "$SEEN_SLOT" --slot
     nddev::reject_seen_option "$SEEN_RELOCATION" --allow-target-relocation
+    nddev::reject_seen_option "$SEEN_ALLOW_PINNED_UNNOTARIZED" --allow-pinned-unnotarized
     nddev::reject_seen_option "$SEEN_BACKUPS" --backups
     nddev::reject_seen_option "$SEEN_JSON" --json
     ;;
@@ -366,6 +378,7 @@ case "$COMMAND" in
     nddev::reject_seen_option "$SEEN_SLOT" --slot
     nddev::reject_seen_option "$SEEN_ADOPT" --adopt-unmanaged
     nddev::reject_seen_option "$SEEN_RELOCATION" --allow-target-relocation
+    nddev::reject_seen_option "$SEEN_ALLOW_PINNED_UNNOTARIZED" --allow-pinned-unnotarized
     nddev::reject_seen_option "$SEEN_BACKUPS" --backups
     nddev::reject_seen_option "$SEEN_JSON" --json
     ;;
@@ -374,6 +387,7 @@ case "$COMMAND" in
     nddev::reject_seen_option "$SEEN_PLATFORM" --platform
     nddev::reject_seen_option "$SEEN_KEEP_BACKUP" --keep-backup
     nddev::reject_seen_option "$SEEN_ADOPT" --adopt-unmanaged
+    nddev::reject_seen_option "$SEEN_ALLOW_PINNED_UNNOTARIZED" --allow-pinned-unnotarized
     nddev::reject_seen_option "$SEEN_BACKUPS" --backups
     nddev::reject_seen_option "$SEEN_JSON" --json
     ;;
@@ -387,6 +401,7 @@ case "$COMMAND" in
     nddev::reject_seen_option "$SEEN_SLOT" --slot
     nddev::reject_seen_option "$SEEN_ADOPT" --adopt-unmanaged
     nddev::reject_seen_option "$SEEN_RELOCATION" --allow-target-relocation
+    nddev::reject_seen_option "$SEEN_ALLOW_PINNED_UNNOTARIZED" --allow-pinned-unnotarized
     ;;
   status)
     nddev::reject_seen_option "$SEEN_MARKETPLACE" --setup/--marketplace
@@ -397,6 +412,7 @@ case "$COMMAND" in
     nddev::reject_seen_option "$SEEN_SLOT" --slot
     nddev::reject_seen_option "$SEEN_ADOPT" --adopt-unmanaged
     nddev::reject_seen_option "$SEEN_RELOCATION" --allow-target-relocation
+    nddev::reject_seen_option "$SEEN_ALLOW_PINNED_UNNOTARIZED" --allow-pinned-unnotarized
     nddev::reject_seen_option "$SEEN_BACKUPS" --backups
     ;;
 esac
@@ -464,6 +480,7 @@ if [ "$COMMAND" = "bootstrap" ]; then
   fi
   bootstrap_args=(--platform "$PLATFORM")
   [ "$APPLY" -eq 1 ] && bootstrap_args+=(--apply) || bootstrap_args+=(--plan)
+  [ "$ALLOW_PINNED_UNNOTARIZED" -eq 1 ] && bootstrap_args+=(--allow-pinned-unnotarized)
   exec "$BOOTSTRAP" "${bootstrap_args[@]}"
 fi
 

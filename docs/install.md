@@ -347,5 +347,7 @@ x64 DMG is signed by the same Team ID but assesses as
 `source=Unnotarized Developer ID`. The installer pins the expected source per
 artifact in `build/version.json` and requires an exact match before
 installation. For a pinned notarized artifact it also requires a successful
-Gatekeeper assessment exit status; any missing, changed, or unexpected source
-fails closed before installation.
+Gatekeeper assessment exit status. For a pinned unnotarized artifact, bootstrap
+fails closed by default and accepts it only when the operator supplies the
+explicit `--allow-pinned-unnotarized` flag for that exact artifact. Any missing,
+changed, or unexpected source fails closed before installation.

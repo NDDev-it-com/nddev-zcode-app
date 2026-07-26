@@ -187,6 +187,35 @@ def check_baseline(version: dict, baseline: dict, errors: list[str]) -> None:
         )
 
 
+def check_manifest(manifest: dict, errors: list[str]) -> None:
+    command_policy = manifest.get("command_option_policy")
+    if not isinstance(command_policy, dict):
+        errors.append("build/manifest.json: command_option_policy must be an object")
+        return
+    bootstrap_options = command_policy.get("bootstrap")
+    bootstrap_option_names = (
+        {str(option) for option in bootstrap_options}
+        if isinstance(bootstrap_options, list)
+        else set()
+    )
+    if "--allow-pinned-unnotarized" not in bootstrap_option_names:
+        errors.append(
+            "build/manifest.json: command_option_policy.bootstrap must include "
+            "--allow-pinned-unnotarized"
+        )
+    artifact_policy = manifest.get("artifact_integrity_policy")
+    macos_identity = (
+        artifact_policy.get("macos_identity", "")
+        if isinstance(artifact_policy, dict)
+        else ""
+    )
+    if "--allow-pinned-unnotarized" not in str(macos_identity):
+        errors.append(
+            "build/manifest.json: artifact_integrity_policy.macos_identity must document "
+            "--allow-pinned-unnotarized"
+        )
+
+
 def check_marketplaces(errors: list[str]) -> None:
     marketplaces_root = ROOT / "zcode_tools" / "marketplaces"
     catalog = (
@@ -279,6 +308,7 @@ def main() -> int:
     if manifest is not None and version is not None:
         if manifest.get("build_version") != version.get("build_version"):
             errors.append("build/manifest.json:build_version disagrees with build/version.json")
+        check_manifest(manifest, errors)
 
     if evidence is not None:
         if evidence.get("schema_version") != 2:

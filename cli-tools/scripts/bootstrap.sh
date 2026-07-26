@@ -35,10 +35,12 @@ BOOTSTRAP_LOCK_PATHS=()
 SEEN_APPLY=0
 SEEN_PLAN=0
 SEEN_PLATFORM=0
+SEEN_ALLOW_PINNED_UNNOTARIZED=0
+ALLOW_PINNED_UNNOTARIZED=0
 
 usage() {
   cat <<'EOF'
-Usage: cli-tools/scripts/bootstrap.sh [--platform macos|ubuntu] [--apply|--plan]
+Usage: cli-tools/scripts/bootstrap.sh [--platform macos|ubuntu] [--apply|--plan] [--allow-pinned-unnotarized]
 
 Installs the exact ZCode desktop artifact pinned in build/version.json and
 wires its embedded CLI into ~/.local/bin/zcode. Downloads are accepted only
@@ -48,6 +50,9 @@ Options:
   --platform macos|ubuntu   Target platform (default: auto-detect).
   --apply                   Download, verify, install, and post-verify.
   --plan | --dry-run        Print the verified plan without writing (default).
+  --allow-pinned-unnotarized
+                            Explicitly opt in to a macOS artifact whose exact
+                            pinned Gatekeeper source is Unnotarized Developer ID.
   -h, --help                Show this help.
 
 Ubuntu uses the verified DEB when complete dpkg tooling is available. A
@@ -71,6 +76,10 @@ while [ "$#" -gt 0 ]; do
     --plan | --dry-run)
       nddev::require_option_once "$SEEN_PLAN" "$1" || exit 2
       APPLY=0; SEEN_PLAN=1; shift
+      ;;
+    --allow-pinned-unnotarized)
+      nddev::require_option_once "$SEEN_ALLOW_PINNED_UNNOTARIZED" "$1" || exit 2
+      ALLOW_PINNED_UNNOTARIZED=1; SEEN_ALLOW_PINNED_UNNOTARIZED=1; shift
       ;;
     -h | --help) usage; exit 0 ;;
     *) nddev::log "error" "unknown argument"; usage >&2; exit 2 ;;
@@ -253,6 +262,10 @@ PY
 )" || exit 1
 IFS='|' read -r CDN_BASE CDN_SUBPATH artifact expected_sha512 expected_size TEAM_ID BUNDLE_ID BUNDLE_VERSION GATEKEEPER_SOURCE PACKAGE_NAME PACKAGE_ARCH PACKAGE_VERSION DEB_CLI_ENTRY <<< "$artifact_record"
 url="${CDN_BASE}/${APP_VERSION}/${CDN_SUBPATH}/${artifact}"
+if [ "$ALLOW_PINNED_UNNOTARIZED" -eq 1 ] && [ "$GATEKEEPER_SOURCE" != "Unnotarized Developer ID" ]; then
+  nddev::log "error" "--allow-pinned-unnotarized is valid only for an exact pinned macOS artifact with Gatekeeper source Unnotarized Developer ID"
+  exit 2
+fi
 
 python3 -I - "$url" <<'PY'
 import sys
@@ -807,6 +820,17 @@ nddev::macos_identity() {
   if [ "$GATEKEEPER_SOURCE" = "Notarized Developer ID" ] && [ "$assessment_status" -ne 0 ]; then
     nddev::log "error" "ZCode.app Gatekeeper assessment failed"
     return 1
+  fi
+  if [ "$GATEKEEPER_SOURCE" = "Unnotarized Developer ID" ]; then
+    if [ "$assessment_status" -eq 0 ]; then
+      nddev::log "error" "ZCode.app Gatekeeper assessment unexpectedly succeeded for pinned unnotarized artifact"
+      return 1
+    fi
+    if [ "$ALLOW_PINNED_UNNOTARIZED" -ne 1 ]; then
+      nddev::log "error" "ZCode.app is pinned as Unnotarized Developer ID; rerun bootstrap with --allow-pinned-unnotarized to accept this exact artifact"
+      return 1
+    fi
+    nddev::log "warn" "accepting exact pinned Unnotarized Developer ID artifact because --allow-pinned-unnotarized was supplied"
   fi
   actual_version="$(/usr/bin/defaults read "$app/Contents/Info" CFBundleShortVersionString 2>/dev/null || true)"
   actual_build="$(/usr/bin/defaults read "$app/Contents/Info" CFBundleVersion 2>/dev/null || true)"
