@@ -10,7 +10,7 @@ Authors a new ZCode skill in the correct place.
 ## Where skills live
 
 Author a skill inside a plugin bundle; the installer is what makes ZCode load
-it. **ZCode 3.3.6 never loads skills from `~/.zcode/marketplaces/.../plugins/`** —
+it. **ZCode 3.5.2 never loads skills from `~/.zcode/marketplaces/.../plugins/`** —
 it loads user-scope skills only from `~/.zcode/skills/` (and `~/.agents/skills/`).
 So the installer **flattens** every plugin's `skills/` into `~/.zcode/skills/`
 (`cli-tools/scripts/lib/build.sh`, `flatten_plugin_components`); that flattened

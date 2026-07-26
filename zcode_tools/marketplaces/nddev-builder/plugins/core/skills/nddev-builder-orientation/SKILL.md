@@ -1,18 +1,18 @@
 ---
 name: nddev-builder-orientation
-description: Orients you in the nddev-builder toolkit and in how ZCode 3.3.6 discovers and loads extensions. Use when asking how nddev-builder is structured, how ZCode loads skills/commands/agents, where components go and why, why an installed skill is not loading, what the installer does (flatten to user scope), or the install/remove/switch lifecycle. Read this first before authoring or debugging a marketplace.
+description: Orients you in the nddev-builder toolkit and in how ZCode 3.5.2 discovers and loads extensions. Use when asking how nddev-builder is structured, how ZCode loads skills/commands/agents, where components go and why, why an installed skill is not loading, what the installer does (flatten to user scope), or the install/remove/switch lifecycle. Read this first before authoring or debugging a marketplace.
 ---
 
 # nddev-builder orientation
 
-The single map for this toolkit: how it is laid out, **how ZCode 3.3.6 actually
+The single map for this toolkit: how it is laid out, **how ZCode 3.5.2 actually
 loads extensions**, what the installer does, and where every component ends up
 and why. Read this before `add-*`, and whenever a component "installs" but does
 not appear in ZCode.
 
 ## The one fact that governs everything
 
-ZCode 3.3.6 loads **user-scope** skills, commands, and agents only from:
+ZCode 3.5.2 loads **user-scope** skills, commands, and agents only from:
 
 - `~/.zcode/skills/`, `~/.zcode/commands/`, `~/.zcode/agents/`
 - `~/.agents/skills/` (shared across agent tools)
@@ -73,13 +73,13 @@ shadow one silently.
 ## Fields ZCode records but never executes
 
 Only `commands`, `skills`, `hooks`, and `mcpServers` execute on the pinned ZCode
-3.3.6 runtime (plus `agents`, via the user-scope flatten above). The
+3.5.2 runtime (plus `agents`, via the user-scope flatten above). The
 plugin-manifest fields **`lspServers` (LSP/language servers), `outputStyles`,
 `channels`, and `settings` are recorded but not executed** — authoring them
 produces dead config. There is **no sixth "LSP component"** to add, so this
 toolkit ships no skill for one by design. Mind the
 **documented-surface-vs-executed-runtime gap**: the public Plugin doc lists LSP
-as a bundle component, but 3.3.6 treats `lspServers` as inert and delivers LSP
+as a bundle component, but 3.5.2 treats `lspServers` as inert and delivers LSP
 through a **hook**, not a native component. A hook — or any plugin-relative
 command — resolves the plugin root with the ZCode-native **`${ZCODE_PLUGIN_ROOT}`**;
 prefer it over the Claude Code spelling `${CLAUDE_PLUGIN_ROOT}`. See

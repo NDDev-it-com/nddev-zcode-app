@@ -24,6 +24,10 @@ ARTIFACT_KEYS = (
     "linux-arm64-appimage",
     "linux-arm64-deb",
 )
+MACOS_GATEKEEPER_SOURCES = {
+    "macos-arm64": "Notarized Developer ID",
+    "macos-x64": "Unnotarized Developer ID",
+}
 _SHA512 = re.compile(r"[0-9a-f]{128}")
 
 
@@ -125,6 +129,11 @@ def check_artifacts(version: dict, errors: list[str]) -> None:
             for field in ("team_id", "bundle_id"):
                 if not str(entry.get(field, "")).strip():
                     errors.append(f"{context}: {field} must be a non-empty string")
+            if entry.get("gatekeeper_source") != MACOS_GATEKEEPER_SOURCES.get(key):
+                errors.append(
+                    f"{context}: gatekeeper_source must be "
+                    f"{MACOS_GATEKEEPER_SOURCES.get(key)!r}"
+                )
         if key.endswith("deb"):
             package = str(entry.get("package_version", ""))
             if not package.startswith(f"{app}-"):

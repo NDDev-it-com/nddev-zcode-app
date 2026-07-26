@@ -1,6 +1,6 @@
 ---
 name: orchestrate-subagents
-description: Designs multi-subagent workflows for a ZCode plugin within the 3.3.6 limits — user-scope agents, foreground, parallel-yes/background-no — using Explore for recon and critic panels with on-disk evidence. Use when a plugin needs several agents to cooperate rather than one.
+description: Designs multi-subagent workflows for a ZCode plugin within the 3.5.2 limits — user-scope agents, foreground, parallel-yes/background-no — using Explore for recon and critic panels with on-disk evidence. Use when a plugin needs several agents to cooperate rather than one.
 ---
 
 # orchestrate-subagents
@@ -8,7 +8,7 @@ description: Designs multi-subagent workflows for a ZCode plugin within the 3.3.
 Compose ZCode subagents into a reliable workflow. Author each agent with
 `add-agent`; this skill is about how they cooperate given ZCode's real limits.
 
-## ZCode 3.3.6 subagent constraints (design around these)
+## ZCode 3.5.2 subagent constraints (design around these)
 
 - Agents load from **user scope only** (`~/.zcode/agents/`) — the installer
   flattens `agents/`; a plugin-bundled agent is diagnostic-only until flattened.
@@ -44,6 +44,6 @@ Compose ZCode subagents into a reliable workflow. Author each agent with
 
 ## Rules
 
-- Never design for background subagents on 3.3.6 — they run foreground.
+- Never design for background subagents on 3.5.2 — they run foreground.
 - Read-only recon (`Explore`) before writes; least-privilege tools per agent.
 - Reproducible gates write verdicts to disk, not only to chat.

@@ -49,7 +49,7 @@ build. Run these checks against a marketplace source tree.
    time, leaving that field empty in the rendered config.
 9. **Inert-field warning (WARN, not fail)** — warn if any
    `.zcode-plugin/plugin.json` authors `lspServers`, `outputStyles`, `channels`,
-   or `settings`: ZCode 3.3.6 records but never executes them, so they are dead
+   or `settings`: ZCode 3.5.2 records but never executes them, so they are dead
    config, not an install-blocking error.
 
 Checks 6-9 encode the ZCode-native execution model, hook, and MCP-schema rules;

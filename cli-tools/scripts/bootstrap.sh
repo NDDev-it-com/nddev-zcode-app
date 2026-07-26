@@ -202,11 +202,13 @@ if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-fA-F]{128}", digest):
 if not isinstance(size, int) or isinstance(size, bool) or not 1 <= size <= 2 * 1024**3:
     raise SystemExit(f"artifact size_bytes must be between 1 byte and 2 GiB: {key}")
 
-team_id = bundle_id = bundle_version = package_name = package_arch = package_version = ""
+team_id = bundle_id = bundle_version = gatekeeper_source = ""
+package_name = package_arch = package_version = ""
 if key.startswith("macos-"):
     team_id = artifact.get("team_id")
     bundle_id = artifact.get("bundle_id")
     bundle_version = artifact.get("bundle_version")
+    gatekeeper_source = artifact.get("gatekeeper_source")
     app_version = artifact.get("app_version")
     if not isinstance(team_id, str) or not re.fullmatch(r"[A-Z0-9]{10}", team_id):
         raise SystemExit(f"invalid macOS team_id: {key}")
@@ -216,6 +218,8 @@ if key.startswith("macos-"):
         raise SystemExit(f"macOS artifact app_version mismatch: {key}")
     if not isinstance(bundle_version, str) or not re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", bundle_version):
         raise SystemExit(f"invalid macOS bundle_version: {key}")
+    if gatekeeper_source not in {"Notarized Developer ID", "Unnotarized Developer ID"}:
+        raise SystemExit(f"invalid macOS gatekeeper_source: {key}")
 elif key.endswith("-deb"):
     package_name = artifact.get("package_name")
     package_arch = artifact.get("package_arch")
@@ -239,7 +243,7 @@ if launcher != expected_launcher:
 
 fields = (
     base.rstrip("/"), cdn_subpath, filename, digest.lower(), str(size), team_id, bundle_id,
-    bundle_version, package_name, package_arch, package_version,
+    bundle_version, gatekeeper_source, package_name, package_arch, package_version,
     launcher["linux_deb_entry"],
 )
 if any("|" in field or "\n" in field or "\r" in field for field in fields):
@@ -247,7 +251,7 @@ if any("|" in field or "\n" in field or "\r" in field for field in fields):
 print("|".join(fields))
 PY
 )" || exit 1
-IFS='|' read -r CDN_BASE CDN_SUBPATH artifact expected_sha512 expected_size TEAM_ID BUNDLE_ID BUNDLE_VERSION PACKAGE_NAME PACKAGE_ARCH PACKAGE_VERSION DEB_CLI_ENTRY <<< "$artifact_record"
+IFS='|' read -r CDN_BASE CDN_SUBPATH artifact expected_sha512 expected_size TEAM_ID BUNDLE_ID BUNDLE_VERSION GATEKEEPER_SOURCE PACKAGE_NAME PACKAGE_ARCH PACKAGE_VERSION DEB_CLI_ENTRY <<< "$artifact_record"
 url="${CDN_BASE}/${APP_VERSION}/${CDN_SUBPATH}/${artifact}"
 
 python3 -I - "$url" <<'PY'
@@ -274,6 +278,11 @@ nddev::log "info" "install kind: $INSTALL_KIND"
 nddev::log "info" "pinned app/CLI: $APP_VERSION / $CLI_VERSION"
 nddev::log "info" "artifact: $artifact ($expected_size bytes)"
 nddev::log "info" "sha512: $expected_sha512"
+if [ "$INSTALL_KIND" = "dmg" ]; then
+  nddev::log "info" "macOS identity: Team ID $TEAM_ID, bundle $BUNDLE_ID $BUNDLE_VERSION, Gatekeeper source $GATEKEEPER_SOURCE"
+elif [ "$INSTALL_KIND" = "deb" ]; then
+  nddev::log "info" "DEB identity: $PACKAGE_NAME $PACKAGE_VERSION $PACKAGE_ARCH"
+fi
 
 nddev::release_bootstrap_locks() {
   local index lock errors=0
@@ -777,18 +786,26 @@ else
 fi
 
 nddev::macos_identity() {
-  local app=$1 actual_version actual_build actual_bundle actual_team details assessment
+  local app=$1 actual_version actual_build actual_bundle actual_team details assessment assessment_status
   [ -d "$app" ] && [ ! -L "$app" ] || { nddev::log "error" "invalid ZCode.app endpoint: $app"; return 1; }
   codesign --verify --deep --strict --verbose=2 "$app" >/dev/null 2>&1 || {
     nddev::log "error" "ZCode.app code signature verification failed"
     return 1
   }
-  assessment="$(LC_ALL=C spctl --assess --type execute --verbose=4 "$app" 2>&1)" || {
-    nddev::log "error" "ZCode.app Gatekeeper assessment failed"
+  set +e
+  assessment="$(LC_ALL=C spctl --assess --type execute --verbose=4 "$app" 2>&1)"
+  assessment_status=$?
+  set -e
+  if ! printf '%s\n' "$assessment" | grep -Fqx "source=$GATEKEEPER_SOURCE"; then
+    if [ "$assessment_status" -ne 0 ]; then
+      nddev::log "error" "ZCode.app Gatekeeper assessment failed"
+    else
+      nddev::log "error" "ZCode.app Gatekeeper source mismatch: expected $GATEKEEPER_SOURCE"
+    fi
     return 1
-  }
-  if ! printf '%s\n' "$assessment" | grep -q '^source=Notarized Developer ID$'; then
-    nddev::log "error" "ZCode.app is not accepted as a notarized Developer ID application"
+  fi
+  if [ "$GATEKEEPER_SOURCE" = "Notarized Developer ID" ] && [ "$assessment_status" -ne 0 ]; then
+    nddev::log "error" "ZCode.app Gatekeeper assessment failed"
     return 1
   fi
   actual_version="$(/usr/bin/defaults read "$app/Contents/Info" CFBundleShortVersionString 2>/dev/null || true)"

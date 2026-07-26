@@ -341,7 +341,11 @@ postcondition failures, but it cannot transactionally undo changes made inside
 a real dpkg transaction. Repair the system package-manager state before
 retrying; bootstrap never masks a failed DEB by falling through to AppImage.
 
-The current upstream macOS app is accepted by Gatekeeper as
-`source=Notarized Developer ID`, and the installer requires that exact result,
-but the DMG does not contain a stapled notarization ticket. If Gatekeeper cannot
-establish that assessment, bootstrap fails closed before installation.
+The current upstream ZCode `3.5.2` macOS artifacts assess differently by
+architecture. The arm64 DMG is accepted as `source=Notarized Developer ID`; the
+x64 DMG is signed by the same Team ID but assesses as
+`source=Unnotarized Developer ID`. The installer pins the expected source per
+artifact in `build/version.json` and requires an exact match before
+installation. For a pinned notarized artifact it also requires a successful
+Gatekeeper assessment exit status; any missing, changed, or unexpected source
+fails closed before installation.
