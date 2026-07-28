@@ -785,13 +785,34 @@ nddev::verify_download() {
   nddev::log "ok" "artifact size and SHA-512 verified"
 }
 
+# Returns 0 (with the installed CLI path on stdout) when the package is already
+# installed at the exact pinned version + architecture and its embedded CLI
+# reports the pinned CLI version. Returns 1 otherwise. This is the pre-download
+# skip gate: a verified prior install must not require a fresh download just to
+# reach the post-install verification block, so a transient DNS or CDN failure
+# cannot break re-running bootstrap on an already-correct host. Only deb is
+# supported here; macOS dmg always re-verifies its artifact.
+nddev::installed_deb_matches() {
+  local installed_version installed_arch package_cli package_cli_version
+  installed_version="$(dpkg-query -W -f='${Version}' "$PACKAGE_NAME" 2>/dev/null || true)"
+  installed_arch="$(dpkg-query -W -f='${Architecture}' "$PACKAGE_NAME" 2>/dev/null || true)"
+  [ "$installed_version" = "$PACKAGE_VERSION" ] || return 1
+  [ "$installed_arch" = "$PACKAGE_ARCH" ] || return 1
+  package_cli="$(nddev::resolve_deb_cli "$PACKAGE_NAME" "$DEB_CLI_ENTRY")" || return 1
+  [ -f "$package_cli" ] && [ ! -L "$package_cli" ] || return 1
+  package_cli_version="$(nddev::probe_cli_version node "$package_cli")"
+  [ "$package_cli_version" = "$CLI_VERSION" ] || return 1
+  printf '%s\n' "$package_cli"
+  return 0
+}
+
 nddev::section "Download and verify artifact"
 nddev::log "info" "url: $url"
 if [ "$APPLY" -eq 0 ]; then
-  printf '[DRY-RUN] curl --disable --fail --location --proto =https --proto-redir =https --tlsv1.2 --max-filesize %s --output %q %q\n' "$expected_size" "$downloaded" "$url"
+  printf '[DRY-RUN] curl --disable --fail --location --proto =https --proto-redir=https --tlsv1.2 --max-filesize %s --output %q %q\n' "$expected_size" "$downloaded" "$url"
   printf '[DRY-RUN] verify size=%s and sha512=%s\n' "$expected_size" "$expected_sha512"
 else
-  curl --disable --fail --location --proto '=https' --proto-redir '=https' --tlsv1.2 \
+  curl --disable --fail --location --proto '=https' --proto-redir=https --tlsv1.2 \
     --retry 3 --retry-all-errors --connect-timeout 20 --max-filesize "$expected_size" \
     --output "$downloaded" "$url"
   chmod 600 "$downloaded"
@@ -983,6 +1004,14 @@ case "$INSTALL_KIND" in
     if [ "$APPLY" -eq 0 ]; then
       printf '[DRY-RUN] verify DEB Package=%s Version=%s Architecture=%s CLI=%s\n' "$PACKAGE_NAME" "$PACKAGE_VERSION" "$PACKAGE_ARCH" "$DEB_CLI_ENTRY"
       printf '[DRY-RUN] require successful dpkg --dry-run -i, then install with dpkg -i; errors are fatal (no AppImage fallback)\n'
+    elif SKIP_DEB_CLI="$(nddev::installed_deb_matches)"; then
+      # The package is already installed at the exact pinned version + arch and
+      # its embedded CLI reports the pinned CLI version. Skip the download,
+      # extraction, and dpkg -i entirely and reuse the verified install. A
+      # transient DNS/CDN failure during re-bootstrap must not block a host that
+      # is already correct; the post-install verification block still runs.
+      nddev::log "ok" "installed DEB already matches the pinned version + arch + CLI; skipping download and install"
+      app_entry="$SKIP_DEB_CLI"
     else
       nddev::deb_identity "$downloaded"
       deb_extract_root="$TMP_ROOT/deb-extract"
