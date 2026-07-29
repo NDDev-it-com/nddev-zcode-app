@@ -8,6 +8,7 @@ never reads private harness material, user state, or the network.
 
 from __future__ import annotations
 
+import ast
 import datetime as dt
 import json
 import re
@@ -336,6 +337,11 @@ def check_lifecycle_source(errors: list[str]) -> None:
     except (OSError, UnicodeDecodeError) as exc:
         errors.append(f"public lifecycle source is unreadable: {exc}")
         return
+    try:
+        manager_tree = ast.parse(manager)
+    except SyntaxError as exc:
+        errors.append(f"cli-tools/nddev_zcode.py: invalid Python syntax: {exc}")
+        return
     required_manager_markers = (
         "class DirectoryAuthority:",
         "class CleanupAuthority:",
@@ -398,6 +404,50 @@ def check_lifecycle_source(errors: list[str]) -> None:
     if "os.rename(str(source), str(destination))" in manager:
         errors.append(
             "cli-tools/nddev_zcode.py: lifecycle rename must use native fd-bound no-replace"
+        )
+    remove_functions = [
+        node
+        for node in manager_tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "remove_command"
+    ]
+    remove_reconciles_failure = False
+    if len(remove_functions) == 1:
+        for candidate in ast.walk(remove_functions[0]):
+            if not isinstance(candidate, ast.Try):
+                continue
+            body_calls = {
+                call.func.id
+                for call in ast.walk(candidate)
+                if isinstance(call, ast.Call) and isinstance(call.func, ast.Name)
+            }
+            catches_base = any(
+                isinstance(handler.type, ast.Name) and handler.type.id == "BaseException"
+                for handler in candidate.handlers
+            )
+            recovery_call = any(
+                isinstance(call, ast.Call)
+                and isinstance(call.func, ast.Name)
+                and call.func.id == "recover_live_prepare_if_needed"
+                for handler in candidate.handlers
+                for call in ast.walk(handler)
+            )
+            if (
+                {
+                    "rename_noreplace",
+                    "fsync_tree",
+                    "validate_live_commit_decision",
+                    "unlink_live_prepare",
+                    "finish_cleanup",
+                }
+                <= body_calls
+                and catches_base
+                and recovery_call
+            ):
+                remove_reconciles_failure = True
+                break
+    if not remove_reconciles_failure:
+        errors.append(
+            "cli-tools/nddev_zcode.py: remove must reconcile every post-prepare failure"
         )
     if '"root": str(cleanup_root_for(target))' in manager:
         errors.append("cli-tools/nddev_zcode.py: status cleanup metadata must not expose cleanup deletion paths")

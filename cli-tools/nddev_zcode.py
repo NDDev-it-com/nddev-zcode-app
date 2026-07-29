@@ -4632,15 +4632,20 @@ def remove_command(options: Options, target_text: str, backups_text: str) -> int
             source_identity=identity,
             destination=destination,
         )
-        rename_noreplace(target, destination, identity)
-        fsync_tree(destination)
-        _, prepare_binding = validate_live_commit_decision(target)
-        unlink_live_prepare(target, prepare_binding)
-        cleanup_pending = finish_cleanup(target, retired_payload)
-        if cleanup_pending:
-            log("warn", "cleanup_pending=true")
-        log("ok", f"removed target into backup: {destination}")
-        return 0
+        try:
+            rename_noreplace(target, destination, identity)
+            fsync_tree(destination)
+            _, prepare_binding = validate_live_commit_decision(target)
+            unlink_live_prepare(target, prepare_binding)
+            cleanup_pending = finish_cleanup(target, retired_payload)
+            if cleanup_pending:
+                log("warn", "cleanup_pending=true")
+            log("ok", f"removed target into backup: {destination}")
+            return 0
+        except BaseException:
+            with contextlib.suppress(BaseException):
+                recover_live_prepare_if_needed(target)
+            raise
 
 
 def list_backups(options: Options, backups_text: str) -> int:
