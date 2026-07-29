@@ -11,7 +11,6 @@ from __future__ import annotations
 import contextlib
 import ctypes
 import datetime as dt
-import errno
 import fcntl
 import hashlib
 import json
@@ -28,7 +27,6 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterator
-
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_DIR = ROOT / "cli-tools" / "scripts"
