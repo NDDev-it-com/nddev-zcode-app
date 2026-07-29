@@ -2691,7 +2691,7 @@ def assert_component_graph(source: Path) -> None:
     if plugins.is_dir():
         for plugin in sorted(plugins.iterdir(), key=lambda item: item.name):
             if plugin.is_dir() and not plugin.is_symlink():
-                roots.append((f"plugin {plugin.name}", plugin))
+                roots.append((plugin.name, plugin))
     for origin, root in roots:
         for component in ("skills", "commands", "agents"):
             directory = root / component
@@ -2701,9 +2701,13 @@ def assert_component_graph(source: Path) -> None:
                 if entry.name == ".gitkeep":
                     continue
                 key = (component, entry.name)
+                location = f"{origin}/{component}/{entry.name}"
                 if key in seen:
-                    fail(f"user-scope {component} name collision: {entry.name} (from {seen[key]}; {origin})")
-                seen[key] = origin
+                    fail(
+                        f"user-scope {component} name collision: {entry.name} "
+                        f"(from {seen[key]}; {location})"
+                    )
+                seen[key] = location
 
 
 def copy_source_tree(source: Path, target: Path) -> None:
@@ -4179,6 +4183,7 @@ def same_setup_noop(target: Path, setup: str, posture: str, platform: str) -> bo
 
 
 def plan_install(options: Options, target: Path, backups: Path, platform: str, source: Path) -> None:
+    assert_component_graph(source)
     log("info", f"profile: desktop ({'macOS' if platform == 'macos' else 'Ubuntu'})")
     log("info", f"posture: {options.posture}")
     log("info", f"target: {target}")

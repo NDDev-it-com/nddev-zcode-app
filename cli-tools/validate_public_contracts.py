@@ -397,6 +397,10 @@ def check_lifecycle_source(errors: list[str]) -> None:
                 "cli-tools/nddev_zcode.py: transaction path control policy must guard "
                 f"the resolver and canonicalizer exactly once for {marker!r}"
             )
+    if manager.count("assert_component_graph(source)") != 2:
+        errors.append(
+            "cli-tools/nddev_zcode.py: plan and apply must validate the same component graph"
+        )
     if "cleanup_pending=true" not in bootstrap or "command reports success with pending cleanup" not in bootstrap:
         errors.append("cli-tools/scripts/bootstrap.sh: post-commit cleanup must report success with cleanup_pending=true")
     if "shutil.rmtree(str(tombstone))" in manager:
