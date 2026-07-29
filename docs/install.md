@@ -18,8 +18,9 @@ freshness window are recorded in
 
 ## Prerequisites
 
-- Git, Python 3.10+ (`python3`), `curl`, and `node` (the CLI launcher runs the
-  app's `zcode.cjs` through node).
+- Git, `/usr/bin/python3` as a regular executable Python 3.9+ interpreter,
+  `curl`, and `node` (the CLI launcher runs the app's `zcode.cjs` through
+  node).
 - A local `build/.env` copied from `build/.env.example` only when explicit
   API-key providers, MCP integrations, or custom target settings are needed
   (see [secrets.md](secrets.md)). When present, it must be a current-user-owned
@@ -173,7 +174,7 @@ ignores a recognized flag.
 | `--target` | — | yes | yes | yes | — | yes |
 | `--platform` | yes | yes | — | — | — | — |
 | `--apply`, `--plan`, `--dry-run` | yes | yes | yes | yes | — | — |
-| `--keep-backup` | — | — | yes | — | — | — |
+| `--keep-backup` | — | yes | yes | yes | — | — |
 | `--slot` | — | — | — | yes | — | — |
 | `--adopt-unmanaged` | — | yes | — | — | — | — |
 | `--allow-target-relocation` | — | — | — | yes | — | — |
@@ -190,6 +191,10 @@ The install, remove, restore, or status target is resolved in this order:
 1. `--target <dir>` flag (highest precedence)
 2. `ZCODE_TARGET` in `build/.env`
 3. `~/.zcode` (the standard ZCode location, default)
+
+The backup root defaults to `~/.zcode-backups`. For install, remove, and
+restore, `--keep-backup <dir>` selects an explicit backup root for that command;
+otherwise `ZCODE_BACKUPS_DIR` in `build/.env` is used when present.
 
 The env parser performs no shell expansion. For portability, only
 `ZCODE_TARGET` and `ZCODE_BACKUPS_DIR` support an exact leading literal

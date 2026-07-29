@@ -136,12 +136,12 @@
   "transaction_policy": {
     "path_boundaries": "canonical non-root target and backup roots must be disjoint absent-or-real-directory endpoints on one filesystem",
     "safe_tree": "managed inputs reject symlinks, special files, and multiply-linked regular files",
-    "locking": "exclusive target lock and exclusive lock for the shared backup pool, acquired in deterministic order",
+    "locking": "monotonic product and canonical-target coordination anchors gate target-bound status, plan, install, remove, and restore operations",
     "runtime_quiescence": "apply-mode target mutations reject open task/session databases and SQLite recovery sidecars; ZCode must be quit cleanly before setup changes",
     "staging": "render, restore selected state, normalize permissions, verify, and fsync a same-filesystem sibling stage before live replacement",
-    "commit": "identity-bind and hold an occupied backup slot, move the previous target into its backup, then atomically rename the verified stage without replacement",
-    "rollback": "restore only identity-matched previous-target and held-slot state if commit, a handled signal, or pre-commit finalization fails; identity mismatch preserves foreign state, recovery paths, and locks; post-commit housekeeping failure is reported without discarding committed state",
-    "hard_interruption": "SIGKILL or power loss may leave a stale lock, stage, or recovery hold for operator inspection"
+    "commit": "write durable live-rename prepare authority before the first live move, move the previous target into its backup when present, then atomically rename the verified stage without replacement",
+    "rollback": "recover or fail closed from durable live-rename prepare and cleanup journal state; identity mismatch preserves foreign state; valid post-commit cleanup failure is reported as cleanup_pending without discarding committed state",
+    "hard_interruption": "SIGKILL or power loss is recovered from bounded prepare/journal authority by the next coordinated lifecycle operation, or reported as deterministic operator action when state is incoherent"
   },
   "adoption_policy": {
     "authorization": "--adopt-unmanaged requires install with an explicit existing --target",
