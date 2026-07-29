@@ -244,6 +244,22 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
                 "build/manifest.json: secrets.injection must declare the bounded "
                 f"environment snapshot contract ({required!r})"
             )
+    rendering_policy = (
+        str(secrets_policy.get("rendering", ""))
+        if isinstance(secrets_policy, dict)
+        else ""
+    )
+    for required in (
+        "reject invalid JSON with its input path",
+        "strip top-level _comment metadata",
+        "after hooks/MCP merge with exact logical paths",
+        "active and disabled branches",
+    ):
+        if required not in rendering_policy:
+            errors.append(
+                "build/manifest.json: secrets.rendering must declare structured "
+                f"rendering parity ({required!r})"
+            )
     setup_policy = manifest.get("setup_state_policy")
     if not isinstance(setup_policy, dict):
         errors.append("build/manifest.json: setup_state_policy must be an object")
@@ -391,6 +407,12 @@ def check_lifecycle_source(errors: list[str]) -> None:
         "plugin manifest name must match marketplace entry",
         "plugin manifest version must match marketplace entry",
         "marketplace plugin directories must match declared plugins exactly",
+        "def load_render_input(",
+        'value.pop("_comment", None)',
+        "def unresolved_key_paths(",
+        'failures.append(f"{location}.<placeholder-key>")',
+        "failures.extend(unresolved_key_paths(value, root_name))",
+        "invalid JSON in {label}: {path}",
         "class DirectoryAuthority:",
         "class CleanupAuthority:",
         "def cleanup_authority(",
@@ -465,6 +487,16 @@ def check_lifecycle_source(errors: list[str]) -> None:
         errors.append(
             "cli-tools/nddev_zcode.py: setup selection must validate the marketplace "
             "runtime contract exactly once before plan/apply"
+        )
+    if manager.count("load_render_input(") != 6:
+        errors.append(
+            "cli-tools/nddev_zcode.py: every base, hook, and MCP render input must "
+            "strip top-level comment metadata"
+        )
+    if 'fail("placeholder-bearing object keys are rejected")' in manager:
+        errors.append(
+            "cli-tools/nddev_zcode.py: placeholder object keys must be reported "
+            "after merge with their exact logical paths"
         )
     if any(
         unsafe in manager

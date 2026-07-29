@@ -1733,8 +1733,12 @@ def load_json_file(path: Path, label: str) -> dict[str, Any]:
         fail(f"missing safe JSON {label}: {path}")
     try:
         value = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
-        fail(f"cannot read {label}: {exc}")
+    except json.JSONDecodeError as exc:
+        fail(f"invalid JSON in {label}: {path}: {exc}")
+    except UnicodeDecodeError as exc:
+        fail(f"invalid UTF-8 in {label}: {path}: {exc}")
+    except OSError as exc:
+        fail(f"cannot read {label}: {path}: {exc}")
     if not isinstance(value, dict):
         fail(f"{label} must contain a JSON object")
     return value
@@ -2670,13 +2674,22 @@ def substitute_placeholders(value: Any, env: Mapping[str, str]) -> Any:
     if isinstance(value, list):
         return [substitute_placeholders(item, env) for item in value]
     if isinstance(value, dict):
-        result: dict[str, Any] = {}
-        for key, item in value.items():
-            if isinstance(key, str) and PLACEHOLDER_RE.search(key):
-                fail("placeholder-bearing object keys are rejected")
-            result[key] = substitute_placeholders(item, env)
-        return result
+        return {key: substitute_placeholders(item, env) for key, item in value.items()}
     return value
+
+
+def unresolved_key_paths(value: Any, path: str) -> list[str]:
+    failures: list[str] = []
+    if isinstance(value, list):
+        for index, item in enumerate(value):
+            failures.extend(unresolved_key_paths(item, f"{path}[{index}]"))
+    elif isinstance(value, dict):
+        for key, item in value.items():
+            location = f"{path}[{key!r}]"
+            if isinstance(key, str) and PLACEHOLDER_RE.search(key):
+                failures.append(f"{location}.<placeholder-key>")
+            failures.extend(unresolved_key_paths(item, location))
+    return failures
 
 
 def unresolved_paths(value: Any, path: str) -> list[str]:
@@ -2744,18 +2757,26 @@ def validate_custom_provider_identities(value: dict[str, Any]) -> None:
             fail("custom provider identities must not reuse ZCode-owned builtin:* ids: " + provider_id)
 
 
+def load_render_input(path: Path, label: str) -> dict[str, Any]:
+    value = load_json_file(path, label)
+    value.pop("_comment", None)
+    return value
+
+
 def render_configs(source: Path, target: Path, env: Mapping[str, str]) -> None:
-    cli = substitute_placeholders(load_json_file(source / "cli-config.template.json", "cli config"), env)
+    cli = substitute_placeholders(
+        load_render_input(source / "cli-config.template.json", "cli config"),
+        env,
+    )
     providers = substitute_placeholders(
-        load_json_file(source / "v2-config.template.json", "provider config"), env
+        load_render_input(source / "v2-config.template.json", "provider config"), env
     )
     settings = substitute_placeholders(
-        load_json_file(source / "v2-setting.template.json", "settings"), env
+        load_render_input(source / "v2-setting.template.json", "settings"), env
     )
     hooks_path = source / "hooks.json"
     if hooks_path.exists():
-        hooks = substitute_placeholders(load_json_file(hooks_path, "hooks"), env)
-        hooks.pop("_comment", None)
+        hooks = substitute_placeholders(load_render_input(hooks_path, "hooks"), env)
         events = cli.setdefault("hooks", {}).setdefault("events", {})
         if not isinstance(events, dict):
             fail("hooks.events must be a JSON object")
@@ -2769,8 +2790,7 @@ def render_configs(source: Path, target: Path, env: Mapping[str, str]) -> None:
             existing.extend(entries)
     mcp_path = source / "mcp.json"
     if mcp_path.exists():
-        mcp = substitute_placeholders(load_json_file(mcp_path, "mcp"), env)
-        mcp.pop("_comment", None)
+        mcp = substitute_placeholders(load_render_input(mcp_path, "mcp"), env)
         servers = mcp.get("mcpServers", {})
         if not isinstance(servers, dict):
             fail("mcpServers must be a JSON object")
@@ -2781,6 +2801,12 @@ def render_configs(source: Path, target: Path, env: Mapping[str, str]) -> None:
     validate_cli_model_provider(cli)
     validate_custom_provider_identities(providers)
     failures: list[str] = []
+    for root_name, value in (
+        ("provider-config", providers),
+        ("setting", settings),
+        ("cli", cli),
+    ):
+        failures.extend(unresolved_key_paths(value, root_name))
     failures.extend(unresolved_paths(settings, "setting"))
     for key, value in providers.items():
         if key != "provider":

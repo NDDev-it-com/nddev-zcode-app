@@ -200,6 +200,7 @@
     "source_requirements": "build/.env must be a current-user-owned regular non-symlink file with no group/world permission bits (0600 or stricter)",
     "path_expansion": "only ZCODE_TARGET and ZCODE_BACKUPS_DIR expand an exact leading literal $HOME, $HOME/, ${HOME}, or ${HOME}/ prefix; no shell evaluation or general expansion",
     "injection": "Only keys declared by build/.env.example or referenced in selected marketplace JSON string values are imported from the process environment; process values override build/.env values in one immutable snapshot shared by target/backup resolution, plan, and apply. ${VAR} placeholders are resolved for plan validation and JSON-escaped during apply rendering; placeholder-bearing object keys are rejected",
+    "rendering": "plan and apply reject invalid JSON with its input path, strip top-level _comment metadata from rendered inputs, and reject placeholder-bearing object keys after hooks/MCP merge with exact logical paths across active and disabled branches",
     "active_placeholder_validation": "plan and apply reject missing/empty placeholders in keys or values across active config, setting, provider, MCP, and hook branches; explicitly disabled providers/MCP servers may remain dormant",
     "runtime_locations": [
       "<target>/.env",
