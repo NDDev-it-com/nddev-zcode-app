@@ -26,8 +26,9 @@ ARTIFACT_KEYS = (
 )
 MACOS_GATEKEEPER_SOURCES = {
     "macos-arm64": "Notarized Developer ID",
-    "macos-x64": "Unnotarized Developer ID",
+    "macos-x64": "Notarized Developer ID",
 }
+DEFAULT_SETUP = "nddev-builder"
 _SHA512 = re.compile(r"[0-9a-f]{128}")
 
 
@@ -120,6 +121,8 @@ def check_artifacts(version: dict, errors: list[str]) -> None:
         if entry.get("cdn_subpath") != expected_subpath:
             errors.append(f"{context}: cdn_subpath must be {expected_subpath!r}")
         if key.startswith("macos"):
+            if not filename.endswith(".zip"):
+                errors.append(f"{context}: macOS artifact must be the official ZIP update artifact")
             if entry.get("app_version") != app:
                 errors.append(f"{context}: app_version must equal zcode_app_version")
             bundle = str(entry.get("bundle_version", ""))
@@ -214,6 +217,76 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
             "build/manifest.json: artifact_integrity_policy.macos_identity must document "
             "--allow-pinned-unnotarized"
         )
+    install_options = command_policy.get("install")
+    install_option_names = (
+        {str(option) for option in install_options}
+        if isinstance(install_options, list)
+        else set()
+    )
+    if "--posture" not in install_option_names:
+        errors.append("build/manifest.json: command_option_policy.install must include --posture")
+    setup_policy = manifest.get("setup_state_policy")
+    if not isinstance(setup_policy, dict):
+        errors.append("build/manifest.json: setup_state_policy must be an object")
+    else:
+        if setup_policy.get("default_setup") != DEFAULT_SETUP:
+            errors.append("build/manifest.json: setup_state_policy.default_setup must be nddev-builder")
+        if setup_policy.get("posture_option") != "--posture full-auto|safe, default full-auto":
+            errors.append("build/manifest.json: setup_state_policy.posture_option is invalid")
+    transaction_policy = manifest.get("transaction_policy")
+    if not isinstance(transaction_policy, dict):
+        errors.append("build/manifest.json: transaction_policy must be an object")
+    else:
+        locking = str(transaction_policy.get("locking", ""))
+        rollback = str(transaction_policy.get("rollback", ""))
+        if "status and plan expose" not in locking or "without cleanup deletion paths" not in locking:
+            errors.append("build/manifest.json: transaction_policy.locking must declare status/plan anchor reporting")
+        if "fd-bound no-follow cleanup namespace authority" not in rollback:
+            errors.append("build/manifest.json: transaction_policy.rollback must declare cleanup namespace authority")
+
+
+def check_lifecycle_source(errors: list[str]) -> None:
+    manager_path = ROOT / "cli-tools" / "nddev_zcode.py"
+    bootstrap_path = ROOT / "cli-tools" / "scripts" / "bootstrap.sh"
+    common_path = ROOT / "cli-tools" / "scripts" / "lib" / "common.sh"
+    try:
+        manager = manager_path.read_text(encoding="utf-8")
+        bootstrap = bootstrap_path.read_text(encoding="utf-8")
+        common = common_path.read_text(encoding="utf-8")
+    except (OSError, UnicodeDecodeError) as exc:
+        errors.append(f"public lifecycle source is unreadable: {exc}")
+        return
+    required_manager_markers = (
+        "class DirectoryAuthority:",
+        "class CleanupAuthority:",
+        "def cleanup_authority(",
+        "def cleanup_root_authority(",
+        "open_child_directory_authority(",
+        "dir_fd=authority.root.fd",
+        "native_rename_child_noreplace(",
+        "expected_graph=",
+        '"gid"',
+        "O_DIRECTORY",
+        "O_NOFOLLOW",
+        '"coordination"',
+        '"cleanup"',
+        '"entry_count"',
+        '"target_digest"',
+        "def print_plan_coordination(",
+        "cleanup_pending_state(target, recover_aliases=False)",
+        "recover_empty_cleanup_root_before_mutation(target)",
+    )
+    for marker in required_manager_markers:
+        if marker not in manager:
+            errors.append(f"cli-tools/nddev_zcode.py: missing lifecycle marker {marker!r}")
+    if "cleanup_pending=true" not in bootstrap or "command reports success with pending cleanup" not in bootstrap:
+        errors.append("cli-tools/scripts/bootstrap.sh: post-commit cleanup must report success with cleanup_pending=true")
+    if "shutil.rmtree(str(tombstone))" in manager:
+        errors.append("cli-tools/nddev_zcode.py: cleanup journal drain must not use path-based rmtree")
+    if '"root": str(cleanup_root_for(target))' in manager:
+        errors.append("cli-tools/nddev_zcode.py: status cleanup metadata must not expose cleanup deletion paths")
+    if "rm -rf --" in common or "rm -f --" in common:
+        errors.append("cli-tools/scripts/lib/common.sh: cleanup must use identity-bound fd-safe deletion, not rm fallback")
 
 
 def check_marketplaces(errors: list[str]) -> None:
@@ -223,8 +296,12 @@ def check_marketplaces(errors: list[str]) -> None:
         if marketplaces_root.is_dir()
         else []
     )
-    if not catalog:
-        errors.append("zcode_tools/marketplaces/: no marketplace setups found")
+    names = [path.name for path in catalog]
+    if names != [DEFAULT_SETUP]:
+        errors.append(
+            "zcode_tools/marketplaces/: managed public catalog must contain only "
+            f"{DEFAULT_SETUP}, found {names}"
+        )
     for marketplace_dir in catalog:
         relative = marketplace_dir.relative_to(ROOT).as_posix()
         manifest = load_json(f"{relative}/marketplace.json", errors)
@@ -264,7 +341,8 @@ def main() -> int:
     version = load_json("build/version.json", errors)
     baseline = load_json("references/zcode-baseline.json", errors)
     manifest = load_json("build/manifest.json", errors)
-    evidence = load_json("build/release-evidence.json", errors)
+    if (ROOT / "build" / "release-evidence.json").exists():
+        errors.append("build/release-evidence.json: release evidence belongs in private validation")
 
     version_file = ROOT / "VERSION"
     declared = version_file.read_text(encoding="utf-8").strip() if version_file.is_file() else None
@@ -310,19 +388,8 @@ def main() -> int:
             errors.append("build/manifest.json:build_version disagrees with build/version.json")
         check_manifest(manifest, errors)
 
-    if evidence is not None:
-        if evidence.get("schema_version") != 2:
-            errors.append("build/release-evidence.json: schema_version must be 2")
-        decision = evidence.get("promotion", {})
-        if not isinstance(decision, dict) or decision.get("decision") not in {
-            "approved",
-            "pending",
-        }:
-            errors.append(
-                "build/release-evidence.json: promotion.decision must be approved or pending"
-            )
-
     check_marketplaces(errors)
+    check_lifecycle_source(errors)
 
     if errors:
         print(f"validate_public_contracts.py: FAIL ({len(errors)} error(s))")

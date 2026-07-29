@@ -11,13 +11,14 @@ Pick a path below; each step hands off to a focused skill.
 ## The one thing to understand first
 
 Read `nddev-builder-orientation` once. The fact that governs everything: ZCode
-3.5.2 loads extensions only from **user scope** (`~/.zcode/{skills,commands,agents}`),
+3.5.3 loads extensions only from **user scope** (`~/.zcode/{skills,commands,agents}`),
 and this repo's installer **flattens** each plugin's components there. You author
 inside a marketplace; the installer makes it live. There is no CLI `plugin add`.
 
 ## Path 1 — add one component to an existing setup
 
-1. Choose the setup (marketplace): `nddev-builder`, `nddev-designer`, or your own.
+1. Choose the marketplace source: the managed `nddev-builder` setup or a new
+   local marketplace you are authoring.
 2. Run the matching skill: `add-skill`, `add-command`, `add-agent`, `add-hook`,
    `add-mcp-server`, `add-provider`, `add-tool`, `add-instructions`, or
    `add-reference`.

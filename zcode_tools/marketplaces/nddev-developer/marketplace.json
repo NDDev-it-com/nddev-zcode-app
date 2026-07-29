@@ -1,9 +1,0 @@
-{
-  "name": "nddev-developer",
-  "owner": {
-    "name": "Danil Silantyev (github:rldyourmnd), CEO NDDev",
-    "url": "https://github.com/rldyourmnd"
-  },
-  "description": "Portable, deliberately lean software-engineering profile for root-cause implementation, explicit contracts, proportionate verification, and clean delivery in any codebase.",
-  "plugins": []
-}

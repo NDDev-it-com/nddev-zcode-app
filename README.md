@@ -1,22 +1,22 @@
 # nddev-zcode-app
 
-`nddev-zcode-app` is a reusable build system and installer for complete,
-version-stamped ZCode setups. It recreates `~/.zcode` from a selected local
-setup catalog entry on macOS or Ubuntu, backs up the previous installation, and
+`nddev-zcode-app` is a reusable build system and installer for a complete,
+version-stamped ZCode setup. It recreates `~/.zcode` from the managed
+`nddev-builder` marketplace on macOS or Ubuntu, backs up the previous installation, and
 selectively restores runtime state so sessions and credentials survive setup
 changes.
 
 - **Author:** Danil Silantyev (github:rldyourmnd), CEO NDDev
 - **License:** AGPL-3.0-or-later
 - **Build version:** 0.1.1
-- **Verified ZCode runtime:** app 3.5.2, CLI 0.15.2, model GLM-5.2
+- **Verified ZCode runtime:** app 3.5.3, CLI 0.15.2, model GLM-5.2
 
 ## What this repository contains
 
 This public repository contains only the distributable implementation:
 
 ```text
-zcode_tools/   Marketplace sources: complete editable ZCode setups
+zcode_tools/   Marketplace source: the complete editable nddev-builder setup
 cli-tools/     Installer and lifecycle commands for macOS and Ubuntu
 build/         Version, artifact-integrity, manifest, and secret contracts
 config/        Public product and native-format contract metadata
@@ -45,12 +45,12 @@ $EDITOR build/.env
 cli-tools/scripts/install.sh bootstrap --plan
 cli-tools/scripts/install.sh bootstrap --apply
 
-# Inspect and install a setup.
+# Inspect and install the managed setup.
 cli-tools/scripts/install.sh list
 cli-tools/scripts/install.sh list --json
-cli-tools/scripts/install.sh install --setup nddev-builder --plan
+cli-tools/scripts/install.sh install --plan
 # Quit the ZCode desktop app before apply-mode target changes.
-cli-tools/scripts/install.sh install --setup nddev-builder --apply
+cli-tools/scripts/install.sh install --apply
 cli-tools/scripts/install.sh status
 cli-tools/scripts/install.sh status --json
 ```
@@ -62,32 +62,22 @@ inputs, requires the explicit CLI model/provider bootstrap expected by ZCode
 and rejects unresolved active placeholders in keys or values. Setup installation
 in apply mode performs a bounded live runtime probe and rejects open
 task/session databases or SQLite recovery sidecars before it changes the target.
-See [docs/install.md](docs/install.md) for install, update, switch, backup,
+See [docs/install.md](docs/install.md) for install, update, posture, backup,
 restore, remove, and custom-target usage.
 
-## Available setups
+## Managed Setup
 
-Each directory under `zcode_tools/marketplaces/` is a complete setup:
+The public catalog installs one managed setup by default:
 
 - `nddev-builder` enables its reusable 22-skill, 22-command `core` toolkit for
   creating and managing ZCode marketplaces, plugins, and components.
-- `nddev-designer` is a deliberately lean product-design profile focused on
-  design-system consistency, accessibility, responsive states, and
-  implementation-ready decisions.
-- `nddev-developer` is a deliberately lean software-engineering profile focused
-  on root-cause changes, explicit contracts, proportionate verification, and
-  clean delivery.
 
-The designer and developer profiles intentionally ship without global plugins,
-hooks, MCP servers, or user-scope components. They take project-specific tools
-and policy from the active workspace, which keeps the profiles portable and
-their permanent context surface small.
-
-The installer copies exactly one selected setup into the target ZCode home.
-`--setup` is the public selector; `--marketplace` remains a compatibility alias
-for the underlying ZCode-native storage format. Every new `BUILD-VERSION`
-schema-2 stamp records the selected `setup_id`, and `status` validates and
-reports it. Setup content is ordinary source and can be adapted independently.
+`install` uses `nddev-builder` when no setup flag is supplied. `--setup
+nddev-builder` is still accepted, and `--marketplace nddev-builder` remains a
+compatibility alias for the underlying ZCode-native storage format. `--posture
+full-auto` is the default; `--posture safe` renders the same managed setup with
+a stricter interaction posture. Every new `BUILD-VERSION` schema-2 stamp records
+`setup_id` and `posture`, and `status` validates and reports both.
 
 ## Backup and restore contract
 
@@ -99,7 +89,7 @@ Apply operations rotate at most 10 backups under `~/.zcode-backups/`:
 
 Credentials, certificates, the desktop task index and legacy session snapshots,
 bot definitions, CLI session databases, and runtime artifacts are selectively
-restored during an update or switch. Logs, crash data, transient execution
+restored during an update. Logs, crash data, transient execution
 data, model I/O rollouts, telemetry, and caches are regenerated. Destructive
 restore/remove operations refuse targets that are not marked by this installer
 with `BUILD-VERSION`.

@@ -12,10 +12,6 @@ LIB_DIR="$SCRIPT_DIR/lib"
 APPLY=0
 PLATFORM="auto"
 TMP_ROOT=""
-MOUNT_POINT=""
-MOUNTED=0
-MOUNT_ATTEMPTED=0
-MOUNT_TOOL=""
 APP_STAGE_PATH=""
 APP_STAGE_IDENTITY=""
 APP_OLD_PATH=""
@@ -142,7 +138,7 @@ esac
 
 INSTALL_KIND=""
 case "$PLATFORM" in
-  macos) INSTALL_KIND="dmg"; artifact_key="macos-$arch" ;;
+  macos) INSTALL_KIND="zip"; artifact_key="macos-$arch" ;;
   ubuntu)
     if command -v dpkg >/dev/null 2>&1 \
       && command -v dpkg-deb >/dev/null 2>&1 \
@@ -291,7 +287,7 @@ nddev::log "info" "install kind: $INSTALL_KIND"
 nddev::log "info" "pinned app/CLI: $APP_VERSION / $CLI_VERSION"
 nddev::log "info" "artifact: $artifact ($expected_size bytes)"
 nddev::log "info" "sha512: $expected_sha512"
-if [ "$INSTALL_KIND" = "dmg" ]; then
+if [ "$INSTALL_KIND" = "zip" ]; then
   nddev::log "info" "macOS identity: Team ID $TEAM_ID, bundle $BUNDLE_ID $BUNDLE_VERSION, Gatekeeper source $GATEKEEPER_SOURCE"
 elif [ "$INSTALL_KIND" = "deb" ]; then
   nddev::log "info" "DEB identity: $PACKAGE_NAME $PACKAGE_VERSION $PACKAGE_ARCH"
@@ -367,38 +363,19 @@ nddev::bootstrap_cleanup() {
   fi
   if ! nddev::cleanup_bootstrap_resources "$cleanup_mode"; then
     cleanup_failed=1
-    nddev::log "error" "bootstrap cleanup is incomplete; inspect the recovery paths reported above"
-  fi
-  [ "$status" -ne 0 ] || status=$cleanup_failed
-  exit "$status"
-}
-
-nddev::detach_image() {
-  local detached=0
-  { [ "$MOUNTED" -eq 1 ] || [ "$MOUNT_ATTEMPTED" -eq 1 ]; } && [ -n "$MOUNT_POINT" ] || return 0
-  if [ "$MOUNT_TOOL" = "diskutil" ]; then
-    if diskutil eject "$MOUNT_POINT" >/dev/null 2>&1 \
-      || hdiutil detach "$MOUNT_POINT" >/dev/null 2>&1; then
-      detached=1
+    if [ "$BOOTSTRAP_COMMITTED" -eq 1 ]; then
+      nddev::log "warn" "cleanup_pending=true"
+      nddev::log "warn" "bootstrap committed safely; inspect the recovery paths reported above"
+    else
+      nddev::log "error" "bootstrap cleanup is incomplete; inspect the recovery paths reported above"
     fi
-  else
-    hdiutil detach "$MOUNT_POINT" >/dev/null 2>&1 && detached=1
   fi
-  if [ "$detached" -ne 1 ] && [ "$MOUNTED" -ne 1 ] \
-    && python3 -I -c 'import os,sys; raise SystemExit(0 if not os.path.ismount(sys.argv[1]) else 1)' \
-      "$MOUNT_POINT"; then
-    # A failed attach may leave no mount at all. This is a clean no-op, while
-    # failure to detach a verified successful mount remains observable.
-    detached=1
+  if [ "$cleanup_failed" -eq 1 ] && [ "$BOOTSTRAP_COMMITTED" -ne 1 ] && [ "$status" -eq 0 ]; then
+    status=1
+  elif [ "$BOOTSTRAP_COMMITTED" -eq 1 ]; then
+    status=0
   fi
-  if [ "$detached" -ne 1 ]; then
-    nddev::log "error" "failed to detach mounted image; mount is preserved at $MOUNT_POINT"
-    return 1
-  fi
-  MOUNTED=0
-  MOUNT_ATTEMPTED=0
-  MOUNT_POINT=""
-  MOUNT_TOOL=""
+  exit "$status"
 }
 
 nddev::bootstrap_identity_preflight() {
@@ -712,18 +689,12 @@ nddev::cleanup_bootstrap_swaps() {
 
 nddev::cleanup_bootstrap_resources() {
   local success=$1 errors=0 swaps_clean=1
-  if { [ "$MOUNTED" -eq 1 ] || [ "$MOUNT_ATTEMPTED" -eq 1 ]; } && [ -n "$MOUNT_POINT" ]; then
-    nddev::detach_image || errors=1
-  fi
   nddev::cleanup_bootstrap_swaps "$success" || {
     errors=1
     swaps_clean=0
   }
   if [ -n "$TMP_ROOT" ]; then
-    if [ "$MOUNTED" -eq 1 ] || [ "$MOUNT_ATTEMPTED" -eq 1 ]; then
-      nddev::log "error" "temporary bootstrap root is preserved because its image is still mounted: $TMP_ROOT"
-      errors=1
-    elif [ -d "$TMP_ROOT" ] && [ ! -L "$TMP_ROOT" ]; then
+    if [ -d "$TMP_ROOT" ] && [ ! -L "$TMP_ROOT" ]; then
       if nddev::remove_direct_child_tree "$(dirname "$TMP_ROOT")" "$TMP_ROOT"; then
         TMP_ROOT=""
       else
@@ -893,7 +864,7 @@ fi
 
 app_entry=""
 case "$INSTALL_KIND" in
-  dmg)
+  zip)
     applications_raw="${NDDEV_APPLICATIONS_DIR-/Applications}"
     applications="$(nddev::bootstrap_destination "applications directory" "$applications_raw")" || exit 2
     if [ "$APPLY" -eq 1 ] && [ ! -d "$applications" ]; then
@@ -904,33 +875,22 @@ case "$INSTALL_KIND" in
       "$applications/.ZCode.app.nddev-bootstrap-lock" \
       "$bin_dir/.zcode.nddev-bootstrap-lock" || exit 1
     if [ "$APPLY" -eq 0 ]; then
-      printf '[DRY-RUN] hdiutil verify %q\n' "$downloaded"
-      printf '[DRY-RUN] mount, verify Team ID %s / bundle %s / versions %s (%s), then atomically install %q\n' \
+      printf '[DRY-RUN] extract verified ZIP %q\n' "$downloaded"
+      printf '[DRY-RUN] verify Team ID %s / bundle %s / versions %s (%s), then atomically install %q\n' \
         "$TEAM_ID" "$BUNDLE_ID" "$APP_VERSION" "$BUNDLE_VERSION" "$applications/ZCode.app"
       app_entry="$applications/ZCode.app/Contents/Resources/glm/zcode.cjs"
     else
-      nddev::require_cmd hdiutil required
       nddev::require_cmd codesign required
       nddev::require_cmd spctl required
       nddev::require_cmd ditto required
-      hdiutil verify "$downloaded" >/dev/null
-      MOUNT_POINT="$TMP_ROOT/mount"
-      mkdir -m 700 "$MOUNT_POINT"
-      if command -v diskutil >/dev/null 2>&1 && diskutil image attach --help >/dev/null 2>&1; then
-        MOUNT_TOOL="diskutil"
-        MOUNT_ATTEMPTED=1
-        diskutil image attach --readOnly --nobrowse --mountPoint "$MOUNT_POINT" "$downloaded" >/dev/null
-      else
-        MOUNT_TOOL="hdiutil"
-        MOUNT_ATTEMPTED=1
-        hdiutil attach "$downloaded" -nobrowse -readonly -mountpoint "$MOUNT_POINT" >/dev/null
-      fi
-      source_app="$MOUNT_POINT/ZCode.app"
+      zip_extract_root="$TMP_ROOT/zip-extract"
+      mkdir -m 700 "$zip_extract_root"
+      ditto -x -k "$downloaded" "$zip_extract_root"
+      source_app="$zip_extract_root/ZCode.app"
       if [ ! -d "$source_app" ] || [ -L "$source_app" ]; then
-        nddev::log "error" "disk image attach returned without the expected application endpoint"
+        nddev::log "error" "ZIP extract returned without the expected application endpoint"
         exit 1
       fi
-      MOUNTED=1
       nddev::macos_identity "$source_app"
 
       installed_app="$applications/ZCode.app"
@@ -1060,10 +1020,33 @@ PY
       extract_root="$TMP_ROOT/appimage-extract"
       mkdir -m 700 "$extract_root"
       (cd "$extract_root" && "$downloaded" --appimage-extract >/dev/null)
-      extracted="$extract_root/squashfs-root"
-      extracted_entry="$extracted/resources/glm/zcode.cjs"
-      [ -f "$extracted_entry" ] || { nddev::log "error" "AppImage does not contain the expected CLI entry"; exit 1; }
-      embedded_cli="$(nddev::probe_cli_version node "$extracted_entry")"
+	      extracted="$extract_root/squashfs-root"
+	      extracted_entry="$extracted/resources/glm/zcode.cjs"
+	      [ -f "$extracted_entry" ] || { nddev::log "error" "AppImage does not contain the expected CLI entry"; exit 1; }
+	      python3 -I - "$extracted" <<'PY'
+import os
+import stat
+import sys
+
+root = sys.argv[1]
+for directory, dirs, files in os.walk(root, topdown=True, followlinks=False):
+    info = os.lstat(directory)
+    if not stat.S_ISDIR(info.st_mode):
+        raise SystemExit(f"AppImage extracted tree contains a non-directory root: {directory}")
+    for name in dirs:
+        path = os.path.join(directory, name)
+        child = os.lstat(path)
+        if not stat.S_ISDIR(child.st_mode):
+            raise SystemExit(f"AppImage extracted tree contains an unsafe directory entry: {path}")
+    for name in files:
+        path = os.path.join(directory, name)
+        child = os.lstat(path)
+        if not stat.S_ISREG(child.st_mode):
+            raise SystemExit(f"AppImage extracted tree contains an unsafe file entry: {path}")
+        if child.st_nlink != 1:
+            raise SystemExit(f"AppImage extracted tree contains a hard-linked file: {path}")
+PY
+	      embedded_cli="$(nddev::probe_cli_version node "$extracted_entry")"
       [ "$embedded_cli" = "$CLI_VERSION" ] || { nddev::log "error" "AppImage embedded CLI mismatch: $embedded_cli"; exit 1; }
 
       if [ -L "$appimage_root" ] || { [ -e "$appimage_root" ] && [ ! -d "$appimage_root" ]; }; then
@@ -1170,7 +1153,7 @@ else
   fi
   [ -f "$app_entry" ] && [ ! -L "$app_entry" ] || { nddev::log "error" "entrypoint postcondition failed"; exit 1; }
   case "$INSTALL_KIND" in
-    dmg) nddev::macos_identity "$applications/ZCode.app" ;;
+    zip) nddev::macos_identity "$applications/ZCode.app" ;;
     deb)
       final_deb_version="$(dpkg-query -W -f='${Version}' "$PACKAGE_NAME" 2>/dev/null || true)"
       final_deb_arch="$(dpkg-query -W -f='${Architecture}' "$PACKAGE_NAME" 2>/dev/null || true)"
@@ -1193,8 +1176,11 @@ if [ "$APPLY" -eq 1 ]; then
   BOOTSTRAP_COMMITTED=1
   if ! nddev::cleanup_bootstrap_resources 1; then
     trap - EXIT INT TERM HUP
-    nddev::log "error" "bootstrap committed safely, but cleanup is incomplete; command reports failure"
-    exit 1
+    nddev::log "warn" "cleanup_pending=true"
+    nddev::log "warn" "bootstrap committed safely, but cleanup is incomplete; command reports success with pending cleanup"
+    nddev::section "Bootstrap complete"
+    nddev::log "info" "next: install.sh install --marketplace <name> --apply"
+    exit 0
   fi
   trap - EXIT INT TERM HUP
 else

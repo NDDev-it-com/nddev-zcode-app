@@ -15,10 +15,11 @@ build/         CONTRACT: versions, artifact integrity, manifest, secret template
 
 ### Marketplace sources
 
-Each `zcode_tools/marketplaces/<name>/` directory is a complete setup. The
-installer selects exactly one setup and builds the target from its native
-marketplace representation. `--setup` is canonical and `--marketplace` is a
-backward-compatible alias.
+`zcode_tools/marketplaces/nddev-builder/` is the managed setup installed by
+default. It remains a native ZCode marketplace so the same tree can be edited,
+validated, and distributed using ZCode's marketplace/plugin format. `--setup
+nddev-builder` is accepted for compatibility and `--marketplace nddev-builder`
+is the storage-format alias.
 
 | Marketplace source | Installed target | Treatment |
 | --- | --- | --- |
@@ -49,19 +50,18 @@ over file values. No shell expansion occurs; only `ZCODE_TARGET` and
 `ZCODE_BACKUPS_DIR` recognize a leading literal `$HOME` or `${HOME}` path
 prefix.
 
-### Setup profiles
+### Managed Setup
 
 - `nddev-builder` enables `core@nddev-builder`, a native component-authoring
   toolkit with 22 skills, 22 matching commands, and one reviewer agent.
-- `nddev-designer` is a production-ready minimal design profile. Its empty
-  extension maps are intentional; project-specific design tools come from the
-  active workspace.
-- `nddev-developer` is a production-ready minimal engineering profile. Its
-  empty extension maps are intentional; language, framework, and repository
-  tools come from the active workspace.
+
+`install` uses `nddev-builder` when no setup flag is supplied. `--posture
+full-auto` is the default and keeps the full automatic builder posture; `--posture
+safe` renders the same setup with a stricter installed instruction layer for
+explicit review before destructive work.
 
 All preference templates keep `modelProviderFamilyModes.zai` set to `oauth`,
-which is the verified ZCode 3.5.2 account-authentication mode. The provider
+which is the verified ZCode account-authentication mode. The provider
 objects in `v2/config.json` are a separate explicit API-key contract: Z.ai uses
 `https://api.z.ai/api/anthropic`; BigModel uses
 `https://open.bigmodel.cn/api/anthropic`. Both API-key providers are disabled
@@ -71,36 +71,52 @@ so rendering a setup cannot disable or replace the app-managed OAuth provider.
 
 ### Installer
 
-The entry point is `cli-tools/scripts/install.sh`. Platform runners source the
-shared libraries and execute the same lifecycle:
+The entry point is `cli-tools/scripts/install.sh`. It validates the trusted
+system `/usr/bin/python3` interpreter, requires Python 3.9 or newer, scrubs
+Python injection variables, and runs `cli-tools/nddev_zcode.py` with `-I -B`.
+The Python manager owns setup lifecycle transactions; no fallback path bypasses
+it.
 
-1. canonicalize absolute target and backup roots; require existing real
-   immediate parents; reject files, symlink endpoints, nested roots,
-   cross-filesystem transactions, and implicit replacement of an unstamped
-   directory,
-2. validate the selected marketplace and acquire an exclusive target lock plus
-   an exclusive lock for the shared backup pool in deterministic order,
-3. reject open task/session databases or SQLite recovery sidecars in apply mode,
-   then create a private same-filesystem sibling stage and check the live ZCode
-   runtime in apply mode through one canonical executable, a 3-second timeout,
-   and a 64 KiB output cap,
-4. copy source, structurally render JSON and MCP inputs, write a schema-2
-   `BUILD-VERSION` bound to the selected `setup_id`,
-   and selectively restore credentials, certificates, the desktop task index,
-   legacy session snapshots, bot definitions, CLI session databases, and
-   runtime artifacts into the stage,
-5. reject a missing or inconsistent CLI model/provider bootstrap, reserved
-   `builtin:*` identities on custom providers, unresolved placeholders in keys
-   or values across active config/setting/provider/MCP/hook branches, symlinks,
-   special files, and hardlink aliases; normalize private permissions, verify
-   the complete staged result, and fsync it before commit,
-6. hold any occupied rotation slot, move the previous live target into its
-   backup, and atomically rename the verified stage into place,
-7. roll back both the live target and held backup occupant on errors or handled
-   signals, then release both locks. Every mutable stage/live/rollback/hold
-   endpoint is bound to its recorded filesystem identity across abort and
-   committed cleanup; an identity mismatch preserves foreign state, recovery
-   paths, and locks instead of guessing ownership.
+Target-bound commands perform host and lexical option checks before filesystem
+observation, then use monotonic product and canonical-target coordination
+anchors in a fixed same-UID system temporary namespace. Read-only status and
+plan commands do not create or repair anchors, but they report the actual
+product and canonical-target anchor paths and whether each anchor is already
+present. A cold read is permitted only when the product anchor is absent and the
+existing product namespace is boundedly empty; if the namespace changes during
+the uncoordinated body, the result is discarded and the read is recomputed under
+coordination.
+
+The apply lifecycle:
+
+1. validates canonical target and backup endpoints, managed setup identity,
+   runtime quiescence, and active placeholder requirements,
+2. drains any valid pending cleanup journal before active mutation,
+3. builds a private same-filesystem stage, writes a schema-2 `BUILD-VERSION`
+   bound to `setup_id` and `posture`, and selectively restores credentials, certificates,
+   task indexes, session snapshots, bot definitions, CLI databases, and
+   artifacts,
+4. verifies the complete staged tree, normalizes private permissions, and
+   fsyncs it before commit,
+5. moves any previous target into a numbered backup slot, preserving exact
+   object identity for rollback, and atomically publishes the verified stage,
+6. promotes irreversible retired-slot cleanup through a durable prepare intent
+   and immutable cleanup journal before destructive drain.
+
+The cleanup namespace (`.nddev-zcode-cleanup/<target-digest>/`) is validated
+component by component before prepare, journal, or tombstone work: every
+manager-owned component is opened without following symlinks, checked for
+current-user ownership, group owner, private mode, expected kind, and exact
+open-vs-lstat identity. Lifecycle cleanup keeps those directory file
+descriptors through child inspection, publication, rename, unlink, and drain
+steps; status and plan expose only cleanup-pending booleans and bounded
+relative metadata, not cleanup deletion paths.
+
+If post-commit cleanup cannot finish after a valid final journal or verified
+bootstrap runtime is visible, the command returns success with explicit
+cleanup-pending state instead of rolling back committed state. Read-only
+commands expose the same state without repairing it. Malformed or incoherent
+cleanup state fails closed with exit code 2 before mutation.
 
 Plan mode describes the operation without writes or live `zcode` execution, but
 still parses, substitutes, merges, and validates config/setting/provider/MCP/hook
@@ -109,22 +125,21 @@ modes; only explicitly disabled provider/MCP nodes may remain dormant. An
 existing unstamped directory is never replaced implicitly: initial adoption
 requires `--adopt-unmanaged` together with an explicit `--target`.
 
-Shared implementation:
+Live implementation:
 
-- `lib/common.sh` owns logging, canonical path boundaries, backup naming,
-  private permissions, safe dry-run operations, and structured template
-  rendering.
-- `lib/version.sh` owns the public build/runtime version contract and installed
-  stamp, including setup identity and legacy schema compatibility.
-- `lib/build.sh` owns selection, two-root locking, staging, backup rotation,
-  fsync durability, rollback, build, restore, verification, and orchestration.
-- `restore.sh` applies the explicit per-path restore modes.
+- `cli-tools/nddev_zcode.py` owns setup selection, target coordination, status,
+  plan, install, remove, restore, backup rotation, rollback, cleanup journals,
+  and rendering.
+- `cli-tools/scripts/install.sh` is the trusted public compatibility shim.
+- `cli-tools/scripts/bootstrap.sh` retains native app/CLI bootstrap behavior and
+  still sources `lib/common.sh` and `lib/version.sh`.
 
 ### Bootstrap and CLI boundaries
 
 Bootstrap accepts only the exact canonical CDN base recorded in
 `build/version.json` and HTTPS-only redirects. It verifies size plus SHA-512
-before native identity checks. The DEB path is fixed to
+before native identity checks. macOS uses the official ZIP artifact from
+upstream `latest.yml`, not the DMG. The DEB path is fixed to
 `/opt/ZCode/resources/glm/zcode.cjs`. Before the package transaction, private
 extraction must find exactly one safe entry there and its CLI version must match
 the pin; `dpkg --dry-run -i` must then pass. After installation, the exact
@@ -134,12 +149,12 @@ required.
 Deterministically ordered locks protect the installer-managed app endpoint and
 the user launcher; dpkg owns the system package transaction on Debian systems.
 App and launcher swaps retain rollback state until exact postconditions pass.
-That point marks the bootstrap committed. Cleanup failure after commit remains
-visible but does not roll back verified state; pre-commit errors and handled
-signals recover the prior app/launcher when state is unambiguous. New and old
-application/launcher endpoints are identity-bound in both abort and success
-cleanup, and cleanup uses exclusive quarantine plus fd-relative deletion for
-owned state.
+That point marks the bootstrap committed. Cleanup failure after commit is
+reported as `cleanup_pending=true`, exits success, and does not roll back
+verified state; pre-commit errors and handled signals recover the prior
+app/launcher when state is unambiguous. New and old application/launcher
+endpoints are identity-bound in both abort and success cleanup, and cleanup uses
+exclusive quarantine plus fd-relative deletion for owned state.
 
 Normal installs treat a missing, timed-out, failed, or over-limit runtime CLI
 probe as advisory `not-installed`/`unknown`. Bootstrap treats the same bounded

@@ -8,7 +8,7 @@ Follow the `add-marketplace` skill exactly:
 
 1. Ask for the marketplace name (convention: `nddev-<purpose>`).
 2. Create the directory tree: `zcode_tools/marketplaces/<name>/{skills,commands,agents,plugins}`.
-3. Copy the template files from `nddev-designer` (the cleanest minimal example) and edit:
+3. Create or copy the required template files from an existing marketplace and edit:
    - `marketplace.json` → set `name` and `description`.
    - `AGENTS.md` → set the `<!-- <name>:begin -->` marker and write substantive,
      purpose-specific operating instructions.
