@@ -226,6 +226,24 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
     )
     if "--posture" not in install_option_names:
         errors.append("build/manifest.json: command_option_policy.install must include --posture")
+    secrets_policy = manifest.get("secrets")
+    injection_policy = (
+        str(secrets_policy.get("injection", ""))
+        if isinstance(secrets_policy, dict)
+        else ""
+    )
+    for required in (
+        "declared by build/.env.example",
+        "selected marketplace JSON string values",
+        "process values override build/.env values",
+        "one immutable snapshot shared by target/backup resolution, plan, and apply",
+        "placeholder-bearing object keys are rejected",
+    ):
+        if required not in injection_policy:
+            errors.append(
+                "build/manifest.json: secrets.injection must declare the bounded "
+                f"environment snapshot contract ({required!r})"
+            )
     setup_policy = manifest.get("setup_state_policy")
     if not isinstance(setup_policy, dict):
         errors.append("build/manifest.json: setup_state_policy must be an object")
@@ -343,6 +361,16 @@ def check_lifecycle_source(errors: list[str]) -> None:
         errors.append(f"cli-tools/nddev_zcode.py: invalid Python syntax: {exc}")
         return
     required_manager_markers = (
+        "class EnvironmentSnapshot:",
+        "values: Mapping[str, str]",
+        "values=MappingProxyType(result)",
+        "def forbidden_environment_key(",
+        "def placeholder_value_keys(",
+        "def supported_env_keys(",
+        "for key in allowed_keys:",
+        "result[key] = os.environ[key]",
+        "def assert_environment_snapshot_current(",
+        "write_env_snapshot(stage, environment)",
         "class DirectoryAuthority:",
         "class CleanupAuthority:",
         "def cleanup_authority(",
@@ -400,6 +428,29 @@ def check_lifecycle_source(errors: list[str]) -> None:
     if manager.count("assert_component_graph(source)") != 2:
         errors.append(
             "cli-tools/nddev_zcode.py: plan and apply must validate the same component graph"
+        )
+    if (
+        manager.count("parse_env_file(") != 2
+        or manager.count("environment = parse_env_file(source)") != 1
+    ):
+        errors.append(
+            "cli-tools/nddev_zcode.py: environment input must be parsed exactly once "
+            "into the install snapshot"
+        )
+    if manager.count("assert_environment_snapshot_current(environment)") != 2:
+        errors.append(
+            "cli-tools/nddev_zcode.py: plan and apply must bind the same environment snapshot"
+        )
+    if any(
+        unsafe in manager
+        for unsafe in (
+            "dict(os.environ)",
+            "result.update(os.environ)",
+            "result.update(os.environ.items())",
+        )
+    ):
+        errors.append(
+            "cli-tools/nddev_zcode.py: process environment imports must remain allowlisted"
         )
     if "cleanup_pending=true" not in bootstrap or "command reports success with pending cleanup" not in bootstrap:
         errors.append("cli-tools/scripts/bootstrap.sh: post-commit cleanup must report success with cleanup_pending=true")

@@ -26,7 +26,8 @@ import tempfile
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Iterator
+from types import MappingProxyType
+from typing import Any, Callable, Iterator, Mapping
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT_DIR = ROOT / "cli-tools" / "scripts"
@@ -50,6 +51,47 @@ SEMVER_RE = re.compile(
 SETUP_RE = re.compile(r"[a-z0-9][a-z0-9-]*")
 BACKUP_RE = re.compile(r"([0-9])-(?:unmanaged|" + SEMVER_RE.pattern + r")-old\.zcode")
 PLACEHOLDER_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
+ENV_EXAMPLE = ROOT / "build" / ".env.example"
+RENDER_INPUT_NAMES = (
+    "cli-config.template.json",
+    "v2-config.template.json",
+    "v2-setting.template.json",
+    "hooks.json",
+    "mcp.json",
+)
+RESERVED_ENV_EXACT = {
+    "PATH",
+    "HOME",
+    "TMPDIR",
+    "TMP",
+    "TEMP",
+    "BASH_ENV",
+    "ENV",
+    "IFS",
+    "CDPATH",
+    "GLOBIGNORE",
+    "SHELLOPTS",
+    "BASHOPTS",
+    "PS4",
+    "PROMPT_COMMAND",
+    "NODE_OPTIONS",
+    "RUBYOPT",
+    "RUBYLIB",
+    "PERL5OPT",
+    "PERL5LIB",
+    "ZDOTDIR",
+    "GIT_ASKPASS",
+    "SSH_ASKPASS",
+}
+RESERVED_ENV_PREFIXES = (
+    "XDG_",
+    "GIT_CONFIG_",
+    "PYTHON",
+    "NODE_",
+    "LD_",
+    "DYLD_",
+    "NDDEV_",
+)
 
 MAX_NAMESPACE_ENTRIES = 512
 MAX_ANCHOR_BYTES = 8192
@@ -129,6 +171,14 @@ class FileIdentity:
     size: int
     mtime_ns: int
     kind: str
+
+
+@dataclass(frozen=True)
+class EnvironmentSnapshot:
+    values: Mapping[str, str]
+    file_bytes: bytes | None
+    file_identity: FileIdentity | None
+    file_digest: str | None
 
 
 @dataclass
@@ -1482,52 +1532,140 @@ def canonical_target_from_text(value: str, *, inspect_endpoint: bool = True) -> 
     return target
 
 
-def parse_env_file() -> dict[str, str]:
+def forbidden_environment_key(key: str) -> bool:
+    return key in RESERVED_ENV_EXACT or key.startswith(RESERVED_ENV_PREFIXES)
+
+
+def placeholder_value_keys(value: Any) -> set[str]:
+    if isinstance(value, str):
+        return set(PLACEHOLDER_RE.findall(value))
+    if isinstance(value, list):
+        keys: set[str] = set()
+        for item in value:
+            keys.update(placeholder_value_keys(item))
+        return keys
+    if isinstance(value, dict):
+        keys = set()
+        for item in value.values():
+            keys.update(placeholder_value_keys(item))
+        return keys
+    return set()
+
+
+def supported_env_keys(source: Path | None = None) -> set[str]:
+    raw_example = read_file_no_follow(ENV_EXAMPLE, 1024 * 1024, "build/.env.example")
+    try:
+        example = raw_example.decode("utf-8")
+    except UnicodeDecodeError as exc:
+        fail(f"build/.env.example is not valid UTF-8: {exc}", 2)
+    keys: set[str] = set()
+    for line in example.splitlines():
+        declaration = line.strip()
+        if declaration.startswith("#"):
+            declaration = declaration[1:].strip()
+        match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)=.*", declaration)
+        if match is not None:
+            keys.add(match.group(1))
+    if source is not None:
+        for name in RENDER_INPUT_NAMES:
+            path = source / name
+            if path_exists(path):
+                keys.update(placeholder_value_keys(load_json_file(path, f"render input {name}")))
+    return {key for key in keys if not forbidden_environment_key(key)}
+
+
+def read_private_env_file() -> tuple[bytes, FileIdentity]:
+    flags = os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        fd = os.open(str(ENV_FILE), flags)
+    except OSError as exc:
+        fail(f"cannot open build/.env safely: {exc}", 2)
+    try:
+        opened_before = identity_from_stat(os.fstat(fd))
+        if opened_before.kind != "file":
+            fail("build/.env must be a regular non-symlink file", 2)
+        if opened_before.uid != current_uid():
+            fail("build/.env must be owned by the current user", 2)
+        if opened_before.mode & 0o077:
+            fail("build/.env must not grant group/world permissions", 2)
+        if opened_before.size > 1024 * 1024:
+            fail("build/.env exceeds the 1 MiB safety limit", 2)
+        chunks: list[bytes] = []
+        total = 0
+        while True:
+            chunk = os.read(fd, 65536)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > 1024 * 1024:
+                fail("build/.env exceeds the 1 MiB safety limit", 2)
+            chunks.append(chunk)
+        opened_after = identity_from_stat(os.fstat(fd))
+        current = lstat_identity(ENV_FILE)
+        if opened_after != opened_before or current != opened_after:
+            fail("build/.env changed during validation", 2)
+        raw = b"".join(chunks)
+        if len(raw) != opened_after.size:
+            fail("build/.env changed during validation", 2)
+        return raw, opened_after
+    finally:
+        os.close(fd)
+
+
+def assert_environment_snapshot_current(snapshot: EnvironmentSnapshot) -> None:
+    if snapshot.file_bytes is None:
+        if path_exists(ENV_FILE):
+            fail("build/.env appeared after the environment snapshot was loaded", 2)
+        return
     if not path_exists(ENV_FILE):
-        return {}
-    identity = require_private_file_identity(ENV_FILE, "build/.env")
-    if identity.size > 1024 * 1024:
-        fail("build/.env exceeds the 1 MiB safety limit")
-    text = read_file_no_follow(ENV_FILE, 1024 * 1024, "build/.env").decode("utf-8")
-    result: dict[str, str] = {}
-    reserved_exact = {
-        "PATH",
-        "HOME",
-        "TMPDIR",
-        "TMP",
-        "TEMP",
-        "BASH_ENV",
-        "ENV",
-        "IFS",
-        "CDPATH",
-        "GLOBIGNORE",
-        "SHELLOPTS",
-        "BASHOPTS",
-        "PS4",
-        "PROMPT_COMMAND",
-        "NODE_OPTIONS",
-        "RUBYOPT",
-        "RUBYLIB",
-        "PERL5OPT",
-        "PERL5LIB",
-        "ZDOTDIR",
-        "GIT_ASKPASS",
-        "SSH_ASKPASS",
-    }
-    reserved_prefixes = ("XDG_", "GIT_CONFIG_", "PYTHON", "NODE_", "LD_", "DYLD_", "NDDEV_")
-    for line_number, line in enumerate(text.splitlines(), 1):
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)=(.*)", line)
-        if match is None:
-            fail(f"build/.env line must be exactly KEY=VALUE at line {line_number}")
-        key, value = match.groups()
-        if key in result:
-            fail(f"build/.env contains a duplicate key at line {line_number}")
-        if key in reserved_exact or key.startswith(reserved_prefixes):
-            fail(f"build/.env contains a forbidden execution-control key at line {line_number}")
-        result[key] = decode_env_value(value, line_number)
-    return result
+        fail("build/.env disappeared after the environment snapshot was loaded", 2)
+    raw, identity = read_private_env_file()
+    if identity != snapshot.file_identity or hashlib.sha256(raw).hexdigest() != snapshot.file_digest:
+        fail("build/.env changed after the environment snapshot was loaded", 2)
+
+
+def load_environment_snapshot(allowed_keys: set[str]) -> EnvironmentSnapshot:
+    parsed: dict[str, str] = {}
+    raw: bytes | None = None
+    identity: FileIdentity | None = None
+    if path_exists(ENV_FILE):
+        raw, identity = read_private_env_file()
+        try:
+            text = raw.decode("utf-8")
+        except UnicodeDecodeError as exc:
+            fail(f"build/.env is not valid UTF-8: {exc}", 2)
+        if any((ord(char) < 32 and char != "\n") or ord(char) == 127 for char in text):
+            fail("build/.env contains unsupported control characters", 2)
+        for line_number, line in enumerate(text.split("\n"), 1):
+            if not line.strip() or line.lstrip().startswith("#"):
+                continue
+            match = re.fullmatch(r"([A-Za-z_][A-Za-z0-9_]*)=(.*)", line)
+            if match is None:
+                fail(f"build/.env line must be exactly KEY=VALUE at line {line_number}")
+            key, value = match.groups()
+            if key in parsed:
+                fail(f"build/.env contains a duplicate key at line {line_number}")
+            if forbidden_environment_key(key):
+                fail(f"build/.env contains a forbidden execution-control key at line {line_number}")
+            parsed[key] = decode_env_value(value, line_number)
+    result = {key: value for key, value in parsed.items() if key in allowed_keys}
+    for key in allowed_keys:
+        if key in os.environ:
+            result[key] = os.environ[key]
+    return EnvironmentSnapshot(
+        values=MappingProxyType(result),
+        file_bytes=raw,
+        file_identity=identity,
+        file_digest=hashlib.sha256(raw).hexdigest() if raw is not None else None,
+    )
+
+
+def parse_env_file(source: Path | None = None) -> EnvironmentSnapshot:
+    allowed_keys = supported_env_keys(source)
+    try:
+        return load_environment_snapshot(allowed_keys)
+    except ManagerError as exc:
+        fail(f"refusing invalid or unsafe secret source: build/.env: {exc}", exc.code)
 
 
 def decode_env_value(value: str, line_number: int) -> str:
@@ -1560,7 +1698,7 @@ def decode_env_value(value: str, line_number: int) -> str:
     return value
 
 
-def resolve_target_option(options: Options, env_file: dict[str, str]) -> str:
+def resolve_target_option(options: Options, env_file: Mapping[str, str]) -> str:
     if options.target:
         value = options.target
     elif env_file.get("ZCODE_TARGET"):
@@ -1570,7 +1708,7 @@ def resolve_target_option(options: Options, env_file: dict[str, str]) -> str:
     return reject_transaction_path_controls(value, "target")
 
 
-def resolve_backups_option(options: Options, env_file: dict[str, str]) -> str:
+def resolve_backups_option(options: Options, env_file: Mapping[str, str]) -> str:
     if options.keep_backup:
         value = options.keep_backup
     elif env_file.get("ZCODE_BACKUPS_DIR"):
@@ -2525,9 +2663,9 @@ def ensure_dir(path: Path) -> None:
     os.chmod(path, 0o700)
 
 
-def substitute_placeholders(value: Any, env: dict[str, str]) -> Any:
+def substitute_placeholders(value: Any, env: Mapping[str, str]) -> Any:
     if isinstance(value, str):
-        return PLACEHOLDER_RE.sub(lambda m: env.get(m.group(1), m.group(0)), value)
+        return PLACEHOLDER_RE.sub(lambda match: env.get(match.group(1)) or match.group(0), value)
     if isinstance(value, list):
         return [substitute_placeholders(item, env) for item in value]
     if isinstance(value, dict):
@@ -2605,7 +2743,7 @@ def validate_custom_provider_identities(value: dict[str, Any]) -> None:
             fail("custom provider identities must not reuse ZCode-owned builtin:* ids: " + provider_id)
 
 
-def render_configs(source: Path, target: Path, env: dict[str, str]) -> None:
+def render_configs(source: Path, target: Path, env: Mapping[str, str]) -> None:
     cli = substitute_placeholders(load_json_file(source / "cli-config.template.json", "cli config"), env)
     providers = substitute_placeholders(
         load_json_file(source / "v2-config.template.json", "provider config"), env
@@ -2676,12 +2814,11 @@ def render_configs(source: Path, target: Path, env: dict[str, str]) -> None:
     write_json(target / "v2" / "setting.json", settings)
 
 
-def write_env_snapshot(target: Path, env_values: dict[str, str]) -> None:
-    if not path_exists(ENV_FILE):
+def write_env_snapshot(target: Path, environment: EnvironmentSnapshot) -> None:
+    if environment.file_bytes is None:
         log("info", "no build/.env - runtime tools must receive secrets from the environment")
         return
-    raw = read_file_no_follow(ENV_FILE, 1024 * 1024, "build/.env")
-    atomic_write(target / ".env", raw, 0o600)
+    atomic_write(target / ".env", environment.file_bytes, 0o600)
 
 
 def assert_component_graph(source: Path) -> None:
@@ -2854,7 +2991,7 @@ def write_stamp(target: Path, platform: str, setup: str, posture: str) -> None:
 def build_stage(
     source: Path,
     stage: Path,
-    env_values: dict[str, str],
+    environment: EnvironmentSnapshot,
     platform: str,
     setup: str,
     posture: str,
@@ -2867,9 +3004,9 @@ def build_stage(
     section(f"Copy source tree (marketplace: {setup})")
     copy_source_tree(source, stage)
     section("Render config templates")
-    render_configs(source, stage, env_values)
+    render_configs(source, stage, environment.values)
     apply_posture(stage, setup, posture)
-    write_env_snapshot(stage, env_values)
+    write_env_snapshot(stage, environment)
     write_stamp(stage, platform, setup, posture)
     verify_managed_tree(stage, setup=setup)
     normalize_tree(stage)
@@ -4182,8 +4319,16 @@ def same_setup_noop(target: Path, setup: str, posture: str, platform: str) -> bo
     )
 
 
-def plan_install(options: Options, target: Path, backups: Path, platform: str, source: Path) -> None:
+def plan_install(
+    options: Options,
+    target: Path,
+    backups: Path,
+    platform: str,
+    source: Path,
+    environment: EnvironmentSnapshot,
+) -> None:
     assert_component_graph(source)
+    assert_environment_snapshot_current(environment)
     log("info", f"profile: desktop ({'macOS' if platform == 'macos' else 'Ubuntu'})")
     log("info", f"posture: {options.posture}")
     log("info", f"target: {target}")
@@ -4202,7 +4347,7 @@ def plan_install(options: Options, target: Path, backups: Path, platform: str, s
     section(f"Copy source tree (marketplace: {source.name})")
     print(f"[DRY-RUN] cp -R {source / 'AGENTS.md'} {parent / ('.' + target.name + '.stage.PLAN') / 'AGENTS.md'}")
     section("Render config templates")
-    validate_plan_configs(source, parse_env_file())
+    validate_plan_configs(source, environment.values)
     log("info", "no build/.env - runtime tools must receive secrets from the environment")
     print(f"[DRY-RUN] write BUILD-VERSION -> {parent / ('.' + target.name + '.stage.PLAN') / 'BUILD-VERSION'}")
     section("Verify staged build")
@@ -4212,7 +4357,7 @@ def plan_install(options: Options, target: Path, backups: Path, platform: str, s
     print("[DRY-RUN] release canonical target coordination anchor")
 
 
-def validate_plan_configs(source: Path, env: dict[str, str]) -> None:
+def validate_plan_configs(source: Path, env: Mapping[str, str]) -> None:
     stage = tempfile.mkdtemp(prefix="nddev-zcode-plan-render-")
     try:
         root = Path(stage)
@@ -4243,7 +4388,9 @@ def apply_install(
     resources: TransactionResources,
     platform: str,
     source: Path,
+    environment: EnvironmentSnapshot,
 ) -> bool:
+    assert_environment_snapshot_current(environment)
     target = resources.target
     backups = resources.backups
     cleanup_drained = recover_transaction_state(resources)
@@ -4287,7 +4434,7 @@ def apply_install(
     adoption_marker: dict[str, Any] | None = None
     try:
         check_runtime_version(plan=False)
-        build_stage(source, stage, parse_env_file(), platform, source.name, options.posture)
+        build_stage(source, stage, environment, platform, source.name, options.posture)
         if had_target:
             copy_runtime_state(target, stage, unmanaged=adoption_mode)
             verify_managed_tree(stage, setup=source.name)
@@ -4394,13 +4541,16 @@ def write_adoption_envelope(
     atomic_write(envelope / "NDDEV-BACKUP.json", json_compact_bytes(payload), 0o600)
 
 
-def install_command(options: Options, target_text: str, backups_text: str) -> int:
+def install_command(
+    options: Options,
+    target_text: str,
+    backups_text: str,
+    source: Path,
+    environment: EnvironmentSnapshot,
+) -> int:
     platform = detect_platform() if options.platform == "auto" else options.platform
     if platform not in {"macos", "ubuntu"}:
         fail("unsupported platform (expected macos|ubuntu)", 2)
-    if not options.setup:
-        options.setup = DEFAULT_SETUP
-    source = select_marketplace(options.setup)
     section("nddev-zcode-app installer")
     log("info", f"mode: {'APPLY' if options.apply else 'PLAN (dry-run)'}")
     log("info", f"platform: {platform}")
@@ -4413,13 +4563,13 @@ def install_command(options: Options, target_text: str, backups_text: str) -> in
             if cleanup["cleanup_pending"]:
                 log("warn", "cleanup_pending=true")
             validate_backup_root(backups, locked, create=False)
-            plan_install(options, locked, backups, platform, source)
+            plan_install(options, locked, backups, platform, source, environment)
         run_transaction_plan(target_text, backups_text, body)
         install_complete(source.name, platform, backup=None, cleanup_pending=False)
         return 0
     with transaction_coordination(target_text, backups_text) as resources:
         validate_backup_root(resources.backups, resources.target, create=False)
-        cleanup_pending = apply_install(options, resources, platform, source)
+        cleanup_pending = apply_install(options, resources, platform, source, environment)
         install_complete(source.name, platform, backup=None, cleanup_pending=cleanup_pending)
     return 0
 
@@ -4931,15 +5081,22 @@ def main(argv: list[str] | None = None) -> int:
             return run_bootstrap(options)
         if options.command == "list":
             return list_setups(options.json_output)
-        env_values = parse_env_file()
-        if options.command == "status":
-            return show_status(options, resolve_target_option(options, env_values))
-        if options.command == "list-backups":
-            return list_backups(options, resolve_backups_option(options, env_values))
-        target_text = resolve_target_option(options, env_values)
-        backups_text = resolve_backups_option(options, env_values)
+        source: Path | None = None
         if options.command == "install":
-            return install_command(options, target_text, backups_text)
+            if not options.setup:
+                options.setup = DEFAULT_SETUP
+            source = select_marketplace(options.setup)
+        environment = parse_env_file(source)
+        if options.command == "status":
+            return show_status(options, resolve_target_option(options, environment.values))
+        if options.command == "list-backups":
+            return list_backups(options, resolve_backups_option(options, environment.values))
+        target_text = resolve_target_option(options, environment.values)
+        backups_text = resolve_backups_option(options, environment.values)
+        if options.command == "install":
+            if source is None:
+                fail("install marketplace resolution failed", 2)
+            return install_command(options, target_text, backups_text, source, environment)
         if options.command == "restore":
             return restore_command(options, target_text, backups_text)
         if options.command == "remove":
