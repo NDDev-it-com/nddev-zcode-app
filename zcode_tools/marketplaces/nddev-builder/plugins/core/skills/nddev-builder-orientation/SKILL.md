@@ -1,18 +1,18 @@
 ---
 name: nddev-builder-orientation
-description: Orients you in the nddev-builder toolkit and in how ZCode 3.5.2 discovers and loads extensions. Use when asking how nddev-builder is structured, how ZCode loads skills/commands/agents, where components go and why, why an installed skill is not loading, what the installer does (flatten to user scope), or the install/remove/switch lifecycle. Read this first before authoring or debugging a marketplace.
+description: Orients you in the nddev-builder toolkit and in how ZCode discovers and loads extensions. Use when asking how nddev-builder is structured, how ZCode loads skills/commands/agents, where components go and why, why an installed skill is not loading, what the installer does (flatten to user scope), or the install/remove/update lifecycle. Read this first before authoring or debugging a marketplace.
 ---
 
 # nddev-builder orientation
 
-The single map for this toolkit: how it is laid out, **how ZCode 3.5.2 actually
+The single map for this toolkit: how it is laid out, **how ZCode actually
 loads extensions**, what the installer does, and where every component ends up
 and why. Read this before `add-*`, and whenever a component "installs" but does
 not appear in ZCode.
 
 ## The one fact that governs everything
 
-ZCode 3.5.2 loads **user-scope** skills, commands, and agents only from:
+ZCode loads **user-scope** skills, commands, and agents only from:
 
 - `~/.zcode/skills/`, `~/.zcode/commands/`, `~/.zcode/agents/`
 - `~/.agents/skills/` (shared across agent tools)
@@ -35,9 +35,10 @@ file-install still cannot register a plugin.
 
 ## What the installer does about it
 
-`install.sh install --setup <marketplace>` builds a complete `~/.zcode` and then
+`install.sh install` builds the managed `nddev-builder` `~/.zcode`; passing
+`--setup <marketplace>` is reserved for explicitly authored local marketplace sources and then
 **flattens** each plugin's components to user scope
-(`cli-tools/scripts/lib/build.sh`, `nddev::flatten_plugin_components`):
+(`cli-tools/nddev_zcode.py`, `copy_source_tree`):
 
 ```
 marketplaces/<mp>/plugins/<plugin>/skills/<name>/   ->  ~/.zcode/skills/<name>/
@@ -73,13 +74,13 @@ shadow one silently.
 ## Fields ZCode records but never executes
 
 Only `commands`, `skills`, `hooks`, and `mcpServers` execute on the pinned ZCode
-3.5.2 runtime (plus `agents`, via the user-scope flatten above). The
+runtime (plus `agents`, via the user-scope flatten above). The
 plugin-manifest fields **`lspServers` (LSP/language servers), `outputStyles`,
 `channels`, and `settings` are recorded but not executed** — authoring them
 produces dead config. There is **no sixth "LSP component"** to add, so this
 toolkit ships no skill for one by design. Mind the
 **documented-surface-vs-executed-runtime gap**: the public Plugin doc lists LSP
-as a bundle component, but 3.5.2 treats `lspServers` as inert and delivers LSP
+as a bundle component, but the pinned runtime treats `lspServers` as inert and delivers LSP
 through a **hook**, not a native component. A hook — or any plugin-relative
 command — resolves the plugin root with the ZCode-native **`${ZCODE_PLUGIN_ROOT}`**;
 prefer it over the Claude Code spelling `${CLAUDE_PLUGIN_ROOT}`. See
@@ -87,11 +88,11 @@ prefer it over the Claude Code spelling `${CLAUDE_PLUGIN_ROOT}`. See
 
 ## Lifecycle
 
-- **install** — backup → build clean `~/.zcode` from the setup → flatten to user
+- **install** — backup → build clean `~/.zcode` from the managed setup → flatten to user
   scope → render configs → restore preserved runtime state (credentials, tasks,
   certs). Each install writes a numbered backup slot.
-- **switch** — `install --setup <other>` rebuilds `~/.zcode` from a different
-  marketplace; the flatten regenerates user scope for the new setup.
+- **posture** — `install --posture safe` renders the same managed setup with a
+  stricter installed policy; the flatten regenerates user scope for that build.
 - **remove** — backs up and deletes the whole managed `~/.zcode`; the flattened
   copies live inside it, so removal is clean. Skills in `~/.agents/skills`
   (other tools' shared skills) are untouched.

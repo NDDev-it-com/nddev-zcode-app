@@ -227,7 +227,7 @@ PY
       nddev::log "error" "build/.env disappeared between environment-loading phases"
       return 1
     fi
-    # Read by build.sh in the same runner process.
+    # Read by the same runner process after the guarded load phase.
     # shellcheck disable=SC2034
     NDDEV_ENV_DIGEST="absent"
     return 0
@@ -249,7 +249,7 @@ PY
         nddev::log "error" "internal build/.env parser contract failed"
         return 1
       fi
-      # Read by build.sh in the same runner process.
+      # Read by the same runner process after the guarded load phase.
       # shellcheck disable=SC2034
       NDDEV_ENV_DIGEST="$val"
       continue
@@ -553,7 +553,7 @@ PY
 # Validate a managed BUILD-VERSION stamp and print one sanitized representation.
 # The complete schema is required so a marker file alone cannot authorize a
 # destructive remove or restore. Schema 0/1 remains readable for recovery;
-# schema 2 binds every newly installed tree to its selected setup.
+# schema 2 binds every newly installed tree to its managed setup.
 nddev::stamp_metadata() {
   local tree=$1 output=${2:-version}
   python3 -I - "$tree/BUILD-VERSION" "$NDDEV_SEMVER_PATTERN" "$output" <<'PY'
@@ -649,74 +649,6 @@ nddev::stamp_setup_id() {
   nddev::stamp_metadata "$1" setup-id
 }
 
-nddev::current_version() {
-  local zcode_home="${NDDEV_TARGET:-${ZCODE_HOME:-$HOME/.zcode}}"
-  if [ ! -e "$zcode_home" ]; then
-    printf 'unmanaged\n'
-    return 0
-  fi
-  if [ -L "$zcode_home" ] || [ ! -d "$zcode_home" ]; then
-    nddev::log "error" "install target is not a real directory: $zcode_home" >&2
-    return 1
-  fi
-  if [ ! -f "$zcode_home/BUILD-VERSION" ] || [ -L "$zcode_home/BUILD-VERSION" ]; then
-    printf 'unmanaged\n'
-    return 0
-  fi
-  nddev::stamp_version "$zcode_home"
-}
-
-# Choose a direct backup slot. Corrupt, duplicate, or symlinked slot entries
-# fail closed instead of being ignored by rotation.
-nddev::backup_slot() {
-  local backups_dir="${BACKUPS_DIR:-${NDDEV_BACKUPS_DIR:-$HOME/.zcode-backups}}"
-  python3 -I - "$backups_dir" "$NDDEV_SEMVER_PATTERN" <<'PY'
-import os
-import re
-import sys
-
-root = os.path.realpath(sys.argv[1])
-semver = sys.argv[2]
-if not os.path.isdir(root):
-    print(0)
-    raise SystemExit(0)
-pattern = re.compile(rf"^([0-9])-(unmanaged|{semver})-old\.zcode$")
-slots = {}
-for entry in os.scandir(root):
-    match = pattern.fullmatch(entry.name)
-    if not match:
-        if re.fullmatch(r"[0-9]-.*-old\.zcode", entry.name):
-            raise SystemExit("invalid backup slot name")
-        if entry.name.startswith(".slot-") and ".hold." in entry.name:
-            raise SystemExit("stale backup recovery hold requires attention")
-        continue
-    slot = int(match.group(1))
-    if entry.is_symlink() or not entry.is_dir(follow_symlinks=False):
-        raise SystemExit("unsafe backup slot entry")
-    if slot in slots:
-        raise SystemExit(f"duplicate backup slot: {slot}")
-    slots[slot] = (entry.stat(follow_symlinks=False).st_mtime_ns, entry.name)
-for slot in range(10):
-    if slot not in slots:
-        print(slot)
-        raise SystemExit(0)
-print(min(slots, key=lambda value: (slots[value][0], value)))
-PY
-}
-
-nddev::backup_name() {
-  local version=$1 slot=${2:-}
-  if [ "$version" != "unmanaged" ] && ! nddev::is_semver "$version"; then
-    nddev::log "error" "unsafe backup version: $version"
-    return 2
-  fi
-  if [ -z "$slot" ]; then
-    slot="$(nddev::backup_slot)" || return 1
-  fi
-  case "$slot" in [0-9]) ;; *) nddev::log "error" "invalid backup slot: $slot"; return 2 ;; esac
-  printf '%s-%s-old.zcode\n' "$slot" "$version"
-}
-
 # Assert that candidate is a direct child of parent, with no symlink endpoint.
 nddev::assert_direct_child() {
   local parent=$1 candidate=$2
@@ -810,6 +742,7 @@ try:
         # then resolves the unpredictable quarantine name through that fd.
         os.fchdir(parent_fd)
         shutil.rmtree(quarantine_name)
+        os.fsync(parent_fd)
     else:
         descriptor = os.open(
             quarantine_name,
@@ -821,6 +754,7 @@ try:
             if (opened.st_dev, opened.st_ino) != (metadata.st_dev, metadata.st_ino):
                 raise SystemExit(f"file cleanup quarantine changed; preserved: {quarantine_path}")
             os.unlink(quarantine_name, dir_fd=parent_fd)
+            os.fsync(parent_fd)
         finally:
             os.close(descriptor)
 finally:
@@ -833,11 +767,8 @@ nddev::remove_direct_child_tree() {
   nddev::assert_direct_child "$parent" "$candidate" || return 1
   if [ -e "$candidate" ]; then
     [ -d "$candidate" ] || { nddev::log "error" "expected directory: $candidate"; return 1; }
-    if [ -n "$expected_identity" ]; then
-      nddev::remove_identity_bound_path "$parent" "$candidate" directory "$expected_identity"
-    else
-      rm -rf -- "$candidate"
-    fi
+    [ -n "$expected_identity" ] || expected_identity="$(nddev::path_identity "$candidate" directory)" || return 1
+    nddev::remove_identity_bound_path "$parent" "$candidate" directory "$expected_identity"
   fi
 }
 
@@ -848,12 +779,9 @@ nddev::remove_regular_file() {
       nddev::log "error" "expected regular file: $candidate"
       return 1
     fi
-    if [ -n "$expected_identity" ]; then
-      nddev::remove_identity_bound_path \
-        "$(dirname "$candidate")" "$candidate" regular "$expected_identity"
-    else
-      rm -f -- "$candidate"
-    fi
+    [ -n "$expected_identity" ] || expected_identity="$(nddev::path_identity "$candidate" regular)" || return 1
+    nddev::remove_identity_bound_path \
+      "$(dirname "$candidate")" "$candidate" regular "$expected_identity"
   fi
 }
 

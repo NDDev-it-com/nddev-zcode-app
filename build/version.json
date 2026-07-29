@@ -1,61 +1,61 @@
 {
   "build_version": "0.1.1",
-  "zcode_app_version": "3.5.2",
+  "zcode_app_version": "3.5.3",
   "zcode_cli_version": "0.15.2",
   "zcode_runtime": "GLM-5.2",
   "zcode_cdn_base": "https://cdn-zcode.z.ai/zcode/electron/releases",
   "zcode_download_artifacts": {
     "macos-arm64": {
-      "filename": "ZCode-3.5.2-mac-arm64.dmg",
+      "filename": "ZCode-3.5.3-mac-arm64.zip",
       "cdn_subpath": "macos-arm64",
-      "size_bytes": 156752830,
-      "sha512": "ac5ee801b686d246122f9c0714eb7b44ae513e947218c7e90a903d520aea2c8e986bd07f8f8d0f34fdd57e01c8a46a214bd5a7dbebbe0a96fc92bbebaa4f5f5c",
+      "size_bytes": 149367771,
+      "sha512": "8801407dcd9057eac8fe81264e3f96f748f9663acdc9837b4f5eb6a2dd0d0f7fb015d26fb698b451cea86c90f0d37d44b04192b41e766570f4f731aeb8e77e30",
       "team_id": "8A5X4JJ39T",
       "bundle_id": "dev.zcode.app",
-      "app_version": "3.5.2",
-      "bundle_version": "3.5.2.3869",
+      "app_version": "3.5.3",
+      "bundle_version": "3.5.3.3911",
       "gatekeeper_source": "Notarized Developer ID"
     },
     "macos-x64": {
-      "filename": "ZCode-3.5.2-mac-x64.dmg",
+      "filename": "ZCode-3.5.3-mac-x64.zip",
       "cdn_subpath": "macos-x64",
-      "size_bytes": 165063926,
-      "sha512": "1dadc70421ac4162bf57a5e5b75e6963c200e500c596af2fbfaf6e03a07b4a803d9e5c8c0467baf74f2b38b26b5a4a3d4ff19e58d37ef50f8b19f2dda2025f78",
+      "size_bytes": 157607464,
+      "sha512": "9b7dc0967df9304516337f0adb99cf26ae1f9309d3e3322acb66f1b1d4aa362c5180091740350dc28065a2ae8bdfc061e556c5e925c478e1e6a400b5ce088c68",
       "team_id": "8A5X4JJ39T",
       "bundle_id": "dev.zcode.app",
-      "app_version": "3.5.2",
-      "bundle_version": "3.5.2.3869",
-      "gatekeeper_source": "Unnotarized Developer ID"
+      "app_version": "3.5.3",
+      "bundle_version": "3.5.3.3911",
+      "gatekeeper_source": "Notarized Developer ID"
     },
     "linux-x64-appimage": {
-      "filename": "ZCode-3.5.2-linux-x64.AppImage",
+      "filename": "ZCode-3.5.3-linux-x64.AppImage",
       "cdn_subpath": "linux-x64",
-      "size_bytes": 163441725,
-      "sha512": "ffa7499299678b82c2fd6f167bb9838339f72747abcf7b593151b522765d5d9daa932a322c745d62cca58054c24f64260bc9ac2bd6be3f8937e345a08e3d4676"
+      "size_bytes": 163441717,
+      "sha512": "b7df5ccb95970bfb2611e690cdda4ae632a67c701eda8ccb2634e3d9752e26cc38bdf74e63e58a34bcffd51019be2d415f5decf6a5e25631253919733c795ff9"
     },
     "linux-x64-deb": {
-      "filename": "ZCode-3.5.2-linux-x64.deb",
+      "filename": "ZCode-3.5.3-linux-x64.deb",
       "cdn_subpath": "linux-x64",
-      "size_bytes": 120550144,
-      "sha512": "67f99e398c1f5723768f18d2d1e1e82b3d226f8bdb5499905b5c946ef3fbcfef9d9d52a45a6b69e9eb2e7dfbb85d3066f848597377bd07b06889fd13d18793cd",
+      "size_bytes": 120551000,
+      "sha512": "eda19457144a672879df93bbf71f97008d6f81d2d6e94cbd95da9073bc77bfa6007f16c3dcf7a754a0e34e9460a42c953c14fd8c450440b13d2f03b4044628ca",
       "package_name": "zcode",
       "package_arch": "amd64",
-      "package_version": "3.5.2-3869"
+      "package_version": "3.5.3-3911"
     },
     "linux-arm64-appimage": {
-      "filename": "ZCode-3.5.2-linux-arm64.AppImage",
+      "filename": "ZCode-3.5.3-linux-arm64.AppImage",
       "cdn_subpath": "linux-arm64",
-      "size_bytes": 163373938,
-      "sha512": "8b0e95a318057ef27a3aea8f8ccf1c8c568d20d9d94c17756d8ec95e785835ea026276bb62a6750cb9da16ff32a815dde75ed2e1d3b000b9649558266a917f32"
+      "size_bytes": 163378046,
+      "sha512": "2c17f9a86d5f649059ede3a60ae527b13a48ae1bb18b3389455001d96af468a44270ae9d13f101d8f2f9d222b79169a1e64d6cc42b58756fbc8198667e8aea46"
     },
     "linux-arm64-deb": {
-      "filename": "ZCode-3.5.2-linux-arm64.deb",
+      "filename": "ZCode-3.5.3-linux-arm64.deb",
       "cdn_subpath": "linux-arm64",
-      "size_bytes": 114757468,
-      "sha512": "b6220fddfb70257783491b887d1ec75ca925a4873c77bc3b94f53b89a9ef759c6cf39e7821daa8d2f1e5c0ee653851f645c0242f0c01769acfbf453790fa81fb",
+      "size_bytes": 114758696,
+      "sha512": "7bfa53d61ea61764931f9b26be3f60e8f8bec59ec080a14d5f432b770bb7810541396a5d196d723059a306691417862061b9fc9767596f62e023c82ab612bd7b",
       "package_name": "zcode",
       "package_arch": "arm64",
-      "package_version": "3.5.2-3869"
+      "package_version": "3.5.3-3911"
     }
   },
   "zcode_cli_launcher": {
@@ -65,5 +65,5 @@
     "wrapper_target": "${HOME}/.local/bin/zcode"
   },
   "schema": 2,
-  "_comment": "build_version is the semantic version of this nddev-zcode-app build. zcode_app_version and zcode_cli_version pin the exact ZCode desktop app and CLI versions this build was verified against. Every downloadable artifact is pinned by filename, byte size, and SHA-512; platform-native identity metadata is verified before installation where available. macOS artifacts additionally pin the observed Gatekeeper source per architecture because 3.5.2 arm64 and x64 assess differently. cdn_subpath is the exact per-artifact directory segment the official CDN serves the file under, between the version and the filename (macOS uses the platform-arch key; the two Linux formats share one linux-<arch> directory), so it is declared per artifact rather than derived from the key. The CLI is the zcode.cjs inside the verified app bundle, launched via node through a wrapper script."
+  "_comment": "build_version is the semantic version of this nddev-zcode-app build. zcode_app_version and zcode_cli_version pin the exact ZCode desktop app and CLI versions this build was verified against. Every downloadable artifact is pinned by filename, byte size, and SHA-512; platform-native identity metadata is verified before installation where available. macOS artifacts are the official ZIP update artifacts from latest.yml, not DMGs, and pin the observed Gatekeeper source per architecture. cdn_subpath is the exact per-artifact directory segment the official CDN serves the file under, between the version and the filename (macOS uses the platform-arch key; the two Linux formats share one linux-<arch> directory), so it is declared per artifact rather than derived from the key. The CLI is the zcode.cjs inside the verified app bundle, launched via node through a wrapper script."
 }

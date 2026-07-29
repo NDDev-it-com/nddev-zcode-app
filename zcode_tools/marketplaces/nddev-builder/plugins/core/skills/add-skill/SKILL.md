@@ -10,10 +10,10 @@ Authors a new ZCode skill in the correct place.
 ## Where skills live
 
 Author a skill inside a plugin bundle; the installer is what makes ZCode load
-it. **ZCode 3.5.2 never loads skills from `~/.zcode/marketplaces/.../plugins/`** —
+it. **ZCode never loads skills from `~/.zcode/marketplaces/.../plugins/`** —
 it loads user-scope skills only from `~/.zcode/skills/` (and `~/.agents/skills/`).
 So the installer **flattens** every plugin's `skills/` into `~/.zcode/skills/`
-(`cli-tools/scripts/lib/build.sh`, `flatten_plugin_components`); that flattened
+(`cli-tools/nddev_zcode.py`, `copy_source_tree`); that flattened
 copy is what actually loads.
 
 | Scope | Location (source) | What ZCode loads |
@@ -29,7 +29,7 @@ lands in `~/.zcode/skills/`.
 > plugin's `skills/` into one `~/.zcode/skills/`, a skill basename must be unique
 > across *every plugin in the marketplace*, not just within its plugin. A
 > cross-plugin name clash makes the install **fail closed** (see the collision
-> guard in `flatten_plugin_components`), not silently shadow one.
+> guard in `copy_source_tree`), not silently shadow one.
 
 Slash commands and subagents are different component types with their own
 frontmatter contracts: use `add-command` and `add-agent` respectively.

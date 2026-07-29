@@ -4,9 +4,9 @@
 
 1. **`bootstrap`** — downloads and verifies the exact pinned ZCode artifact,
    installs the desktop app and embedded CLI, and atomically writes the local
-   `zcode` launcher. macOS uses a DMG; Ubuntu uses a DEB when the complete dpkg
+   `zcode` launcher. macOS uses the official ZIP update artifact; Ubuntu uses a DEB when the complete dpkg
    toolchain is available and a locally extracted AppImage otherwise.
-2. **`install`** — builds a clean `~/.zcode` from a setup (config, plugins,
+2. **`install`** — builds a clean `~/.zcode` from the managed setup (config, plugins,
    skills). Backs up the current one first.
 
 Both work on macOS (desktop) and Ubuntu (desktop/server). Upstream ZCode
@@ -18,18 +18,17 @@ freshness window are recorded in
 
 ## Prerequisites
 
-- Git, Python 3.10+ (`python3`), `curl`, and `node` (the CLI launcher runs the
-  app's `zcode.cjs` through node).
+- Git, `/usr/bin/python3` as a regular executable Python 3.9+ interpreter,
+  `curl`, and `node` (the CLI launcher runs the app's `zcode.cjs` through
+  node).
 - A local `build/.env` copied from `build/.env.example` only when explicit
   API-key providers, MCP integrations, or custom target settings are needed
   (see [secrets.md](secrets.md)). When present, it must be a current-user-owned
   regular non-symlink with mode `0600` or stricter. Z.ai account OAuth remains
   the default.
-- macOS bootstrap additionally requires the system `hdiutil`, `codesign`, and
-  `spctl` tools; it prefers current `diskutil image attach`/`eject` operations
-  and retains `hdiutil` attach/detach only as a compatibility fallback. Ubuntu
-  DEB installation requires `dpkg`, `dpkg-deb`, `dpkg-query`, and `sudo` when
-  not running as root.
+- macOS bootstrap additionally requires the system `ditto`, `codesign`, and
+  `spctl` tools. Ubuntu DEB installation requires `dpkg`, `dpkg-deb`,
+  `dpkg-query`, and `sudo` when not running as root.
 
 ## From zero (fresh machine)
 
@@ -45,10 +44,10 @@ $EDITOR build/.env
 cli-tools/scripts/install.sh bootstrap --plan     # dry-run first
 cli-tools/scripts/install.sh bootstrap --apply
 
-# 4. Configure ~/.zcode from a setup:
+# 4. Configure ~/.zcode from the managed setup:
 cli-tools/scripts/install.sh list
-cli-tools/scripts/install.sh install --setup nddev-builder --plan
-cli-tools/scripts/install.sh install --setup nddev-builder --apply
+cli-tools/scripts/install.sh install --plan
+cli-tools/scripts/install.sh install --apply
 ```
 
 After step 3, ZCode is installed and the `zcode` command is on PATH. After
@@ -74,9 +73,9 @@ Apply mode performs these checks in order:
    credential-free artifact URL, and allow HTTPS-only redirects.
 3. Verify the exact byte size and SHA-512 digest before opening the artifact.
    Both must match independently; equal size never excuses digest drift.
-4. On macOS, verify the DMG, mount it read-only (preferring `diskutil image`
-   operations), and verify Gatekeeper assessment, code signature, Team ID,
-   bundle ID, app version, and bundle version before and after installation.
+4. On macOS, extract the already verified ZIP artifact privately, then verify
+   Gatekeeper assessment, code signature, Team ID, bundle ID, app version, and
+   bundle version before and after installation.
 5. On Ubuntu DEB systems, verify package name, architecture, and exact Debian
    package version. Extract the payload privately before installation; require
    exactly one safe `/opt/ZCode/resources/glm/zcode.cjs` entry and verify its
@@ -99,7 +98,7 @@ Default runtime paths are:
 
 | Platform/package | Embedded CLI entry |
 | --- | --- |
-| macOS DMG | `/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs` |
+| macOS ZIP | `/Applications/ZCode.app/Contents/Resources/glm/zcode.cjs` |
 | Ubuntu DEB | `/opt/ZCode/resources/glm/zcode.cjs` |
 | Ubuntu AppImage | `${HOME}/.local/opt/ZCode/resources/glm/zcode.cjs` |
 
@@ -114,12 +113,12 @@ root can be changed with `NDDEV_APPLICATIONS_DIR` for isolated environments.
 cli-tools/scripts/install.sh list
 cli-tools/scripts/install.sh list --json
 
-# Install — plan (dry-run) first, then apply:
-cli-tools/scripts/install.sh install --setup nddev-builder --plan
+# Install the managed setup — plan (dry-run) first, then apply:
+cli-tools/scripts/install.sh install --plan
 # Quit the ZCode desktop app before every apply-mode target mutation.
-cli-tools/scripts/install.sh install --setup nddev-builder --apply
+cli-tools/scripts/install.sh install --apply
 
-# Inspect the selected setup and validated installed-state stamp:
+# Inspect the managed setup and validated installed-state stamp:
 cli-tools/scripts/install.sh status
 cli-tools/scripts/install.sh status --json
 
@@ -130,8 +129,8 @@ cli-tools/scripts/install.sh install --setup nddev-builder \
 cli-tools/scripts/install.sh install --setup nddev-builder \
   --target "$HOME/.zcode" --adopt-unmanaged --apply
 
-# Update — re-run install with the same setup (old ~/.zcode is backed up).
-# Switch — install a different setup (the old setup is backed up).
+# Update — re-run install when the managed setup source changed.
+# Posture — add --posture safe for a stricter rendered policy.
 # Remove — back up and delete the install:
 cli-tools/scripts/install.sh remove --apply
 
@@ -142,12 +141,12 @@ cli-tools/scripts/install.sh restore --slot 3 --apply
 
 # Custom install directory (default is ~/.zcode):
 cli-tools/scripts/install.sh install \
-  --setup nddev-builder --target "$HOME/.zcode-work" --apply
+  --target "$HOME/.zcode-work" --apply
 # ...or set it once in build/.env (ZCODE_TARGET=...) and skip --target.
 
 # Force a platform (otherwise auto-detected from uname):
 cli-tools/scripts/install.sh install \
-  --setup nddev-builder --platform macos --apply
+  --platform macos --apply
 ```
 
 ### Commands
@@ -155,11 +154,11 @@ cli-tools/scripts/install.sh install \
 | Command | What it does |
 | --- | --- |
 | `bootstrap` | Install the pinned ZCode app and CLI; defaults to plan mode. |
-| `install` | Back up, build from one setup, and restore runtime state. |
+| `install` | Back up, build from the managed setup, and restore runtime state. |
 | `remove` | Atomically move a stamped target into the backup pool. |
 | `restore` | Restore one backup slot into an empty or stamped target. |
 | `list` | Show setups; add `--json` for automation or `--backups` for backup slots. |
-| `status` | Validate and report missing, unmanaged, legacy-managed, or setup-aware managed state. |
+| `status` | Validate and report missing, unmanaged, legacy-managed, or setup-aware managed state, including coordination anchors and cleanup state. |
 
 ### Command option matrix
 
@@ -169,11 +168,12 @@ ignores a recognized flag.
 
 | Option | bootstrap | install | remove | restore | list | status |
 | --- | --- | --- | --- | --- | --- | --- |
-| `--setup` (`--marketplace` alias) | — | yes | — | — | — | — |
+| `--setup` (`--marketplace` alias) | — | optional, `nddev-builder` | — | — | — | — |
+| `--posture` | — | `full-auto` or `safe` | — | — | — | — |
 | `--target` | — | yes | yes | yes | — | yes |
 | `--platform` | yes | yes | — | — | — | — |
 | `--apply`, `--plan`, `--dry-run` | yes | yes | yes | yes | — | — |
-| `--keep-backup` | — | — | yes | — | — | — |
+| `--keep-backup` | — | yes | yes | yes | — | — |
 | `--slot` | — | — | — | yes | — | — |
 | `--adopt-unmanaged` | — | yes | — | — | — | — |
 | `--allow-target-relocation` | — | — | — | yes | — | — |
@@ -191,6 +191,10 @@ The install, remove, restore, or status target is resolved in this order:
 2. `ZCODE_TARGET` in `build/.env`
 3. `~/.zcode` (the standard ZCode location, default)
 
+The backup root defaults to `~/.zcode-backups`. For install, remove, and
+restore, `--keep-backup <dir>` selects an explicit backup root for that command;
+otherwise `ZCODE_BACKUPS_DIR` in `build/.env` is used when present.
+
 The env parser performs no shell expansion. For portability, only
 `ZCODE_TARGET` and `ZCODE_BACKUPS_DIR` support an exact leading literal
 `$HOME`, `$HOME/`, `${HOME}`, or `${HOME}/` prefix; other values remain literal.
@@ -204,15 +208,14 @@ An existing unstamped directory is also refused unless `install` receives both
 `--adopt-unmanaged` and an explicit existing `--target`; this prevents a typo
 from silently replacing an unrelated directory.
 
-### Lifecycle: install → update → switch → remove
+### Lifecycle: install → update → posture → remove
 
 Every transition backs up the current install first into a rotating pool of
 **10 slots** (`0-<VERSION>-old.zcode` … `9-<VERSION>-old.zcode`), so the total
 never grows beyond 10 directories:
 
-- **Install** — fresh build from a setup.
-- **Update** — re-run `install` with the same setup (source changed).
-- **Switch** — `install` with a different `--setup`.
+- **Install** — fresh build from the managed setup.
+- **Update** — re-run `install` when the managed setup source changed.
 - **Remove** — `remove` backs up and deletes.
 
 Slot selection: the lowest free slot (0–9). When all 10 are full, the **oldest**
@@ -234,18 +237,18 @@ original canonical target.
    installer acquires exclusive target and shared backup-pool locks. Concurrent
    operations cannot race the same live tree or rotation pool. Apply mode also
    rejects open task/session databases and SQLite recovery sidecars; quit ZCode
-   cleanly before install, switch, remove, or restore.
+   cleanly before install, remove, or restore.
 2. **Stage** — a private sibling staging directory is created on the same
-   filesystem. A clean target is rendered there from the selected marketplace:
+   filesystem. A clean target is rendered there from the managed marketplace:
    - `AGENTS.md` and user-scope `skills/`, `commands/`, and `agents/` are copied
-     as-is; the complete selected marketplace, including its plugins, is copied
+     as-is; the complete managed marketplace, including its plugins, is copied
      under `marketplaces/<name>/`.
    - `cli/config.json`, `v2/config.json`, `v2/setting.json` are rendered from
      their JSON inputs, with `${VAR}` values structurally substituted and
      JSON-escaped. Placeholder-bearing object keys are rejected. Rendered MCP
      entries are merged into `cli/config.json`.
    - Empty runtime directories ZCode expects are created.
-3. **Version stamp** — schema-2 `BUILD-VERSION` records the selected `setup_id`,
+3. **Version stamp** — schema-2 `BUILD-VERSION` records `setup_id`, `posture`,
    build version, ZCode runtime baseline, platform, and timestamp. Legacy
    schema 0/1 stamps remain readable for recovery, but their setup identity is
    reported as unknown.
@@ -259,7 +262,7 @@ original canonical target.
    - **Never restored** (regenerated by ZCode): `cli/log/`, `v2/logs/`,
      `v2/crash/`, `cli/plugins/cache/`, transient `cli/exec/`, model I/O
      `cli/rollout/`, telemetry, and model/plan caches.
-5. **Verify** — managed stamp and JSON schemas, exact stamp/setup identity, marketplace presence,
+5. **Verify** — managed stamp and JSON schemas, exact stamp/setup/posture identity, marketplace presence,
    unresolved active config/setting/provider/MCP/hook placeholders in keys or
    values,
    symlink/special-file/hardlink absence, and private permissions are checked;
@@ -269,7 +272,8 @@ original canonical target.
    target moves into its backup, and the verified stage is atomically renamed
    into place. A failed commit, handled signal, or pre-commit finalization step
    restores the previous target and backup-slot occupant. Housekeeping failure
-   after a verified commit is reported without discarding committed state.
+   after a verified commit is reported as `cleanup_pending=true` without
+   discarding committed state.
    Stage, live, rollback, adoption-envelope, and occupied-slot endpoints remain
    bound to their recorded filesystem identities through abort and success
    cleanup. If any endpoint is replaced, foreign state is left untouched and
@@ -325,14 +329,19 @@ cli-tools/scripts/install.sh restore --slot <N> \
 ## Interrupted operations and upstream limits
 
 Ordinary errors and handled termination signals trigger deterministic rollback
-and lock cleanup. An uncatchable `SIGKILL` or power loss can leave a sibling
-stage, recovery hold, or lock directory. The installer then fails closed rather
-than guessing that the transaction owner is dead. Inspect the lock's `owner`
-metadata and reconcile the live target, backup slot, and held state before
-removing recovery artifacts; preserve uncertain state for manual recovery.
-The locks are advisory against cooperative installer processes; filesystem
-identity checks additionally prevent cleanup from deleting a same-path object
-that another process substituted before a guarded mutation.
+before the commit point. After a valid final cleanup journal or verified
+bootstrap runtime is visible, cleanup failures are pending lifecycle work rather
+than rollback failures. Read-only `status` and dry-run plans expose the actual
+product/target coordination anchors plus bounded cleanup-pending metadata, never
+cleanup deletion paths, and never repair it. An
+uncatchable `SIGKILL` or power loss can leave a sibling stage, recovery hold, or
+lock directory. The installer then fails closed rather than guessing that the
+transaction owner is dead. Inspect the lock's `owner` metadata and reconcile the
+live target, backup slot, and held state before removing recovery artifacts;
+preserve uncertain state for manual recovery. The locks are advisory against
+cooperative installer processes; filesystem identity checks additionally
+prevent cleanup from deleting a same-path object that another process substituted
+before a guarded mutation.
 
 Ubuntu DEB installation delegates the system package transaction to `dpkg`.
 Before the real transaction, the installer verifies the privately extracted
@@ -341,13 +350,11 @@ postcondition failures, but it cannot transactionally undo changes made inside
 a real dpkg transaction. Repair the system package-manager state before
 retrying; bootstrap never masks a failed DEB by falling through to AppImage.
 
-The current upstream ZCode `3.5.2` macOS artifacts assess differently by
-architecture. The arm64 DMG is accepted as `source=Notarized Developer ID`; the
-x64 DMG is signed by the same Team ID but assesses as
-`source=Unnotarized Developer ID`. The installer pins the expected source per
-artifact in `build/version.json` and requires an exact match before
-installation. For a pinned notarized artifact it also requires a successful
-Gatekeeper assessment exit status. For a pinned unnotarized artifact, bootstrap
-fails closed by default and accepts it only when the operator supplies the
-explicit `--allow-pinned-unnotarized` flag for that exact artifact. Any missing,
-changed, or unexpected source fails closed before installation.
+The current upstream ZCode `3.5.3` macOS install policy uses the official ZIP
+artifacts from `latest.yml`; the DMG bytes are not accepted evidence for this
+build. Both supported macOS ZIP artifacts are signed by Team ID `8A5X4JJ39T`,
+bundle `dev.zcode.app`, build `3.5.3.3911`, and assess as
+`source=Notarized Developer ID`. The installer pins the expected source per
+artifact in `build/version.json` and requires an exact match plus a successful
+Gatekeeper assessment before installation. Any missing, changed, or unexpected
+source fails closed before installation.

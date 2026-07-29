@@ -18,7 +18,7 @@ an existing plugin, use the matching `add-*` skill directly.
 ## ZCode facts this skill respects
 
 - A plugin is a metadata-only `.zcode-plugin/plugin.json` plus components under
-  convention directories. ZCode 3.5.2 executes only `commands`, `skills`,
+  convention directories. ZCode 3.5.3 executes only `commands`, `skills`,
   `hooks`, `mcpServers`, and user-scope `agents`; never scaffold the inert
   `lspServers`/`outputStyles`/`channels`/`settings` fields or manifest component
   arrays. See `nddev-builder-orientation`.

@@ -27,7 +27,7 @@ owned by the repository's private release process.
    five version sources agree (see `add-plugin` step 8). Flag any drift; do not
    set pins here.
 5. **Execution-boundary hygiene.** No inert `lspServers`/`outputStyles`/
-   `channels`/`settings` fields and no manifest component arrays (ZCode 3.5.2
+   `channels`/`settings` fields and no manifest component arrays (ZCode 3.5.3
    records but never executes them).
 6. **Safety and language.** No secrets, credentials, or machine-local absolute
    paths in any tracked file; English only across code, docs, and manifests.

@@ -1,6 +1,6 @@
 ---
 name: add-marketplace
-description: Scaffolds a new self-contained ZCode marketplace — a complete ~/.zcode setup — under zcode_tools/marketplaces/. Use when creating a brand-new setup or profile such as nddev-builder or nddev-designer, or bootstrapping a marketplace directory from scratch.
+description: Scaffolds a new self-contained ZCode marketplace — a complete ~/.zcode setup — under zcode_tools/marketplaces/. Use when creating a brand-new marketplace source or bootstrapping a marketplace directory from scratch.
 ---
 
 # add-marketplace
@@ -31,8 +31,8 @@ the installer merges them into `cli/config.json` if present):
 
 ## Procedure
 
-1. **Pick the name.** Convention: `nddev-<purpose>` (e.g. `nddev-builder`,
-   `nddev-designer`). Lowercase, hyphens.
+1. **Pick the name.** Convention: `nddev-<purpose>` (for example,
+   `nddev-builder`). Lowercase, hyphens.
 
 2. **Create the directory tree:**
 
@@ -40,8 +40,8 @@ the installer merges them into `cli/config.json` if present):
    mkdir -p zcode_tools/marketplaces/<name>/{skills,commands,agents,plugins}
    ```
 
-3. **Copy the template files from an existing marketplace** (e.g. `nddev-designer`
-   is a clean, minimal starting point) and edit the marketplace-specific values:
+3. **Create or copy the required template files** from an existing marketplace
+   and edit the marketplace-specific values:
    - `marketplace.json` → set `name` to `<name>`, write a one-sentence `description`.
    - `AGENTS.md` → set the `<!-- <name>:begin -->` marker and describe this setup.
    - `cli-config.template.json` → keep an explicit `provider/model` main-model
@@ -79,7 +79,7 @@ the installer merges them into `cli/config.json` if present):
 
 This repo installs a marketplace headlessly (`install.sh install --setup <name>`),
 which requires local `./plugins/<name>` sources on disk. To let others install it,
-ZCode 3.5.2 also supports UI distribution: a user adds the marketplace through
+ZCode 3.5.3 also supports UI distribution: a user adds the marketplace through
 Plugin Management → Marketplace from a **GitHub repo, Git URL, local path, or ZIP
 URL**, and a plugin `source` may be a remote object
 `{"source":"github","repo":"owner/repo"}` (npm is not a supported source). See the
