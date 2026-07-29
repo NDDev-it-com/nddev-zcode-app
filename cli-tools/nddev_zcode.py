@@ -40,6 +40,7 @@ DEFAULT_SETUP = "nddev-builder"
 POSTURES = {"full-auto", "safe"}
 ANCHOR_SCHEMA = 1
 CLEANUP_SCHEMA = 1
+LIVE_PREPARE_SCHEMA = 2
 SEMVER_RE = re.compile(
     r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
     r"(?:-(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
@@ -204,6 +205,37 @@ class LockHandle:
             errors.append(str(exc))
         if errors:
             raise ManagerError(f"cannot release coordination lock safely: {errors[0]}")
+
+
+@dataclass(frozen=True)
+class CanonicalResource:
+    path: Path
+    digest: str
+
+    @property
+    def anchor_path(self) -> Path:
+        return resource_anchor_path(self.digest)
+
+
+@dataclass(frozen=True)
+class PendingCoordinationSnapshot:
+    root_identity: FileIdentity | None
+    entries: tuple[tuple[str, FileIdentity], ...]
+    live_prepare: bytes | None
+    cleanup_prepare: bytes | None
+
+
+@dataclass(frozen=True)
+class DurableFileBinding:
+    identity: FileIdentity
+    data: bytes
+
+
+@dataclass(frozen=True)
+class TransactionResources:
+    target: Path
+    backups: Path
+    pending_backups: tuple[Path, ...]
 
 
 def usage() -> str:
@@ -651,12 +683,24 @@ def product_anchor_path() -> Path:
     return coordination_root() / "global.lock"
 
 
-def target_digest_for(path: Path) -> str:
+def resource_digest_for(path: Path) -> str:
     return hashlib.sha256(str(path).encode("utf-8")).hexdigest()
 
 
-def target_anchor_path(digest: str) -> Path:
+def resource_anchor_path(digest: str) -> Path:
     return coordination_root() / f"{digest}.lock"
+
+
+def canonical_resource(path: Path) -> CanonicalResource:
+    return CanonicalResource(path=path, digest=resource_digest_for(path))
+
+
+def target_digest_for(path: Path) -> str:
+    return resource_digest_for(path)
+
+
+def target_anchor_path(digest: str) -> Path:
+    return resource_anchor_path(digest)
 
 
 def anchor_payload(anchor: str, digest: str | None) -> dict[str, Any]:
@@ -666,6 +710,8 @@ def anchor_payload(anchor: str, digest: str | None) -> dict[str, Any]:
         "anchor": anchor,
     }
     if digest is not None:
+        # Keep the exact legacy marker so old managers can validate anchors
+        # published for either path role during a rolling upgrade.
         payload["target_digest"] = digest
     return payload
 
@@ -801,6 +847,27 @@ def validate_anchor_temp(path: Path, *, anchor: str, digest: str | None) -> File
     return identity
 
 
+def anchor_temp_binding(path: Path) -> tuple[str, str | None]:
+    raw = read_file_no_follow(path, MAX_ANCHOR_BYTES, "anchor temporary file")
+    try:
+        payload = json.loads(raw.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        fail(f"anchor temporary file is malformed: {path}: {exc}", 2)
+    if payload == anchor_payload("product", None):
+        return "product", None
+    if (
+        isinstance(payload, dict)
+        and payload.get("schema") == ANCHOR_SCHEMA
+        and payload.get("product") == PRODUCT
+        and payload.get("anchor") == "target"
+        and set(payload) == {"schema", "product", "anchor", "target_digest"}
+        and isinstance(payload["target_digest"], str)
+        and TARGET_DIGEST_RE.fullmatch(payload["target_digest"]) is not None
+    ):
+        return "target", payload["target_digest"]
+    fail(f"anchor temporary file binding mismatch: {path}", 2)
+
+
 def open_private_temp_file(root: Path, *, prefix: str, mode: int) -> tuple[int, Path]:
     flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | getattr(os, "O_NOFOLLOW", 0)
     for _ in range(64):
@@ -816,8 +883,6 @@ def open_private_temp_file(root: Path, *, prefix: str, mode: int) -> tuple[int, 
 
 def recover_staged_anchor_before_publish(path: Path, *, anchor: str, digest: str | None) -> bool:
     root = path.parent
-    if path_exists(path):
-        return True
     matches: list[Path] = []
     try:
         names = sorted(os.listdir(str(root)))
@@ -828,14 +893,37 @@ def recover_staged_anchor_before_publish(path: Path, *, anchor: str, digest: str
     for name in names:
         child = root / name
         if ANCHOR_TEMP_RE.fullmatch(name):
-            validate_anchor_temp(child, anchor=anchor, digest=digest)
-            matches.append(child)
+            binding = anchor_temp_binding(child)
+            if binding == (anchor, digest):
+                validate_anchor_temp(child, anchor=anchor, digest=digest)
+                matches.append(child)
             continue
         if not is_known_anchor_name(name):
             fail(f"anchor namespace contains unknown entry before publication: {name}", 2)
     if not matches:
         return False
+    if len(matches) != 1:
+        fail("anchor namespace contains duplicate staged publications", 2)
     temp = matches[0]
+    if path_exists(path):
+        handle = open_anchor(
+            path,
+            anchor=anchor,
+            digest=digest,
+            create=False,
+            shared=False,
+            recover_aliases=True,
+        )
+        if handle is None:
+            raise ConcurrentNamespaceChange("anchor winner disappeared during staged recovery")
+        try:
+            if path_exists(temp):
+                validate_anchor_temp(temp, anchor=anchor, digest=digest)
+                temp.unlink()
+                fsync_dir(root)
+        finally:
+            handle.close()
+        return True
     validate_anchor_temp(temp, anchor=anchor, digest=digest)
     try:
         os.link(str(temp), str(path))
@@ -950,6 +1038,8 @@ def open_anchor(
                 if not is_known_anchor_name(name):
                     fail(f"anchor namespace contains unknown entry: {name}", 2)
         return None
+    else:
+        require_private_directory(path.parent, "product coordination namespace")
 
     flags = os.O_RDWR | getattr(os, "O_NOFOLLOW", 0)
     try:
@@ -1048,46 +1138,239 @@ def publish_anchor(path: Path, *, anchor: str, digest: str | None, shared: bool)
         raise
 
 
+def close_lock_handles(handles: list[LockHandle]) -> None:
+    first_error: BaseException | None = None
+    for handle in reversed(handles):
+        try:
+            handle.close()
+        except BaseException as exc:
+            if first_error is None:
+                first_error = exc
+    if first_error is not None:
+        raise first_error
+
+
+def existing_resource_digests(*, recover_staged: bool) -> list[str]:
+    root = coordination_root()
+    require_private_directory(root, "product coordination namespace")
+    names = sorted(os.listdir(str(root)))
+    if len(names) > MAX_NAMESPACE_ENTRIES:
+        fail("anchor namespace exceeds bounded entry count", 2)
+    staged: set[str] = set()
+    for name in names:
+        if name == "global.lock":
+            continue
+        if TARGET_ANCHOR_RE.fullmatch(name):
+            continue
+        if ANCHOR_TEMP_RE.fullmatch(name):
+            anchor, digest = anchor_temp_binding(root / name)
+            if anchor == "target" and digest is not None:
+                staged.add(digest)
+                continue
+        fail(f"anchor namespace contains unknown entry: {name}", 2)
+    if recover_staged:
+        for digest in sorted(staged):
+            handle = publish_anchor(
+                resource_anchor_path(digest),
+                anchor="target",
+                digest=digest,
+                shared=False,
+            )
+            handle.close()
+        names = sorted(os.listdir(str(root)))
+    elif staged:
+        fail("anchor publication is incomplete", 2)
+    return sorted(
+        name[:-5]
+        for name in names
+        if TARGET_ANCHOR_RE.fullmatch(name) is not None
+    )
+
+
+def acquire_resources(
+    resources: list[CanonicalResource],
+    *,
+    create: bool,
+    shared: bool,
+) -> tuple[list[LockHandle], bool]:
+    handles: list[LockHandle] = []
+    missing = False
+    unique = {resource.digest: resource for resource in resources}
+    try:
+        for resource in sorted(unique.values(), key=lambda item: (item.digest, str(item.path))):
+            handle = open_anchor(
+                resource.anchor_path,
+                anchor="target",
+                digest=resource.digest,
+                create=create,
+                shared=shared,
+                recover_aliases=create,
+            )
+            if handle is None:
+                missing = True
+            else:
+                handles.append(handle)
+        return handles, missing
+    except BaseException:
+        close_lock_handles(handles)
+        raise
+
+
+def pending_coordination_snapshot(target: Path) -> PendingCoordinationSnapshot:
+    root = cleanup_root_for(target)
+    if not path_exists(root):
+        return PendingCoordinationSnapshot(None, (), None, None)
+    root_identity = require_private_directory(root, "cleanup state root")
+    names = sorted(os.listdir(str(root)))
+    if len(names) > MAX_NAMESPACE_ENTRIES:
+        fail("cleanup state root exceeds bounded entry count", 2)
+    entries = tuple((name, lstat_identity(root / name)) for name in names)
+    live_name = live_prepare_path(target).name
+    cleanup_name = cleanup_prepare_path(target).name
+    live = (
+        read_file_no_follow(root / live_name, MAX_CLEANUP_BYTES, "live transaction prepare intent")
+        if live_name in names
+        else None
+    )
+    cleanup = (
+        read_file_no_follow(root / cleanup_name, MAX_CLEANUP_BYTES, "cleanup prepare intent")
+        if cleanup_name in names
+        else None
+    )
+    return PendingCoordinationSnapshot(root_identity, entries, live, cleanup)
+
+
+def pending_backup_paths(snapshot: PendingCoordinationSnapshot) -> tuple[Path, ...]:
+    values: list[str] = []
+    for raw, label, nested in (
+        (snapshot.live_prepare, "live transaction prepare intent", False),
+        (snapshot.cleanup_prepare, "cleanup prepare intent", True),
+    ):
+        if raw is None:
+            continue
+        try:
+            payload = json.loads(raw.decode("utf-8"))
+        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+            fail(f"{label} is malformed: {exc}", 2)
+        value = payload.get("backup_root") if isinstance(payload, dict) else None
+        if nested:
+            value = value.get("path") if isinstance(value, dict) else None
+        if not isinstance(value, str):
+            fail(f"{label} backup root binding is invalid", 2)
+        reject_transaction_path_controls(value, f"{label} backup root")
+        path = Path(value)
+        if not path.is_absolute() or path == Path("/") or str(path) != value:
+            fail(f"{label} backup root binding is not canonical", 2)
+        values.append(value)
+    return tuple(Path(value) for value in sorted(set(values)))
+
+
+def validate_locked_resource_path(path: Path, label: str) -> None:
+    try:
+        parent = path.parent.resolve(strict=True)
+    except OSError as exc:
+        fail(f"{label} parent cannot be resolved safely: {exc}", 2)
+    if parent / path.name != path:
+        fail(f"{label} binding is not canonical", 2)
+    if path_exists(path) and lstat_identity(path).kind != "directory":
+        fail(f"{label} must be a directory endpoint", 2)
+
+
 @contextlib.contextmanager
-def target_coordination(target_text: str, *, create: bool, shared: bool) -> Iterator[Path]:
+def transaction_coordination(
+    target_text: str,
+    backups_text: str,
+) -> Iterator[TransactionResources]:
     product = open_anchor(
         product_anchor_path(),
         anchor="product",
-        create=create,
-        shared=shared,
-        recover_aliases=create,
+        create=True,
+        shared=False,
+        recover_aliases=True,
     )
     if product is None:
-        fail("product coordination anchor is absent", 2)
+        fail("product coordination anchor could not be published", 2)
+    all_handles: list[LockHandle] = []
+    required_handles: list[LockHandle] = []
     try:
-        target = canonical_target_from_text(target_text)
-        digest = target_digest_for(target)
-        target_path = target_anchor_path(digest)
-        target_handle = open_anchor(
-            target_path,
-            anchor="target",
-            digest=digest,
-            create=create,
-            shared=shared,
-            recover_aliases=create,
-        )
-        if target_handle is None:
-            if create:
-                fail("target coordination anchor could not be published", 2)
-            yield target
-            return
+        target = canonical_target_from_text(target_text, inspect_endpoint=False)
+        backups = canonical_backups_from_text(backups_text, inspect_endpoint=False)
+        validate_resource_disjoint(target, backups)
+
+        # Product EX prevents new old binaries from starting. Locking every
+        # existing path anchor waits out old binaries that already handed off.
+        for digest in existing_resource_digests(recover_staged=True):
+            handle = open_anchor(
+                resource_anchor_path(digest),
+                anchor="target",
+                digest=digest,
+                create=False,
+                shared=False,
+                recover_aliases=True,
+            )
+            if handle is None:
+                raise ConcurrentNamespaceChange("resource anchor disappeared during quiescence")
+            all_handles.append(handle)
+
+        by_digest = {handle.path.name[:-5]: handle for handle in all_handles}
+        target_resource = canonical_resource(target)
+        if target_resource.digest not in by_digest:
+            target_handles, _ = acquire_resources([target_resource], create=True, shared=False)
+            all_handles.extend(target_handles)
+            by_digest.update({handle.path.name[:-5]: handle for handle in target_handles})
+
+        before = pending_coordination_snapshot(target)
+        pending = pending_backup_paths(before)
+        for pending_path in pending:
+            validate_resource_disjoint(target, pending_path)
+        required = [target_resource, canonical_resource(backups)]
+        required.extend(canonical_resource(path) for path in pending)
+        missing = [
+            resource
+            for resource in required
+            if resource.digest not in by_digest
+        ]
+        new_handles, _ = acquire_resources(missing, create=True, shared=False)
+        all_handles.extend(new_handles)
+        by_digest.update({handle.path.name[:-5]: handle for handle in new_handles})
+        required_handles = [by_digest[item.digest] for item in sorted(
+            {resource.digest: resource for resource in required}.values(),
+            key=lambda item: (item.digest, str(item.path)),
+        )]
+
+        after = pending_coordination_snapshot(target)
+        if after != before:
+            fail("pending transaction authority changed during resource acquisition", 2)
+        validate_locked_resource_path(target, "target")
+        validate_locked_resource_path(backups, "backup root")
+        for path in pending:
+            validate_locked_resource_path(path, "pending backup root")
+
+        unrelated = [handle for handle in all_handles if handle not in required_handles]
+        close_lock_handles(unrelated)
+        all_handles = required_handles
+        yield TransactionResources(target, backups, pending)
+    finally:
+        close_error: BaseException | None = None
+        try:
+            close_lock_handles(all_handles)
+        except BaseException as exc:
+            close_error = exc
         try:
             product.close()
-            product = None
-            yield target
-        finally:
-            target_handle.close()
-    finally:
-        if product is not None:
-            product.close()
+        except BaseException as exc:
+            if close_error is None:
+                close_error = exc
+        if close_error is not None:
+            raise close_error
 
 
-def run_read_only(target_text: str, callback: Callable[[Path], Any]) -> Any:
+def run_read_only_resources(
+    canonicalizers: tuple[Callable[[], Path], ...],
+    callback: Callable[[tuple[Path, ...]], Any],
+    *,
+    include_pending_for_target: bool = False,
+) -> Any:
     product_path = product_anchor_path()
     product = open_anchor(
         product_path,
@@ -1097,39 +1380,82 @@ def run_read_only(target_text: str, callback: Callable[[Path], Any]) -> Any:
         recover_aliases=False,
     )
     if product is not None:
+        handles: list[LockHandle] = []
         try:
-            target = canonical_target_from_text(target_text)
-            digest = target_digest_for(target)
-            target_handle = open_anchor(
-                target_anchor_path(digest),
-                anchor="target",
-                digest=digest,
+            paths = tuple(canonicalize() for canonicalize in canonicalizers)
+            handles, missing = acquire_resources(
+                [canonical_resource(path) for path in paths],
                 create=False,
                 shared=True,
-                recover_aliases=False,
             )
-            if target_handle is None:
-                return callback(target)
-            try:
+            if include_pending_for_target:
+                before = pending_coordination_snapshot(paths[0])
+                pending = pending_backup_paths(before)
+                pending_handles, pending_missing = acquire_resources(
+                    [canonical_resource(path) for path in pending],
+                    create=False,
+                    shared=True,
+                )
+                handles.extend(pending_handles)
+                missing = missing or pending_missing
+                if pending_coordination_snapshot(paths[0]) != before:
+                    fail("pending transaction authority changed during read coordination", 2)
+                for pending_path in pending:
+                    validate_resource_disjoint(paths[0], pending_path)
+                    if path_exists(canonical_resource(pending_path).anchor_path):
+                        validate_locked_resource_path(pending_path, "pending backup root")
+            if not missing:
                 product.close()
                 product = None
-                return callback(target)
-            finally:
-                target_handle.close()
+            return callback(paths)
         finally:
+            close_lock_handles(handles)
             if product is not None:
                 product.close()
 
     before = validate_product_namespace_empty()
-    result = callback(canonical_target_from_text(target_text))
+    paths = tuple(canonicalize() for canonicalize in canonicalizers)
+    result = callback(paths)
     after = namespace_snapshot()
     if not same_namespace(before, after):
-        with target_coordination(target_text, create=False, shared=True) as locked:
-            return callback(locked)
+        return run_read_only_resources(
+            canonicalizers,
+            callback,
+            include_pending_for_target=include_pending_for_target,
+        )
     return result
 
 
-def canonical_target_from_text(value: str) -> Path:
+def run_read_only(target_text: str, callback: Callable[[Path], Any]) -> Any:
+    return run_read_only_resources(
+        (lambda: canonical_target_from_text(target_text),),
+        lambda paths: callback(paths[0]),
+    )
+
+
+def run_transaction_plan(
+    target_text: str,
+    backups_text: str,
+    callback: Callable[[Path, Path], Any],
+) -> Any:
+    return run_read_only_resources(
+        (
+            lambda: canonical_target_from_text(target_text),
+            lambda: canonical_backups_from_text(backups_text),
+        ),
+        lambda paths: callback(paths[0], paths[1]),
+        include_pending_for_target=True,
+    )
+
+
+def run_backup_read_only(backups_text: str, callback: Callable[[Path], Any]) -> Any:
+    return run_read_only_resources(
+        (lambda: canonical_backups_from_text(backups_text),),
+        lambda paths: callback(paths[0]),
+    )
+
+
+def canonical_target_from_text(value: str, *, inspect_endpoint: bool = True) -> Path:
     value = reject_transaction_path_controls(value, "target")
     if not value:
         fail("target path is invalid", 2)
@@ -1147,7 +1473,7 @@ def canonical_target_from_text(value: str) -> Path:
     if str(parent_real) == "/":
         fail("target parent must not be filesystem root", 2)
     target = parent_real / name
-    if path_exists(target):
+    if inspect_endpoint and path_exists(target):
         identity = lstat_identity(target)
         if identity.kind == "symlink":
             fail("install target must not be a symlink", 2)
@@ -1494,7 +1820,13 @@ def write_live_prepare(
             "target_graph": None if source_identity is None else snapshot_tree(target),
             "stage_graph": None if stage is None else snapshot_tree(stage),
             "adoption_marker": adoption_marker,
+            "target_parent_identity": identity_payload(lstat_identity(target.parent)),
+            "backup_parent_identity": identity_payload(lstat_identity(backups.parent)),
+            "backup_root_identity": (
+                identity_payload(lstat_identity(backups)) if path_exists(backups) else None
+            ),
         }
+        payload["schema"] = LIVE_PREPARE_SCHEMA
         data = json_compact_bytes(payload)
         if len(data) > MAX_CLEANUP_BYTES:
             fail("live transaction prepare intent exceeds serialized byte bound", 2)
@@ -1510,7 +1842,7 @@ def read_live_prepare(target: Path) -> dict[str, Any]:
             fail(f"live transaction prepare intent is malformed: {exc}", 2)
     if not isinstance(payload, dict):
         fail("live transaction prepare intent must contain an object", 2)
-    required = {
+    legacy_required = {
         "schema",
         "product",
         "type",
@@ -1527,21 +1859,38 @@ def read_live_prepare(target: Path) -> dict[str, Any]:
         "stage_graph",
         "adoption_marker",
     }
-    if set(payload) != required:
+    current_required = legacy_required | {
+        "target_parent_identity",
+        "backup_parent_identity",
+        "backup_root_identity",
+    }
+    if set(payload) != legacy_required and set(payload) != current_required:
         fail("live transaction prepare intent keys are invalid", 2)
+    schema = payload["schema"]
     if (
-        payload["schema"] != CLEANUP_SCHEMA
+        schema not in {CLEANUP_SCHEMA, LIVE_PREPARE_SCHEMA}
         or payload["product"] != PRODUCT
         or payload["type"] != "live-rename-prepare"
     ):
         fail("live transaction prepare intent schema/product mismatch", 2)
+    if schema == CLEANUP_SCHEMA and set(payload) != legacy_required:
+        fail("legacy live transaction prepare intent keys are invalid", 2)
+    if schema == LIVE_PREPARE_SCHEMA and set(payload) != current_required:
+        fail("live transaction prepare intent parent bindings are missing", 2)
     if payload["target"] != str(target) or payload["target_digest"] != target_digest_for(target):
         fail("live transaction prepare intent target binding mismatch", 2)
     if payload["operation"] not in {"install", "restore", "remove"}:
         fail("live transaction prepare operation is invalid", 2)
     if payload["target_name"] != target.name:
         fail("live transaction prepare target name mismatch", 2)
-    if not isinstance(payload["backup_root"], str) or not os.path.isabs(payload["backup_root"]):
+    backup_root_value = payload["backup_root"]
+    if (
+        not isinstance(backup_root_value, str)
+        or any(ord(character) < 32 or ord(character) == 127 for character in backup_root_value)
+        or not os.path.isabs(backup_root_value)
+        or Path(backup_root_value) == Path("/")
+        or str(Path(backup_root_value)) != backup_root_value
+    ):
         fail("live transaction prepare backup root is invalid", 2)
     for key in ("stage_name", "backup_name"):
         value = payload[key]
@@ -1567,6 +1916,11 @@ def read_live_prepare(target: Path) -> dict[str, Any]:
             expected_target=target,
             expected_build=build_version(),
         )
+    if schema == LIVE_PREPARE_SCHEMA:
+        identity_from_payload(payload["target_parent_identity"], "live target parent")
+        identity_from_payload(payload["backup_parent_identity"], "live backup parent")
+        if payload["backup_root_identity"] is not None:
+            identity_from_payload(payload["backup_root_identity"], "live backup root")
     return payload
 
 
@@ -1632,7 +1986,11 @@ def adoption_envelope_payload(original_target: Path) -> dict[str, Any]:
 
 
 def canonical_adoption_original_target(value: Any) -> Path:
-    if not isinstance(value, str) or "\x00" in value or not os.path.isabs(value):
+    if (
+        not isinstance(value, str)
+        or any(ord(character) < 32 or ord(character) == 127 for character in value)
+        or not os.path.isabs(value)
+    ):
         fail("adoption backup marker original_target is not canonical", 2)
     original = Path(value)
     if original == Path("/"):
@@ -1700,9 +2058,148 @@ def require_tree_graph(path: Path, expected: list[dict[str, Any]] | None, label:
         fail(f"{label} changed before recovery", 2)
 
 
-def unlink_live_prepare(target: Path) -> None:
+def durable_file_binding(path: Path, expected: bytes, label: str) -> DurableFileBinding:
+    identity = require_private_file_identity(path, label)
+    data = read_file_no_follow(path, MAX_CLEANUP_BYTES, label)
+    if data != expected:
+        fail(f"{label} bytes changed at the commit decision", 2)
+    return DurableFileBinding(identity, data)
+
+
+def require_durable_file_binding(path: Path, binding: DurableFileBinding, label: str) -> None:
+    if require_private_file_identity(path, label) != binding.identity:
+        fail(f"{label} identity changed at the commit decision", 2)
+    if read_file_no_follow(path, MAX_CLEANUP_BYTES, label) != binding.data:
+        fail(f"{label} bytes changed at the commit decision", 2)
+
+
+def live_prepare_binding(target: Path, payload: dict[str, Any]) -> DurableFileBinding:
+    return durable_file_binding(
+        live_prepare_path(target),
+        json_compact_bytes(payload),
+        "live transaction prepare intent",
+    )
+
+
+def require_object_binding(
+    path: Path,
+    expected_identity: FileIdentity | None,
+    expected_graph: list[dict[str, Any]] | None,
+    label: str,
+) -> None:
+    if expected_identity is None or not path_exists(path):
+        fail(f"{label} is absent at the commit decision", 2)
+    if lstat_identity(path) != expected_identity:
+        fail(f"{label} identity changed at the commit decision", 2)
+    require_tree_graph(path, expected_graph, label)
+
+
+def require_parent_binding(path: Path, expected: FileIdentity, label: str) -> None:
+    current = lstat_identity(path)
+    if (
+        identity_tuple(current) != identity_tuple(expected)
+        or current.kind != expected.kind
+        or current.uid != expected.uid
+        or current.gid != expected.gid
+        or current.mode != expected.mode
+    ):
+        fail(f"{label} identity changed at the commit decision", 2)
+
+
+def validate_live_parent_bindings(payload: dict[str, Any], target: Path, backups: Path) -> None:
+    if payload["schema"] != LIVE_PREPARE_SCHEMA:
+        require_safe_directory(target.parent, "live target parent")
+        require_safe_directory(backups.parent, "live backup parent")
+        return
+    require_parent_binding(
+        target.parent,
+        identity_from_payload(payload["target_parent_identity"], "live target parent"),
+        "live target parent",
+    )
+    require_parent_binding(
+        backups.parent,
+        identity_from_payload(payload["backup_parent_identity"], "live backup parent"),
+        "live backup parent",
+    )
+    if payload["backup_root_identity"] is not None:
+        require_parent_binding(
+            backups,
+            identity_from_payload(payload["backup_root_identity"], "live backup root"),
+            "live backup root",
+        )
+
+
+def validate_retired_cleanup_authority(target: Path, backups: Path) -> None:
+    if not path_exists(cleanup_prepare_path(target)):
+        return
+    prepare = read_cleanup_prepare(target)
+    validate_prepare_backup_binding(prepare, backups)
+    tombstone = cleanup_root_for(target) / prepare["tombstone"]["relative"]
+    root_entries = [item for item in prepare["source_graph"] if item["relative"] == "."]
+    if len(root_entries) != 1:
+        fail("cleanup prepare source graph root is invalid", 2)
+    require_object_binding(
+        tombstone,
+        identity_from_tree_entry(root_entries[0], "cleanup prepare source graph root"),
+        prepare["source_graph"],
+        "retired cleanup tombstone",
+    )
+    journal = read_cleanup_journal(target, recover_aliases=False)
+    matches = [
+        entry
+        for entry in journal["entries"]
+        if entry["relative"] == tombstone.name and entry["graph"] == prepare["source_graph"]
+    ]
+    if len(matches) != 1:
+        fail("cleanup journal does not bind the retired tombstone", 2)
+
+
+def validate_live_commit_decision(
+    target: Path,
+) -> tuple[dict[str, Any], DurableFileBinding]:
+    payload = read_live_prepare(target)
+    binding = live_prepare_binding(target, payload)
+    backups = Path(payload["backup_root"])
+    validate_live_parent_bindings(payload, target, backups)
+    stage_identity = (
+        None
+        if payload["stage_identity"] is None
+        else identity_from_payload(payload["stage_identity"], "live stage")
+    )
+    source_identity = (
+        None
+        if payload["target_identity"] is None
+        else identity_from_payload(payload["target_identity"], "live target")
+    )
+    if payload["operation"] == "remove":
+        if path_exists(target):
+            fail("removed target reappeared before commit", 2)
+    else:
+        require_object_binding(target, stage_identity, payload["stage_graph"], "published live target")
+    if source_identity is not None:
+        backup_name = payload["backup_name"]
+        if backup_name is None:
+            fail("live rollback source binding is missing", 2)
+        destination = backups / backup_name
+        require_object_binding(
+            destination,
+            source_identity,
+            payload["target_graph"],
+            "live rollback source",
+        )
+    validate_retired_cleanup_authority(target, backups)
+    require_durable_file_binding(
+        live_prepare_path(target),
+        binding,
+        "live transaction prepare intent",
+    )
+    return payload, binding
+
+
+def unlink_live_prepare(target: Path, binding: DurableFileBinding) -> None:
     with cleanup_authority(target, create=False) as authority:
         prepare = live_prepare_path(target)
+        require_durable_file_binding(prepare, binding, "live transaction prepare intent")
         try:
             stat_child(authority.root, prepare.name, "live transaction prepare intent")
         except ManagerError:
@@ -1773,7 +2270,9 @@ def recover_live_prepare_if_needed(target: Path) -> None:
     if not path_exists(prepare):
         return
     payload = read_live_prepare(target)
+    prepare_binding = live_prepare_binding(target, payload)
     backups = Path(payload["backup_root"])
+    validate_live_parent_bindings(payload, target, backups)
     stage = target.parent / payload["stage_name"] if payload["stage_name"] is not None else None
     destination = backups / payload["backup_name"] if payload["backup_name"] is not None else None
     source_identity = (
@@ -1802,59 +2301,62 @@ def recover_live_prepare_if_needed(target: Path) -> None:
 
     if operation == "remove":
         if target_matches_source and not destination_exists:
-            require_tree_graph(target, target_graph, "live remove target graph")
+            require_object_binding(target, source_identity, target_graph, "live remove target")
             cleanup_empty_backup_container(destination, backups, adoption_marker)
-            unlink_live_prepare(target)
+            require_object_binding(target, source_identity, target_graph, "live remove target")
+            unlink_live_prepare(target, prepare_binding)
             return
         if not path_exists(target) and destination_exists:
-            if source_identity is not None and lstat_identity(destination) != source_identity:
-                fail("live remove backup identity changed before recovery", 2)
-            require_tree_graph(destination, target_graph, "live remove backup graph")
-            unlink_live_prepare(target)
+            require_object_binding(destination, source_identity, target_graph, "live remove backup")
+            unlink_live_prepare(target, prepare_binding)
             return
         fail("live remove prepare state is incoherent", 2)
 
     if target_matches_stage and not stage_exists:
-        require_tree_graph(target, stage_graph, "live published stage graph")
-        unlink_live_prepare(target)
+        require_object_binding(target, stage_identity, stage_graph, "live published stage")
+        if source_identity is not None and destination is not None:
+            require_object_binding(destination, source_identity, target_graph, "live rollback source")
+        validate_retired_cleanup_authority(target, backups)
+        unlink_live_prepare(target, prepare_binding)
         return
     if target_matches_source and not stage_exists and not destination_exists:
-        require_tree_graph(target, target_graph, "live target graph")
+        require_object_binding(target, source_identity, target_graph, "live target")
         cleanup_empty_backup_container(destination, backups, adoption_marker)
-        unlink_live_prepare(target)
+        require_object_binding(target, source_identity, target_graph, "live target")
+        unlink_live_prepare(target, prepare_binding)
         return
     if target_matches_source and stage_exists and not destination_exists:
-        require_tree_graph(target, target_graph, "live target graph")
+        require_object_binding(target, source_identity, target_graph, "live target")
         if stage_identity is None:
             fail("live prepare stage identity is missing", 2)
-        require_tree_graph(stage, stage_graph, "live stage graph")
+        require_object_binding(stage, stage_identity, stage_graph, "live stage")
         remove_tree_identity(stage, stage_identity)
         cleanup_empty_backup_container(destination, backups, adoption_marker)
-        unlink_live_prepare(target)
+        require_object_binding(target, source_identity, target_graph, "live target")
+        unlink_live_prepare(target, prepare_binding)
         return
     if not path_exists(target) and source_identity is not None and destination_exists:
-        if lstat_identity(destination) != source_identity:
-            fail("live rollback source identity changed before recovery", 2)
-        require_tree_graph(destination, target_graph, "live rollback source graph")
+        require_object_binding(destination, source_identity, target_graph, "live rollback source")
         if stage_exists:
             if stage_identity is None:
                 fail("live prepare stage identity is missing", 2)
-            require_tree_graph(stage, stage_graph, "live stage graph")
+            require_object_binding(stage, stage_identity, stage_graph, "live stage")
             remove_tree_identity(stage, stage_identity)
         rename_noreplace(destination, target, source_identity)
-        require_tree_graph(target, target_graph, "live restored target graph")
+        require_object_binding(target, source_identity, target_graph, "live restored target")
         cleanup_empty_backup_container(destination, backups, adoption_marker)
-        unlink_live_prepare(target)
+        require_object_binding(target, source_identity, target_graph, "live restored target")
+        unlink_live_prepare(target, prepare_binding)
         return
     if not path_exists(target) and source_identity is None and stage_exists:
         if stage_identity is None:
             fail("live prepare stage identity is missing", 2)
-        require_tree_graph(stage, stage_graph, "live stage graph")
+        require_object_binding(stage, stage_identity, stage_graph, "live stage")
         remove_tree_identity(stage, stage_identity)
-        unlink_live_prepare(target)
+        unlink_live_prepare(target, prepare_binding)
         return
     if not path_exists(target) and source_identity is None and not stage_exists:
-        unlink_live_prepare(target)
+        unlink_live_prepare(target, prepare_binding)
         return
     fail("live transaction prepare state is incoherent", 2)
 
@@ -2530,7 +3032,10 @@ def backup_entries(backups: Path) -> list[Path]:
         fail(f"backup root must be a real directory: {backups}", 2)
     entries: list[Path] = []
     seen: set[str] = set()
-    for entry in sorted(backups.iterdir(), key=lambda item: item.name):
+    candidates = sorted(backups.iterdir(), key=lambda item: item.name)
+    if len(candidates) > MAX_NAMESPACE_ENTRIES:
+        fail("backup root exceeds bounded entry count", 2)
+    for entry in candidates:
         match = BACKUP_RE.fullmatch(entry.name)
         if match is None:
             if re.fullmatch(r"[0-9]-.*-old\.zcode", entry.name):
@@ -2548,6 +3053,35 @@ def backup_entries(backups: Path) -> list[Path]:
     return entries
 
 
+def backup_inventory_entries(backups: Path) -> list[tuple[str, Path | None, str | None]]:
+    if not path_exists(backups):
+        return []
+    require_private_directory(backups, "backup root")
+    candidates = sorted(backups.iterdir(), key=lambda item: item.name)
+    if len(candidates) > MAX_NAMESPACE_ENTRIES:
+        fail("backup inventory exceeds bounded entry count", 2)
+    result: list[tuple[str, Path | None, str | None]] = []
+    seen: set[str] = set()
+    for entry in candidates:
+        match = BACKUP_RE.fullmatch(entry.name)
+        if match is None:
+            if re.fullmatch(r"[0-9]-.*-old\.zcode", entry.name, flags=re.DOTALL):
+                result.append(("[redacted-invalid-name]", None, "invalid-backup-name"))
+            elif entry.name.startswith(".slot-") and ".hold." in entry.name:
+                result.append(("[redacted-recovery-hold]", None, "stale-recovery-hold"))
+            continue
+        slot = match.group(1)
+        if slot in seen:
+            result.append((entry.name, None, "duplicate-backup-slot"))
+            continue
+        seen.add(slot)
+        if entry.is_symlink() or not entry.is_dir():
+            result.append((entry.name, None, "unsafe-backup-slot"))
+            continue
+        result.append((entry.name, entry, None))
+    return result
+
+
 def backup_version_name(version: str, slot: int) -> str:
     if version != "unmanaged" and SEMVER_RE.fullmatch(version) is None:
         fail(f"invalid backup version: {version}")
@@ -2562,9 +3096,13 @@ def path_contains(parent: Path, child: Path) -> bool:
     return True
 
 
-def validate_backup_root(backups: Path, target: Path, *, create: bool) -> None:
+def validate_resource_disjoint(target: Path, backups: Path) -> None:
     if backups == target or path_contains(backups, target) or path_contains(target, backups):
         fail("backup root must be disjoint from the target", 2)
+
+
+def validate_backup_root(backups: Path, target: Path, *, create: bool) -> None:
+    validate_resource_disjoint(target, backups)
     target_parent_identity = require_safe_directory(target.parent, "target parent")
     backup_parent_identity = require_safe_directory(backups.parent, "backup root parent")
     if target_parent_identity.uid != current_uid():
@@ -2603,20 +3141,50 @@ def choose_backup_destination(
 
 
 def rename_noreplace(source: Path, destination: Path, expected: FileIdentity | None = None) -> None:
-    if expected is not None and lstat_identity(source) != expected:
-        fail(f"source identity changed before rename: {source}")
-    if path_exists(destination):
-        fail(f"exclusive rename destination already exists: {destination}")
-    os.rename(str(source), str(destination))
-    if expected is not None:
-        current = lstat_identity(destination)
-        if identity_tuple(current) != identity_tuple(expected):
-            fail(f"exclusive rename postcondition failed: {destination}")
-    fsync_dir(source.parent)
-    fsync_dir(destination.parent)
+    source_parent = open_directory_authority(source.parent, "rename source parent", private=False)
+    destination_parent: DirectoryAuthority | None = None
+    try:
+        destination_parent = open_directory_authority(
+            destination.parent,
+            "rename destination parent",
+            private=False,
+        )
+        source_name = child_name(source, source_parent.path, "rename source")
+        destination_name = child_name(
+            destination,
+            destination_parent.path,
+            "rename destination",
+        )
+        source_identity = stat_child(source_parent, source_name, "rename source")
+        if expected is not None and source_identity != expected:
+            fail(f"source identity changed before rename: {source}", 2)
+        expected_identity = expected or source_identity
+        native_rename_noreplace(
+            source_parent.fd,
+            source_name,
+            destination_parent.fd,
+            destination_name,
+            "exclusive rename",
+        )
+        current = stat_child(destination_parent, destination_name, "rename destination")
+        if current != expected_identity:
+            fail(f"exclusive rename postcondition failed: {destination}", 2)
+        fsync_authority(source_parent)
+        if identity_tuple(destination_parent.identity) != identity_tuple(source_parent.identity):
+            fsync_authority(destination_parent)
+    finally:
+        if destination_parent is not None:
+            destination_parent.close()
+        source_parent.close()
 
 
-def native_rename_child_noreplace(parent_fd: int, source: str, destination: str, label: str) -> None:
+def native_rename_noreplace(
+    source_parent_fd: int,
+    source: str,
+    destination_parent_fd: int,
+    destination: str,
+    label: str,
+) -> None:
     libc = ctypes.CDLL(None, use_errno=True)
     source_b = os.fsencode(source)
     destination_b = os.fsencode(destination)
@@ -2624,17 +3192,33 @@ def native_rename_child_noreplace(parent_fd: int, source: str, destination: str,
         rename = libc.renameat2
         rename.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
         rename.restype = ctypes.c_int
-        result = rename(parent_fd, source_b, parent_fd, destination_b, 1)
+        result = rename(
+            source_parent_fd,
+            source_b,
+            destination_parent_fd,
+            destination_b,
+            1,
+        )
     elif sys.platform == "darwin":
         rename = libc.renameatx_np
         rename.argtypes = [ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint]
         rename.restype = ctypes.c_int
-        result = rename(parent_fd, source_b, parent_fd, destination_b, 0x00000004)
+        result = rename(
+            source_parent_fd,
+            source_b,
+            destination_parent_fd,
+            destination_b,
+            0x00000004,
+        )
     else:
         fail(f"{label} requires a native no-replace rename primitive", 2)
     if result != 0:
         err = ctypes.get_errno()
         fail(f"{label} no-replace rename failed: {os.strerror(err)}", 2)
+
+
+def native_rename_child_noreplace(parent_fd: int, source: str, destination: str, label: str) -> None:
+    native_rename_noreplace(parent_fd, source, parent_fd, destination, label)
 
 
 def stat_child(authority: DirectoryAuthority, name: str, label: str) -> FileIdentity:
@@ -2984,6 +3568,8 @@ def recover_staged_cleanup_journal_before_publish(
         if name == cleanup_prepare_path(target).name:
             fd, _ = open_child_file(authority.root, name, "cleanup prepare intent")
             os.close(fd)
+        elif name == live_prepare_path(target).name:
+            read_live_prepare(target)
         elif name in declared:
             validate_cleanup_tombstone_child(authority.root, name)
         elif JOURNAL_TEMP_RE.fullmatch(name):
@@ -3104,7 +3690,15 @@ def validate_cleanup_prepare_payload(
     cleanup_root = payload["cleanup_root"]
     if not isinstance(backup_root, dict) or set(backup_root) != {"anchor", "path", "identity"}:
         fail("cleanup prepare backup root binding is invalid", 2)
-    if backup_root["anchor"] != "backup-root" or not isinstance(backup_root["path"], str) or not os.path.isabs(backup_root["path"]):
+    backup_path_value = backup_root.get("path")
+    if (
+        backup_root["anchor"] != "backup-root"
+        or not isinstance(backup_path_value, str)
+        or any(ord(character) < 32 or ord(character) == 127 for character in backup_path_value)
+        or not os.path.isabs(backup_path_value)
+        or Path(backup_path_value) == Path("/")
+        or str(Path(backup_path_value)) != backup_path_value
+    ):
         fail("cleanup prepare backup root binding mismatch", 2)
     identity_from_payload(backup_root["identity"], "cleanup prepare backup root")
     if not isinstance(cleanup_root, dict) or set(cleanup_root) != {"anchor", "relative", "identity"}:
@@ -3140,6 +3734,7 @@ def validate_prepare_backup_binding(payload: dict[str, Any], backups: Path) -> N
     backup_root = payload["backup_root"]
     if backup_root["path"] != str(backups):
         fail("cleanup prepare backup root path mismatch", 2)
+    validate_locked_resource_path(backups, "cleanup prepare backup root")
     expected = identity_from_payload(backup_root["identity"], "cleanup prepare backup root")
     current = lstat_identity(backups)
     if (
@@ -3232,6 +3827,9 @@ def validate_cleanup_journal_namespace(
         if name == cleanup_prepare_path(target).name:
             open_fd, _ = open_child_file(authority.root, name, "cleanup prepare intent")
             os.close(open_fd)
+            continue
+        if name == live_prepare_path(target).name:
+            read_live_prepare(target)
             continue
         if name in declared:
             validate_cleanup_tombstone_child(authority.root, name)
@@ -3329,6 +3927,11 @@ def recover_prepare_if_needed(target: Path, backups: Path) -> None:
         return
     with cleanup_authority(target, create=False) as authority:
         payload = read_cleanup_prepare(target)
+        prepare_binding = durable_file_binding(
+            prepare,
+            json_compact_bytes(payload),
+            "cleanup prepare intent",
+        )
         validate_prepare_backup_binding(payload, backups)
         if path_exists(journal):
             # Valid pending cleanup owns the tombstone now.
@@ -3352,11 +3955,31 @@ def recover_prepare_if_needed(target: Path, backups: Path) -> None:
             root_entries = [item for item in payload["source_graph"] if item["relative"] == "."]
             if len(root_entries) != 1:
                 fail("cleanup prepare source graph root is invalid", 2)
-            rename_noreplace(tombstone, source, identity_from_tree_entry(root_entries[0], "cleanup prepare source graph root"))
+            source_identity = identity_from_tree_entry(
+                root_entries[0],
+                "cleanup prepare source graph root",
+            )
+            rename_noreplace(tombstone, source, source_identity)
+            require_object_binding(
+                source,
+                source_identity,
+                payload["source_graph"],
+                "recovered retired backup slot",
+            )
         elif source_exists and not tombstone_exists:
-            pass
+            root_entries = [item for item in payload["source_graph"] if item["relative"] == "."]
+            if len(root_entries) != 1:
+                fail("cleanup prepare source graph root is invalid", 2)
+            require_object_binding(
+                source,
+                identity_from_tree_entry(root_entries[0], "cleanup prepare source graph root"),
+                payload["source_graph"],
+                "recovered retired backup slot",
+            )
         else:
             fail("cleanup preparation state is incoherent", 2)
+        validate_prepare_backup_binding(payload, backups)
+        require_durable_file_binding(prepare, prepare_binding, "cleanup prepare intent")
         os.unlink(prepare.name, dir_fd=authority.root.fd)
         fsync_authority(authority.root)
 
@@ -3367,6 +3990,31 @@ def drain_cleanup_pending(target: Path) -> bool:
         return False
     cleanup_root_authority(target, create=False)
     payload = read_cleanup_journal(target, recover_aliases=True)
+    journal_binding = durable_file_binding(
+        journal,
+        cleanup_journal_bytes(payload),
+        "cleanup journal",
+    )
+    prepare = cleanup_prepare_path(target)
+    prepare_binding: DurableFileBinding | None = None
+    if path_exists(prepare):
+        prepare_payload = read_cleanup_prepare(target)
+        prepare_binding = durable_file_binding(
+            prepare,
+            json_compact_bytes(prepare_payload),
+            "cleanup prepare intent",
+        )
+        backups = Path(prepare_payload["backup_root"]["path"])
+        validate_prepare_backup_binding(prepare_payload, backups)
+        tombstone_name = prepare_payload["tombstone"]["relative"]
+        matches = [
+            entry
+            for entry in payload["entries"]
+            if entry["relative"] == tombstone_name
+            and entry["graph"] == prepare_payload["source_graph"]
+        ]
+        if len(matches) != 1:
+            fail("cleanup prepare and journal bindings disagree", 2)
     root = cleanup_root_for(target)
     for entry in payload["entries"]:
         tombstone = root / entry["relative"]
@@ -3387,6 +4035,7 @@ def drain_cleanup_pending(target: Path) -> bool:
             expected_graph=entry["graph"],
         )
     with cleanup_authority(target, create=False) as authority:
+        require_durable_file_binding(journal, journal_binding, "cleanup journal")
         try:
             stat_child(authority.root, journal.name, "cleanup journal")
         except ManagerError:
@@ -3400,6 +4049,9 @@ def drain_cleanup_pending(target: Path) -> bool:
         except ManagerError:
             pass
         else:
+            if prepare_binding is None:
+                fail("cleanup prepare appeared during journal drain", 2)
+            require_durable_file_binding(prepare, prepare_binding, "cleanup prepare intent")
             os.unlink(prepare.name, dir_fd=authority.root.fd)
             fsync_authority(authority.root)
             try:
@@ -3424,6 +4076,7 @@ def drain_cleanup_pending(target: Path) -> bool:
                             fsync_authority(target_parent)
                     finally:
                         target_parent.close()
+                return True
         try:
             names = sorted(os.listdir(authority.root.fd))
         except OSError as exc:
@@ -3458,9 +4111,20 @@ def create_cleanup_for_retired_backup(target: Path, backups: Path, retired: Path
         root_entries = [item for item in prepare_payload["source_graph"] if item["relative"] == "."]
         if len(root_entries) != 1:
             fail("cleanup prepare source graph root is invalid", 2)
-        rename_noreplace(retired, tombstone, identity_from_tree_entry(root_entries[0], "cleanup prepare source graph root"))
+        retired_identity = identity_from_tree_entry(
+            root_entries[0],
+            "cleanup prepare source graph root",
+        )
+        rename_noreplace(retired, tombstone, retired_identity)
+        require_object_binding(
+            tombstone,
+            retired_identity,
+            prepare_payload["source_graph"],
+            "retired cleanup tombstone",
+        )
         payload = cleanup_payload(target, tombstone)
         publish_cleanup_journal(target, payload)
+        validate_retired_cleanup_authority(target, backups)
         return tombstone, payload
 
 
@@ -3555,11 +4219,29 @@ def validate_plan_configs(source: Path, env: dict[str, str]) -> None:
     log("ok", "plan config render, merge, and active-placeholder contracts passed")
 
 
-def apply_install(options: Options, target: Path, backups: Path, platform: str, source: Path) -> bool:
+def recover_transaction_state(resources: TransactionResources) -> bool:
+    target = resources.target
     recover_live_prepare_if_needed(target)
     cleanup_drained = drain_cleanup_pending(target)
-    recover_prepare_if_needed(target, backups)
+    if path_exists(cleanup_prepare_path(target)):
+        payload = read_cleanup_prepare(target)
+        bound = Path(payload["backup_root"]["path"])
+        if bound not in resources.pending_backups:
+            fail("cleanup prepare backup root was not acquired", 2)
+        recover_prepare_if_needed(target, bound)
     recover_empty_cleanup_root_before_mutation(target)
+    return cleanup_drained
+
+
+def apply_install(
+    options: Options,
+    resources: TransactionResources,
+    platform: str,
+    source: Path,
+) -> bool:
+    target = resources.target
+    backups = resources.backups
+    cleanup_drained = recover_transaction_state(resources)
     log("info", f"profile: desktop ({'macOS' if platform == 'macos' else 'Ubuntu'})")
     log("info", f"target: {target}")
     had_target = path_exists(target)
@@ -3663,7 +4345,8 @@ def apply_install(options: Options, target: Path, backups: Path, platform: str, 
             )
         rename_noreplace(stage, target, stage_identity)
         stage = Path()
-        unlink_live_prepare(target)
+        _, prepare_binding = validate_live_commit_decision(target)
+        unlink_live_prepare(target, prepare_binding)
         cleanup_pending = finish_cleanup(target, retired_payload)
         return cleanup_drained or cleanup_pending
     except BaseException:
@@ -3673,9 +4356,9 @@ def apply_install(options: Options, target: Path, backups: Path, platform: str, 
                 failed.rmdir()
                 require_tree_graph(target, stage_graph, "failed live target graph")
                 require_tree_graph(rollback_source, original_graph, "rollback source graph")
-                rename_noreplace(target, failed)
+                rename_noreplace(target, failed, stage_identity)
                 rename_noreplace(rollback_source, target, rollback_identity)
-                remove_tree_identity(failed)
+                remove_tree_identity(failed, stage_identity, expected_graph=stage_graph)
                 cleanup_empty_backup_container(rollback_source, backups, adoption_marker if adoption_mode else None)
         elif rollback_source is not None and path_exists(rollback_source) and not path_exists(target):
             with contextlib.suppress(BaseException):
@@ -3720,20 +4403,18 @@ def install_command(options: Options, target_text: str, backups_text: str) -> in
     log("info", f"selected marketplace: {source.name} ({source})")
     log("info", f"posture: {options.posture}")
     if not options.apply:
-        def body(locked: Path) -> None:
+        def body(locked: Path, backups: Path) -> None:
             cleanup = cleanup_pending_state(locked, recover_aliases=False)
             if cleanup["cleanup_pending"]:
                 log("warn", "cleanup_pending=true")
-            backups = canonical_backups_from_text(backups_text)
             validate_backup_root(backups, locked, create=False)
             plan_install(options, locked, backups, platform, source)
-        run_read_only(target_text, body)
+        run_transaction_plan(target_text, backups_text, body)
         install_complete(source.name, platform, backup=None, cleanup_pending=False)
         return 0
-    with target_coordination(target_text, create=True, shared=False) as target:
-        backups = canonical_backups_from_text(backups_text)
-        validate_backup_root(backups, target, create=False)
-        cleanup_pending = apply_install(options, target, backups, platform, source)
+    with transaction_coordination(target_text, backups_text) as resources:
+        validate_backup_root(resources.backups, resources.target, create=False)
+        cleanup_pending = apply_install(options, resources, platform, source)
         install_complete(source.name, platform, backup=None, cleanup_pending=cleanup_pending)
     return 0
 
@@ -3750,14 +4431,14 @@ def install_complete(setup: str, platform: str, *, backup: Path | None, cleanup_
     log("info", "next: open the ZCode desktop app. credentials.json restored from backup.")
 
 
-def canonical_backups_from_text(value: str) -> Path:
+def canonical_backups_from_text(value: str, *, inspect_endpoint: bool = True) -> Path:
     value = reject_transaction_path_controls(value, "backup root")
     if not value:
         fail("backup root path is invalid", 2)
     expanded = Path(value).expanduser()
     if not expanded.is_absolute():
         expanded = Path.cwd() / expanded
-    if path_exists(expanded) and lstat_identity(expanded).kind != "directory":
+    if inspect_endpoint and path_exists(expanded) and lstat_identity(expanded).kind != "directory":
         fail("backup root must be a directory endpoint", 2)
     try:
         parent = expanded.parent.resolve(strict=True)
@@ -3786,12 +4467,11 @@ def adoption_payload(envelope: Path, target: Path, allow_relocation: bool) -> Pa
 
 def restore_command(options: Options, target_text: str, backups_text: str) -> int:
     if not options.apply:
-        def body(locked: Path) -> None:
+        def body(locked: Path, backups: Path) -> None:
             cleanup = cleanup_pending_state(locked, recover_aliases=False)
             if cleanup["cleanup_pending"]:
                 log("warn", "cleanup_pending=true")
             print_plan_coordination(locked, cleanup)
-            backups = canonical_backups_from_text(backups_text)
             validate_backup_root(backups, locked, create=False)
             source = find_slot(backups, options.slot)
             section(f"Restore from backup slot {options.slot}")
@@ -3801,16 +4481,14 @@ def restore_command(options: Options, target_text: str, backups_text: str) -> in
             log("info", f"target: {locked}")
             log("info", "mode: PLAN (dry-run)")
             print(f"[DRY-RUN] copy managed payload {source} -> {locked.parent / ('.' + locked.name + '.stage.PLAN')}")
-        run_read_only(target_text, body)
+        run_transaction_plan(target_text, backups_text, body)
         section("Restore complete")
         return 0
-    with target_coordination(target_text, create=True, shared=False) as target:
-        backups = canonical_backups_from_text(backups_text)
-        recover_live_prepare_if_needed(target)
+    with transaction_coordination(target_text, backups_text) as resources:
+        target = resources.target
+        backups = resources.backups
+        recover_transaction_state(resources)
         validate_backup_root(backups, target, create=False)
-        drain_cleanup_pending(target)
-        recover_prepare_if_needed(target, backups)
-        recover_empty_cleanup_root_before_mutation(target)
         source = find_slot(backups, options.slot)
         if source is None:
             fail(f"no safe backup found in slot {options.slot}")
@@ -3884,7 +4562,8 @@ def restore_command(options: Options, target_text: str, backups_text: str) -> in
                 )
             rename_noreplace(stage, target, stage_identity)
             stage = Path()
-            unlink_live_prepare(target)
+            _, prepare_binding = validate_live_commit_decision(target)
+            unlink_live_prepare(target, prepare_binding)
             cleanup_pending = finish_cleanup(target, retired_payload)
             section("Restore complete")
             if cleanup_pending:
@@ -3906,12 +4585,11 @@ def restore_command(options: Options, target_text: str, backups_text: str) -> in
 
 def remove_command(options: Options, target_text: str, backups_text: str) -> int:
     if not options.apply:
-        def body(locked: Path) -> None:
+        def body(locked: Path, backups: Path) -> None:
             cleanup = cleanup_pending_state(locked, recover_aliases=False)
             if cleanup["cleanup_pending"]:
                 log("warn", "cleanup_pending=true")
             print_plan_coordination(locked, cleanup)
-            backups = canonical_backups_from_text(backups_text)
             section("nddev-zcode-app - remove")
             log("info", "mode: PLAN (dry-run)")
             log("info", f"target: {locked}")
@@ -3921,15 +4599,13 @@ def remove_command(options: Options, target_text: str, backups_text: str) -> int
                 version = current_version(locked)
                 destination, _ = choose_backup_destination(backups, version, locked, create=False)
                 print(f"[DRY-RUN] atomic move {locked} {destination}")
-        run_read_only(target_text, body)
+        run_transaction_plan(target_text, backups_text, body)
         return 0
-    with target_coordination(target_text, create=True, shared=False) as target:
-        backups = canonical_backups_from_text(backups_text)
-        recover_live_prepare_if_needed(target)
+    with transaction_coordination(target_text, backups_text) as resources:
+        target = resources.target
+        backups = resources.backups
+        recover_transaction_state(resources)
         validate_backup_root(backups, target, create=False)
-        drain_cleanup_pending(target)
-        recover_prepare_if_needed(target, backups)
-        recover_empty_cleanup_root_before_mutation(target)
         section("nddev-zcode-app - remove")
         log("info", "mode: APPLY")
         log("info", f"target: {target}")
@@ -3958,7 +4634,8 @@ def remove_command(options: Options, target_text: str, backups_text: str) -> int
         )
         rename_noreplace(target, destination, identity)
         fsync_tree(destination)
-        unlink_live_prepare(target)
+        _, prepare_binding = validate_live_commit_decision(target)
+        unlink_live_prepare(target, prepare_binding)
         cleanup_pending = finish_cleanup(target, retired_payload)
         if cleanup_pending:
             log("warn", "cleanup_pending=true")
@@ -3967,33 +4644,43 @@ def remove_command(options: Options, target_text: str, backups_text: str) -> int
 
 
 def list_backups(options: Options, backups_text: str) -> int:
-    backups = canonical_backups_from_text(backups_text)
+    return run_backup_read_only(
+        backups_text,
+        lambda backups: list_backups_locked(options, backups),
+    )
+
+
+def list_backups_locked(options: Options, backups: Path) -> int:
     section(f"Backups ({backups})")
     if not backups.is_dir():
         log("info", "no backups directory")
         return 0
     found = False
-    for entry in backup_entries(backups):
+    for display_name, entry, invalid_kind in backup_inventory_entries(backups):
         found = True
+        if invalid_kind is not None or entry is None:
+            print(f"  {display_name}  type={invalid_kind}")
+            continue
         if path_exists(entry / "BUILD-VERSION"):
             try:
                 stamp = stamp_metadata(entry)
                 print(
-                    f"  {entry.name}  type=managed  build={stamp['build_version']}  installed={stamp['installed_at']}"
+                    f"  {display_name}  type=managed  build={stamp['build_version']}  installed={stamp['installed_at']}"
                 )
             except ManagerError:
-                print(f"  {entry.name}  type=invalid-managed-stamp")
+                print(f"  {display_name}  type=invalid-managed-stamp")
         elif path_exists(entry / "NDDEV-BACKUP.json"):
             try:
                 marker = load_json_file(entry / "NDDEV-BACKUP.json", "adoption envelope")
+                original = validate_adoption_marker_payload(marker)
                 print(
-                    f"  {entry.name}  type=adopted-unmanaged build={marker['installer_build']} "
-                    f"created={marker['created_at']} target={marker['original_target']}"
+                    f"  {display_name}  type=adopted-unmanaged build={marker['installer_build']} "
+                    f"created={marker['created_at']} target={original}"
                 )
             except ManagerError:
-                print(f"  {entry.name}  type=invalid-adoption-envelope")
+                print(f"  {display_name}  type=invalid-adoption-envelope")
         else:
-            print(f"  {entry.name}  type=invalid-or-unmanaged")
+            print(f"  {display_name}  type=invalid-or-unmanaged")
     if not found:
         log("info", "no backups found")
     return 0

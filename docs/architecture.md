@@ -78,14 +78,26 @@ The Python manager owns setup lifecycle transactions; no fallback path bypasses
 it.
 
 Target-bound commands perform host and lexical option checks before filesystem
-observation, then use monotonic product and canonical-target coordination
-anchors in a fixed same-UID system temporary namespace. Read-only status and
-plan commands do not create or repair anchors, but they report the actual
-product and canonical-target anchor paths and whether each anchor is already
-present. A cold read is permitted only when the product anchor is absent and the
-existing product namespace is boundedly empty; if the namespace changes during
-the uncoordinated body, the result is discarded and the read is recomputed under
-coordination.
+observation, then map every canonical target or backup path to one
+role-independent digest anchor in a fixed same-UID system temporary namespace.
+Path anchors retain the exact legacy `anchor=target,target_digest` marker bytes,
+so old and new managers validate the same monotonic files during an upgrade.
+Mutators retain the product anchor exclusively for their complete lifecycle.
+Before touching transaction state, they boundedly acquire every existing path
+anchor to wait out old managers that already completed the former product-to-
+target handoff. They then retain the deterministic digest-sorted target,
+requested-backup, and prepare-bound backup anchors through commit and recovery.
+Pending prepare namespace identities and bounded file bytes are reread exactly
+after final acquisition.
+
+Read-only commands never create or repair anchors. Status coordinates only its
+target, plans coordinate the target plus requested and pending backup roots, and
+`list --backups` coordinates only its backup root. When a required path anchor
+does not exist, the product shared lock remains held through the read. A cold
+read is permitted only when the product anchor is absent and the existing
+product namespace is boundedly empty; if the exact namespace snapshot changes,
+the result is discarded and recomputed under coordination. Status preserves the
+public `product_anchor` and `target_anchor` fields and paths.
 
 The apply lifecycle:
 
@@ -99,7 +111,9 @@ The apply lifecycle:
 4. verifies the complete staged tree, normalizes private permissions, and
    fsyncs it before commit,
 5. moves any previous target into a numbered backup slot, preserving exact
-   object identity for rollback, and atomically publishes the verified stage,
+   object identity for rollback, atomically publishes the verified stage, and
+   revalidates both complete graphs, retired-slot journal state, and parent
+   identities at the actual commit decision before removing durable authority,
 6. promotes irreversible retired-slot cleanup through a durable prepare intent
    and immutable cleanup journal before destructive drain.
 
@@ -116,7 +130,16 @@ If post-commit cleanup cannot finish after a valid final journal or verified
 bootstrap runtime is visible, the command returns success with explicit
 cleanup-pending state instead of rolling back committed state. Read-only
 commands expose the same state without repairing it. Malformed or incoherent
-cleanup state fails closed with exit code 2 before mutation.
+cleanup state fails closed with exit code 2 before mutation. A post-rename
+identity, graph, journal, or parent mismatch leaves foreign objects untouched
+and retains durable prepare authority for bounded recovery or operator
+inspection.
+
+Backup inventory is also fail-closed without becoming an output-injection
+surface. It validates a complete managed stamp or adopted envelope before
+displaying any metadata. Invalid names and marker values are represented by
+fixed redacted classifications; valid historical installer SemVer and canonical
+UTC timestamps remain readable.
 
 Plan mode describes the operation without writes or live `zcode` execution, but
 still parses, substitutes, merges, and validates config/setting/provider/MCP/hook

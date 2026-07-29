@@ -134,16 +134,17 @@
     "max_backups": 10,
     "rotation": "lowest free slot 0-9; oldest (by mtime) overwritten when full, regardless of version",
     "version_source": "validated <target>/BUILD-VERSION for managed targets",
-    "adopted_unmanaged_envelope": "<N>-unmanaged-old.zcode/{NDDEV-BACKUP.json,payload/}"
+    "adopted_unmanaged_envelope": "<N>-unmanaged-old.zcode/{NDDEV-BACKUP.json,payload/}",
+    "inventory": "list --backups is a no-create backup-resource read; it validates complete managed stamps and adopted envelopes before display, preserves valid historical SemVer/timestamps, and emits fixed redacted classifications without echoing malformed names or metadata"
   },
   "transaction_policy": {
     "path_boundaries": "target and backup path values reject ASCII C0 controls (U+0000-U+001F) and DEL (U+007F) before coordination or filesystem mutation while preserving spaces, Unicode, and relative-path resolution; canonical non-root target and backup roots must be disjoint absent-or-real-directory endpoints on one filesystem",
     "safe_tree": "managed inputs reject symlinks, special files, and multiply-linked regular files",
-    "locking": "monotonic product and canonical-target coordination anchors gate target-bound status, plan, install, remove, and restore operations; status and plan expose the actual product and target anchor paths/states plus bounded cleanup_pending metadata without cleanup deletion paths or repair",
+    "locking": "one role-independent canonical-path digest and legacy-byte-compatible target marker identify target and backup resources; mutators hold product EX through the complete lifecycle, first quiesce every bounded existing path anchor for mixed-version safety, then hold the deterministic sorted target, requested-backup, and exact-snapshot pending-backup resource set through commit and recovery; status reads target only, plan reads target/requested/pending resources, and list --backups reads backup only without anchor creation or repair; status and plan expose the compatible product and target anchor paths/states plus bounded cleanup_pending metadata without cleanup deletion paths",
     "runtime_quiescence": "apply-mode target mutations reject open task/session databases and SQLite recovery sidecars; ZCode must be quit cleanly before setup changes",
     "staging": "render, restore selected state, normalize permissions, verify, and fsync a same-filesystem sibling stage before live replacement",
-    "commit": "write durable live-rename prepare authority before the first live move, move the previous target into its backup when present, then atomically rename the verified stage without replacement",
-    "rollback": "recover or fail closed from durable live-rename prepare and cleanup journal state under fd-bound no-follow cleanup namespace authority; identity mismatch preserves foreign state; valid post-commit cleanup failure is reported as cleanup_pending without discarding committed state",
+    "commit": "write durable live-rename prepare authority before the first live move, move the previous target into its backup when present, then atomically rename the verified stage without replacement; before removing durable authority, revalidate the final target, rollback source, retired slot, complete graphs, journal binding, and parent identities at the actual commit decision",
+    "rollback": "recover or fail closed from durable live-rename prepare and cleanup journal state under fd-bound no-follow cleanup namespace authority and all bound resource locks; identity, graph, journal, or parent mismatch preserves foreign state and durable recovery authority; valid post-commit cleanup failure is reported as cleanup_pending without discarding committed state",
     "hard_interruption": "SIGKILL or power loss is recovered from bounded prepare/journal authority by the next coordinated lifecycle operation, or reported as deterministic operator action when state is incoherent"
   },
   "adoption_policy": {
@@ -161,7 +162,7 @@
       ],
       "installer_build": "canonical SemVer 2.0.0; restore accepts valid historical builds",
       "created_at": "canonical UTC YYYY-MM-DDTHH:MM:SSZ with second precision",
-      "original_target": "NUL-free canonical absolute non-root path",
+      "original_target": "ASCII C0/DEL-free canonical absolute non-root path",
       "validation_order": "the complete marker is validated before target binding or relocation authorization"
     },
     "restore": "the validated original target is enforced; relocation requires restore with explicit absolute --target and --allow-target-relocation"

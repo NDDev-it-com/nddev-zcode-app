@@ -239,6 +239,7 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
     else:
         path_boundaries = str(transaction_policy.get("path_boundaries", ""))
         locking = str(transaction_policy.get("locking", ""))
+        commit = str(transaction_policy.get("commit", ""))
         rollback = str(transaction_policy.get("rollback", ""))
         if (
             "reject ASCII C0 controls (U+0000-U+001F) and DEL (U+007F)" not in path_boundaries
@@ -249,10 +250,45 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
                 "build/manifest.json: transaction_policy.path_boundaries must declare "
                 "pre-coordination C0/DEL rejection and preserved path semantics"
             )
-        if "status and plan expose" not in locking or "without cleanup deletion paths" not in locking:
-            errors.append("build/manifest.json: transaction_policy.locking must declare status/plan anchor reporting")
+        required_locking = (
+            "role-independent canonical-path digest",
+            "legacy-byte-compatible target marker",
+            "product EX through the complete lifecycle",
+            "quiesce every bounded existing path anchor",
+            "deterministic sorted target, requested-backup",
+            "without anchor creation or repair",
+            "without cleanup deletion paths",
+        )
+        if any(marker not in locking for marker in required_locking):
+            errors.append(
+                "build/manifest.json: transaction_policy.locking must declare "
+                "mixed-version multi-resource coordination and no-create reads"
+            )
+        if (
+            "actual commit decision" not in commit
+            or "complete graphs" not in commit
+            or "parent identities" not in commit
+        ):
+            errors.append(
+                "build/manifest.json: transaction_policy.commit must declare final "
+                "identity/graph/parent revalidation"
+            )
         if "fd-bound no-follow cleanup namespace authority" not in rollback:
             errors.append("build/manifest.json: transaction_policy.rollback must declare cleanup namespace authority")
+        backup_policy = manifest.get("backup_policy")
+        inventory = (
+            str(backup_policy.get("inventory", ""))
+            if isinstance(backup_policy, dict)
+            else ""
+        )
+        if (
+            "no-create backup-resource read" not in inventory
+            or "fixed redacted classifications" not in inventory
+            or "valid historical SemVer/timestamps" not in inventory
+        ):
+            errors.append(
+                "build/manifest.json: backup_policy.inventory must declare safe no-create listing"
+            )
     adoption_policy = manifest.get("adoption_policy")
     if not isinstance(adoption_policy, dict):
         errors.append("build/manifest.json: adoption_policy must be an object")
@@ -270,7 +306,7 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
             ],
             "installer_build": "canonical SemVer 2.0.0; restore accepts valid historical builds",
             "created_at": "canonical UTC YYYY-MM-DDTHH:MM:SSZ with second precision",
-            "original_target": "NUL-free canonical absolute non-root path",
+            "original_target": "ASCII C0/DEL-free canonical absolute non-root path",
             "validation_order": (
                 "the complete marker is validated before target binding or relocation authorization"
             ),
@@ -308,6 +344,9 @@ def check_lifecycle_source(errors: list[str]) -> None:
         "open_child_directory_authority(",
         "dir_fd=authority.root.fd",
         "native_rename_child_noreplace(",
+        "def native_rename_noreplace(",
+        "source_parent.fd",
+        "destination_parent.fd",
         "expected_graph=",
         '"gid"',
         "O_DIRECTORY",
@@ -318,6 +357,20 @@ def check_lifecycle_source(errors: list[str]) -> None:
         '"target_digest"',
         "def reject_transaction_path_controls(",
         "def print_plan_coordination(",
+        "class CanonicalResource:",
+        "class PendingCoordinationSnapshot:",
+        "def transaction_coordination(",
+        "def run_read_only_resources(",
+        "def run_transaction_plan(",
+        "def run_backup_read_only(",
+        "def existing_resource_digests(",
+        "def pending_coordination_snapshot(",
+        "if after != before:",
+        "validate_live_commit_decision(target)",
+        "validate_retired_cleanup_authority(target, backups)",
+        "def backup_inventory_entries(",
+        "original = validate_adoption_marker_payload(marker)",
+        '"[redacted-invalid-name]"',
         "cleanup_pending_state(target, recover_aliases=False)",
         "recover_empty_cleanup_root_before_mutation(target)",
         "def canonical_adoption_original_target(",
@@ -342,6 +395,10 @@ def check_lifecycle_source(errors: list[str]) -> None:
         errors.append("cli-tools/scripts/bootstrap.sh: post-commit cleanup must report success with cleanup_pending=true")
     if "shutil.rmtree(str(tombstone))" in manager:
         errors.append("cli-tools/nddev_zcode.py: cleanup journal drain must not use path-based rmtree")
+    if "os.rename(str(source), str(destination))" in manager:
+        errors.append(
+            "cli-tools/nddev_zcode.py: lifecycle rename must use native fd-bound no-replace"
+        )
     if '"root": str(cleanup_root_for(target))' in manager:
         errors.append("cli-tools/nddev_zcode.py: status cleanup metadata must not expose cleanup deletion paths")
     if "rm -rf --" in common or "rm -f --" in common:
