@@ -243,6 +243,40 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
             errors.append("build/manifest.json: transaction_policy.locking must declare status/plan anchor reporting")
         if "fd-bound no-follow cleanup namespace authority" not in rollback:
             errors.append("build/manifest.json: transaction_policy.rollback must declare cleanup namespace authority")
+    adoption_policy = manifest.get("adoption_policy")
+    if not isinstance(adoption_policy, dict):
+        errors.append("build/manifest.json: adoption_policy must be an object")
+    else:
+        marker_policy = adoption_policy.get("marker")
+        expected_marker_policy = {
+            "schema": 1,
+            "exact_keys": [
+                "schema",
+                "type",
+                "original_target",
+                "created_at",
+                "installer_build",
+                "payload",
+            ],
+            "installer_build": "canonical SemVer 2.0.0; restore accepts valid historical builds",
+            "created_at": "canonical UTC YYYY-MM-DDTHH:MM:SSZ with second precision",
+            "original_target": "NUL-free canonical absolute non-root path",
+            "validation_order": (
+                "the complete marker is validated before target binding or relocation authorization"
+            ),
+        }
+        if marker_policy != expected_marker_policy:
+            errors.append("build/manifest.json: adoption_policy.marker is invalid")
+        restore = str(adoption_policy.get("restore", ""))
+        if (
+            "validated original target is enforced" not in restore
+            or "explicit absolute --target" not in restore
+            or "--allow-target-relocation" not in restore
+        ):
+            errors.append(
+                "build/manifest.json: adoption_policy.restore must declare validated "
+                "target binding and explicit absolute relocation"
+            )
 
 
 def check_lifecycle_source(errors: list[str]) -> None:
@@ -275,6 +309,11 @@ def check_lifecycle_source(errors: list[str]) -> None:
         "def print_plan_coordination(",
         "cleanup_pending_state(target, recover_aliases=False)",
         "recover_empty_cleanup_root_before_mutation(target)",
+        "def canonical_adoption_original_target(",
+        "def validate_adoption_timestamp(",
+        "original = validate_adoption_marker_payload(marker)",
+        "expected_build=build_version()",
+        "--allow-target-relocation requires an absolute --target",
     )
     for marker in required_manager_markers:
         if marker not in manager:

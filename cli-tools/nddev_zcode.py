@@ -1553,7 +1553,11 @@ def read_live_prepare(target: Path) -> dict[str, Any]:
         validate_tree_graph_payload(payload["stage_graph"], "live stage graph")
     marker = payload["adoption_marker"]
     if marker is not None:
-        validate_adoption_marker_payload(marker, target)
+        validate_adoption_marker_payload(
+            marker,
+            expected_target=target,
+            expected_build=build_version(),
+        )
     return payload
 
 
@@ -1618,7 +1622,40 @@ def adoption_envelope_payload(original_target: Path) -> dict[str, Any]:
     }
 
 
-def validate_adoption_marker_payload(value: Any, target: Path) -> None:
+def canonical_adoption_original_target(value: Any) -> Path:
+    if not isinstance(value, str) or "\x00" in value or not os.path.isabs(value):
+        fail("adoption backup marker original_target is not canonical", 2)
+    original = Path(value)
+    if original == Path("/"):
+        fail("adoption backup marker original_target is not canonical", 2)
+    try:
+        resolved = original.resolve(strict=False)
+    except (OSError, RuntimeError) as exc:
+        fail(f"adoption backup marker original_target cannot be resolved safely: {exc}", 2)
+    if str(resolved) != value:
+        fail("adoption backup marker original_target is not canonical", 2)
+    return original
+
+
+def validate_adoption_timestamp(value: Any) -> str:
+    if not isinstance(value, str):
+        fail("adoption backup marker created_at is not canonical UTC", 2)
+    try:
+        parsed = dt.datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=dt.timezone.utc)
+    except ValueError:
+        fail("adoption backup marker created_at is not canonical UTC", 2)
+    canonical = parsed.isoformat(timespec="seconds").replace("+00:00", "Z")
+    if canonical != value:
+        fail("adoption backup marker created_at is not canonical UTC", 2)
+    return value
+
+
+def validate_adoption_marker_payload(
+    value: Any,
+    *,
+    expected_target: Path | None = None,
+    expected_build: str | None = None,
+) -> Path:
     if not isinstance(value, dict) or set(value) != {
         "schema",
         "type",
@@ -1627,17 +1664,23 @@ def validate_adoption_marker_payload(value: Any, target: Path) -> None:
         "installer_build",
         "payload",
     }:
-        fail("adoption backup marker binding is malformed", 2)
+        fail("adoption backup marker is malformed", 2)
     if (
         value["schema"] != 1
         or value["type"] != "adopted-unmanaged"
-        or value["original_target"] != str(target)
-        or value["installer_build"] != build_version()
         or value["payload"] != "payload"
     ):
-        fail("adoption backup marker binding mismatch", 2)
-    if not isinstance(value["created_at"], str) or not value["created_at"]:
-        fail("adoption backup marker timestamp is invalid", 2)
+        fail("adoption backup marker schema/type/payload is invalid", 2)
+    installer_build = value["installer_build"]
+    if not isinstance(installer_build, str) or SEMVER_RE.fullmatch(installer_build) is None:
+        fail("adoption backup marker installer_build is not canonical SemVer", 2)
+    validate_adoption_timestamp(value["created_at"])
+    original = canonical_adoption_original_target(value["original_target"])
+    if expected_target is not None and original != expected_target:
+        fail("adoption backup marker target binding mismatch", 2)
+    if expected_build is not None and installer_build != expected_build:
+        fail("adoption backup marker build binding mismatch", 2)
+    return original
 
 
 def require_tree_graph(path: Path, expected: list[dict[str, Any]] | None, label: str) -> None:
@@ -3646,7 +3689,11 @@ def write_adoption_envelope(
 ) -> None:
     if payload is None:
         payload = adoption_envelope_payload(original_target)
-    validate_adoption_marker_payload(payload, original_target)
+    validate_adoption_marker_payload(
+        payload,
+        expected_target=original_target,
+        expected_build=build_version(),
+    )
     atomic_write(envelope / "NDDEV-BACKUP.json", json_compact_bytes(payload), 0o600)
 
 
@@ -3718,14 +3765,8 @@ def find_slot(backups: Path, slot: str) -> Path | None:
 
 def adoption_payload(envelope: Path, target: Path, allow_relocation: bool) -> Path:
     marker = load_json_file(envelope / "NDDEV-BACKUP.json", "adopted backup marker")
-    if marker.get("schema") != 1 or marker.get("type") != "adopted-unmanaged":
-        fail("unsupported adopted backup marker")
-    if marker.get("payload") != "payload":
-        fail("adopted backup payload name must be exactly 'payload'")
-    original = marker.get("original_target")
-    if not isinstance(original, str) or not os.path.isabs(original) or Path(original).resolve() == Path("/"):
-        fail("adopted backup original_target is not canonical")
-    if not allow_relocation and original != str(target):
+    original = validate_adoption_marker_payload(marker)
+    if not allow_relocation and original != target:
         fail("adopted backup belongs to a different target; explicit relocation is required")
     payload = envelope / "payload"
     if not payload.is_dir() or payload.is_symlink():
@@ -4167,6 +4208,8 @@ def parse_args(argv: list[str]) -> Options:
             fail("--slot must be a single digit 0-9", 2)
     if options.allow_target_relocation and (options.command != "restore" or not options.target):
         fail("--allow-target-relocation requires restore with an explicit --target", 2)
+    if options.allow_target_relocation and not os.path.isabs(options.target):
+        fail("--allow-target-relocation requires an absolute --target", 2)
     return options
 
 

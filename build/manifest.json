@@ -149,7 +149,22 @@
   "adoption_policy": {
     "authorization": "--adopt-unmanaged requires install with an explicit existing --target",
     "backup": "the original unstamped content tree is stored inside a typed adopted-unmanaged envelope with permissions normalized to private owner-only modes",
-    "restore": "the original target is enforced; relocation requires restore with explicit --target and --allow-target-relocation"
+    "marker": {
+      "schema": 1,
+      "exact_keys": [
+        "schema",
+        "type",
+        "original_target",
+        "created_at",
+        "installer_build",
+        "payload"
+      ],
+      "installer_build": "canonical SemVer 2.0.0; restore accepts valid historical builds",
+      "created_at": "canonical UTC YYYY-MM-DDTHH:MM:SSZ with second precision",
+      "original_target": "NUL-free canonical absolute non-root path",
+      "validation_order": "the complete marker is validated before target binding or relocation authorization"
+    },
+    "restore": "the validated original target is enforced; relocation requires restore with explicit absolute --target and --allow-target-relocation"
   },
   "restore_policy": {
     "always_restore": [
