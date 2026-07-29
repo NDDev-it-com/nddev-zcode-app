@@ -95,6 +95,7 @@
     "catalog_identity": "the managed setup catalog contains nddev-builder; safe kebab-case directory id must equal marketplace.json:name",
     "default_setup": "nddev-builder",
     "selection_option": "install defaults to nddev-builder; --setup nddev-builder and --marketplace nddev-builder remain backward-compatible aliases",
+    "plugin_contract": "runtime selection validates a safe self-contained tree; plugin names match [a-z0-9][a-z0-9._-]{0,127}; names and exact ./plugins/<name> sources are unique; marketplace entries, SemVer versions, plugin manifests, and declared directories match before plan or apply mutation",
     "posture_option": "--posture full-auto|safe, default full-auto",
     "new_stamp_schema": 2,
     "new_stamp_identity": "BUILD-VERSION.setup_id must equal nddev-builder; BUILD-VERSION.posture records the selected posture",

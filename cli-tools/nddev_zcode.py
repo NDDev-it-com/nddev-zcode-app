@@ -49,6 +49,7 @@ SEMVER_RE = re.compile(
     r"(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?"
 )
 SETUP_RE = re.compile(r"[a-z0-9][a-z0-9-]*")
+PLUGIN_RE = re.compile(r"[a-z0-9][a-z0-9._-]{0,127}")
 BACKUP_RE = re.compile(r"([0-9])-(?:unmanaged|" + SEMVER_RE.pattern + r")-old\.zcode")
 PLACEHOLDER_RE = re.compile(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}")
 ENV_EXAMPLE = ROOT / "build" / ".env.example"
@@ -3154,15 +3155,90 @@ def check_runtime_version(*, plan: bool) -> None:
         log("warn", f"ZCode CLI {running_cli} != pinned {pinned_cli}")
 
 
+def validate_marketplace_runtime(source: Path, expected_name: str) -> None:
+    safe_tree(source)
+    required = (
+        "AGENTS.md",
+        "marketplace.json",
+        "cli-config.template.json",
+        "v2-config.template.json",
+        "v2-setting.template.json",
+    )
+    for name in required:
+        path = source / name
+        if path.is_symlink() or not path.is_file():
+            fail(f"marketplace is not self-contained: missing safe {name}")
+    marketplace = load_json_file(source / "marketplace.json", "marketplace")
+    for name in (
+        "cli-config.template.json",
+        "v2-config.template.json",
+        "v2-setting.template.json",
+    ):
+        load_json_file(source / name, name)
+    if marketplace.get("name") != expected_name or SETUP_RE.fullmatch(expected_name) is None:
+        fail("marketplace manifest name must match its safe directory name")
+    plugins = marketplace.get("plugins")
+    if not isinstance(plugins, list):
+        fail("marketplace plugins must be a JSON array")
+    seen_names: set[str] = set()
+    seen_sources: set[str] = set()
+    declared_directories: set[str] = set()
+    for entry in plugins:
+        if not isinstance(entry, dict):
+            fail("marketplace plugin entries must be JSON objects")
+        name = entry.get("name")
+        plugin_source = entry.get("source")
+        version = entry.get("version")
+        if not isinstance(name, str) or PLUGIN_RE.fullmatch(name) is None:
+            fail("marketplace plugin name is unsafe")
+        if plugin_source != f"./plugins/{name}":
+            fail("marketplace plugin source must be exactly ./plugins/<name>")
+        if name in seen_names or plugin_source in seen_sources:
+            fail("marketplace plugin names and sources must be unique")
+        if not isinstance(version, str) or SEMVER_RE.fullmatch(version) is None:
+            fail("marketplace plugin version must be SemVer")
+        seen_names.add(name)
+        seen_sources.add(plugin_source)
+        declared_directories.add(name)
+
+        plugin_root = source / "plugins" / name
+        if not path_exists(plugin_root):
+            fail("missing plugin directory")
+        if lstat_identity(plugin_root).kind != "directory":
+            fail("unsafe plugin directory")
+        manifest_path = plugin_root / ".zcode-plugin" / "plugin.json"
+        if not path_exists(manifest_path):
+            fail("missing plugin manifest")
+        if lstat_identity(manifest_path).kind != "file":
+            fail("unsafe plugin manifest")
+        manifest = load_json_file(manifest_path, "plugin manifest")
+        if manifest.get("name") != name:
+            fail("plugin manifest name must match marketplace entry")
+        if manifest.get("version") != version:
+            fail("plugin manifest version must match marketplace entry")
+
+    plugins_root = source / "plugins"
+    if path_exists(plugins_root):
+        if lstat_identity(plugins_root).kind != "directory":
+            fail("marketplace plugins endpoint is unsafe")
+        actual_directories = {
+            entry.name
+            for entry in plugins_root.iterdir()
+            if lstat_identity(entry).kind == "directory"
+        }
+        if actual_directories != declared_directories:
+            fail("marketplace plugin directories must match declared plugins exactly")
+    elif declared_directories:
+        fail("marketplace declares plugins without a plugins directory")
+
+
 def select_marketplace(name: str) -> Path:
     if SETUP_RE.fullmatch(name) is None:
         fail("invalid setup id", 2)
     source = MARKETPLACES / name
     if not source.is_dir() or source.is_symlink():
         fail(f"unknown setup: {name}")
-    manifest = load_json_file(source / "marketplace.json", "marketplace")
-    if manifest.get("name") != name:
-        fail(f"setup manifest identity mismatch: {name}")
+    validate_marketplace_runtime(source, name)
     return source
 
 

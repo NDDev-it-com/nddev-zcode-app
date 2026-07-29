@@ -252,6 +252,19 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
             errors.append("build/manifest.json: setup_state_policy.default_setup must be nddev-builder")
         if setup_policy.get("posture_option") != "--posture full-auto|safe, default full-auto":
             errors.append("build/manifest.json: setup_state_policy.posture_option is invalid")
+        plugin_contract = str(setup_policy.get("plugin_contract", ""))
+        for required in (
+            "safe self-contained tree",
+            "[a-z0-9][a-z0-9._-]{0,127}",
+            "exact ./plugins/<name> sources are unique",
+            "plugin manifests",
+            "before plan or apply mutation",
+        ):
+            if required not in plugin_contract:
+                errors.append(
+                    "build/manifest.json: setup_state_policy.plugin_contract must "
+                    f"declare strict runtime validation ({required!r})"
+                )
     transaction_policy = manifest.get("transaction_policy")
     if not isinstance(transaction_policy, dict):
         errors.append("build/manifest.json: transaction_policy must be an object")
@@ -371,6 +384,13 @@ def check_lifecycle_source(errors: list[str]) -> None:
         "result[key] = os.environ[key]",
         "def assert_environment_snapshot_current(",
         "write_env_snapshot(stage, environment)",
+        "def validate_marketplace_runtime(",
+        "PLUGIN_RE.fullmatch(name)",
+        'plugin_source != f"./plugins/{name}"',
+        "marketplace plugin names and sources must be unique",
+        "plugin manifest name must match marketplace entry",
+        "plugin manifest version must match marketplace entry",
+        "marketplace plugin directories must match declared plugins exactly",
         "class DirectoryAuthority:",
         "class CleanupAuthority:",
         "def cleanup_authority(",
@@ -440,6 +460,11 @@ def check_lifecycle_source(errors: list[str]) -> None:
     if manager.count("assert_environment_snapshot_current(environment)") != 2:
         errors.append(
             "cli-tools/nddev_zcode.py: plan and apply must bind the same environment snapshot"
+        )
+    if manager.count("validate_marketplace_runtime(source, name)") != 1:
+        errors.append(
+            "cli-tools/nddev_zcode.py: setup selection must validate the marketplace "
+            "runtime contract exactly once before plan/apply"
         )
     if any(
         unsafe in manager
