@@ -276,6 +276,12 @@ def fail(message: str, code: int = 1) -> None:
     raise ManagerError(message, code)
 
 
+def reject_transaction_path_controls(value: str, role: str) -> str:
+    if any(ord(char) < 0x20 or ord(char) == 0x7F for char in value):
+        fail(f"{role} path contains a forbidden control character", 2)
+    return value
+
+
 def require_semver(value: Any, field: str) -> str:
     if not isinstance(value, str) or SEMVER_RE.fullmatch(value) is None:
         fail(f"invalid {field}: {value!r}")
@@ -1124,7 +1130,8 @@ def run_read_only(target_text: str, callback: Callable[[Path], Any]) -> Any:
 
 
 def canonical_target_from_text(value: str) -> Path:
-    if "\x00" in value or not value:
+    value = reject_transaction_path_controls(value, "target")
+    if not value:
         fail("target path is invalid", 2)
     expanded = Path(value).expanduser()
     if not expanded.is_absolute():
@@ -1229,18 +1236,22 @@ def decode_env_value(value: str, line_number: int) -> str:
 
 def resolve_target_option(options: Options, env_file: dict[str, str]) -> str:
     if options.target:
-        return options.target
-    if env_file.get("ZCODE_TARGET"):
-        return env_file["ZCODE_TARGET"]
-    return str(Path.home() / ".zcode")
+        value = options.target
+    elif env_file.get("ZCODE_TARGET"):
+        value = env_file["ZCODE_TARGET"]
+    else:
+        value = str(Path.home() / ".zcode")
+    return reject_transaction_path_controls(value, "target")
 
 
 def resolve_backups_option(options: Options, env_file: dict[str, str]) -> str:
     if options.keep_backup:
-        return options.keep_backup
-    if env_file.get("ZCODE_BACKUPS_DIR"):
-        return env_file["ZCODE_BACKUPS_DIR"]
-    return str(Path.home() / ".zcode-backups")
+        value = options.keep_backup
+    elif env_file.get("ZCODE_BACKUPS_DIR"):
+        value = env_file["ZCODE_BACKUPS_DIR"]
+    else:
+        value = str(Path.home() / ".zcode-backups")
+    return reject_transaction_path_controls(value, "backup root")
 
 
 def detect_platform() -> str:
@@ -3740,7 +3751,8 @@ def install_complete(setup: str, platform: str, *, backup: Path | None, cleanup_
 
 
 def canonical_backups_from_text(value: str) -> Path:
-    if "\x00" in value or not value:
+    value = reject_transaction_path_controls(value, "backup root")
+    if not value:
         fail("backup root path is invalid", 2)
     expanded = Path(value).expanduser()
     if not expanded.is_absolute():
@@ -4223,12 +4235,12 @@ def main(argv: list[str] | None = None) -> int:
         if options.command == "list":
             return list_setups(options.json_output)
         env_values = parse_env_file()
+        if options.command == "status":
+            return show_status(options, resolve_target_option(options, env_values))
+        if options.command == "list-backups":
+            return list_backups(options, resolve_backups_option(options, env_values))
         target_text = resolve_target_option(options, env_values)
         backups_text = resolve_backups_option(options, env_values)
-        if options.command == "status":
-            return show_status(options, target_text)
-        if options.command == "list-backups":
-            return list_backups(options, backups_text)
         if options.command == "install":
             return install_command(options, target_text, backups_text)
         if options.command == "restore":

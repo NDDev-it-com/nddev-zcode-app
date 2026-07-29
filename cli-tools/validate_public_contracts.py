@@ -237,8 +237,18 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
     if not isinstance(transaction_policy, dict):
         errors.append("build/manifest.json: transaction_policy must be an object")
     else:
+        path_boundaries = str(transaction_policy.get("path_boundaries", ""))
         locking = str(transaction_policy.get("locking", ""))
         rollback = str(transaction_policy.get("rollback", ""))
+        if (
+            "reject ASCII C0 controls (U+0000-U+001F) and DEL (U+007F)" not in path_boundaries
+            or "before coordination or filesystem mutation" not in path_boundaries
+            or "preserving spaces, Unicode, and relative-path resolution" not in path_boundaries
+        ):
+            errors.append(
+                "build/manifest.json: transaction_policy.path_boundaries must declare "
+                "pre-coordination C0/DEL rejection and preserved path semantics"
+            )
         if "status and plan expose" not in locking or "without cleanup deletion paths" not in locking:
             errors.append("build/manifest.json: transaction_policy.locking must declare status/plan anchor reporting")
         if "fd-bound no-follow cleanup namespace authority" not in rollback:
@@ -306,6 +316,7 @@ def check_lifecycle_source(errors: list[str]) -> None:
         '"cleanup"',
         '"entry_count"',
         '"target_digest"',
+        "def reject_transaction_path_controls(",
         "def print_plan_coordination(",
         "cleanup_pending_state(target, recover_aliases=False)",
         "recover_empty_cleanup_root_before_mutation(target)",
@@ -318,6 +329,15 @@ def check_lifecycle_source(errors: list[str]) -> None:
     for marker in required_manager_markers:
         if marker not in manager:
             errors.append(f"cli-tools/nddev_zcode.py: missing lifecycle marker {marker!r}")
+    for marker in (
+        'reject_transaction_path_controls(value, "target")',
+        'reject_transaction_path_controls(value, "backup root")',
+    ):
+        if manager.count(marker) != 2:
+            errors.append(
+                "cli-tools/nddev_zcode.py: transaction path control policy must guard "
+                f"the resolver and canonicalizer exactly once for {marker!r}"
+            )
     if "cleanup_pending=true" not in bootstrap or "command reports success with pending cleanup" not in bootstrap:
         errors.append("cli-tools/scripts/bootstrap.sh: post-commit cleanup must report success with cleanup_pending=true")
     if "shutil.rmtree(str(tombstone))" in manager:

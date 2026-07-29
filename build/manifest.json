@@ -137,7 +137,7 @@
     "adopted_unmanaged_envelope": "<N>-unmanaged-old.zcode/{NDDEV-BACKUP.json,payload/}"
   },
   "transaction_policy": {
-    "path_boundaries": "canonical non-root target and backup roots must be disjoint absent-or-real-directory endpoints on one filesystem",
+    "path_boundaries": "target and backup path values reject ASCII C0 controls (U+0000-U+001F) and DEL (U+007F) before coordination or filesystem mutation while preserving spaces, Unicode, and relative-path resolution; canonical non-root target and backup roots must be disjoint absent-or-real-directory endpoints on one filesystem",
     "safe_tree": "managed inputs reject symlinks, special files, and multiply-linked regular files",
     "locking": "monotonic product and canonical-target coordination anchors gate target-bound status, plan, install, remove, and restore operations; status and plan expose the actual product and target anchor paths/states plus bounded cleanup_pending metadata without cleanup deletion paths or repair",
     "runtime_quiescence": "apply-mode target mutations reject open task/session databases and SQLite recovery sidecars; ZCode must be quit cleanly before setup changes",
