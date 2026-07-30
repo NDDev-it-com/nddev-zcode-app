@@ -172,8 +172,7 @@ def check_artifacts(version: dict, errors: list[str]) -> None:
                     errors.append(f"{context}: {field} must be a non-empty string")
             if entry.get("gatekeeper_source") != MACOS_GATEKEEPER_SOURCES.get(key):
                 errors.append(
-                    f"{context}: gatekeeper_source must be "
-                    f"{MACOS_GATEKEEPER_SOURCES.get(key)!r}"
+                    f"{context}: gatekeeper_source must be {MACOS_GATEKEEPER_SOURCES.get(key)!r}"
                 )
         if key.endswith("deb"):
             package = str(entry.get("package_version", ""))
@@ -190,9 +189,7 @@ def check_artifacts(version: dict, errors: list[str]) -> None:
 
 def check_baseline(version: dict, baseline: dict, errors: list[str]) -> None:
     if "verified_date" in baseline:
-        errors.append(
-            "references/zcode-baseline.json: observation-only verified_date forbidden"
-        )
+        errors.append("references/zcode-baseline.json: observation-only verified_date forbidden")
     zcode = baseline.get("zcode")
     if not isinstance(zcode, dict):
         errors.append("references/zcode-baseline.json: zcode must be an object")
@@ -250,9 +247,7 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
         )
     artifact_policy = manifest.get("artifact_integrity_policy")
     macos_identity = (
-        artifact_policy.get("macos_identity", "")
-        if isinstance(artifact_policy, dict)
-        else ""
+        artifact_policy.get("macos_identity", "") if isinstance(artifact_policy, dict) else ""
     )
     if "--allow-pinned-unnotarized" not in str(macos_identity):
         errors.append(
@@ -261,17 +256,13 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
         )
     install_options = command_policy.get("install")
     install_option_names = (
-        {str(option) for option in install_options}
-        if isinstance(install_options, list)
-        else set()
+        {str(option) for option in install_options} if isinstance(install_options, list) else set()
     )
     if "--posture" not in install_option_names:
         errors.append("build/manifest.json: command_option_policy.install must include --posture")
     secrets_policy = manifest.get("secrets")
     injection_policy = (
-        str(secrets_policy.get("injection", ""))
-        if isinstance(secrets_policy, dict)
-        else ""
+        str(secrets_policy.get("injection", "")) if isinstance(secrets_policy, dict) else ""
     )
     for required in (
         "declared by build/.env.example",
@@ -286,9 +277,7 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
                 f"environment snapshot contract ({required!r})"
             )
     rendering_policy = (
-        str(secrets_policy.get("rendering", ""))
-        if isinstance(secrets_policy, dict)
-        else ""
+        str(secrets_policy.get("rendering", "")) if isinstance(secrets_policy, dict) else ""
     )
     for required in (
         "reject invalid JSON with its input path",
@@ -306,7 +295,9 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
         errors.append("build/manifest.json: setup_state_policy must be an object")
     else:
         if setup_policy.get("default_setup") != DEFAULT_SETUP:
-            errors.append("build/manifest.json: setup_state_policy.default_setup must be nddev-builder")
+            errors.append(
+                "build/manifest.json: setup_state_policy.default_setup must be nddev-builder"
+            )
         if setup_policy.get("posture_option") != "--posture full-auto|safe, default full-auto":
             errors.append("build/manifest.json: setup_state_policy.posture_option is invalid")
         plugin_contract = str(setup_policy.get("plugin_contract", ""))
@@ -363,12 +354,12 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
                 "identity/graph/parent revalidation"
             )
         if "fd-bound no-follow cleanup namespace authority" not in rollback:
-            errors.append("build/manifest.json: transaction_policy.rollback must declare cleanup namespace authority")
+            errors.append(
+                "build/manifest.json: transaction_policy.rollback must declare cleanup namespace authority"
+            )
         backup_policy = manifest.get("backup_policy")
         inventory = (
-            str(backup_policy.get("inventory", ""))
-            if isinstance(backup_policy, dict)
-            else ""
+            str(backup_policy.get("inventory", "")) if isinstance(backup_policy, dict) else ""
         )
         if (
             "no-create backup-resource read" not in inventory
@@ -550,10 +541,17 @@ def check_lifecycle_source(errors: list[str]) -> None:
         errors.append(
             "cli-tools/nddev_zcode.py: process environment imports must remain allowlisted"
         )
-    if "cleanup_pending=true" not in bootstrap or "command reports success with pending cleanup" not in bootstrap:
-        errors.append("cli-tools/scripts/bootstrap.sh: post-commit cleanup must report success with cleanup_pending=true")
+    if (
+        "cleanup_pending=true" not in bootstrap
+        or "command reports success with pending cleanup" not in bootstrap
+    ):
+        errors.append(
+            "cli-tools/scripts/bootstrap.sh: post-commit cleanup must report success with cleanup_pending=true"
+        )
     if "shutil.rmtree(str(tombstone))" in manager:
-        errors.append("cli-tools/nddev_zcode.py: cleanup journal drain must not use path-based rmtree")
+        errors.append(
+            "cli-tools/nddev_zcode.py: cleanup journal drain must not use path-based rmtree"
+        )
     if "os.rename(str(source), str(destination))" in manager:
         errors.append(
             "cli-tools/nddev_zcode.py: lifecycle rename must use native fd-bound no-replace"
@@ -599,13 +597,15 @@ def check_lifecycle_source(errors: list[str]) -> None:
                 remove_reconciles_failure = True
                 break
     if not remove_reconciles_failure:
-        errors.append(
-            "cli-tools/nddev_zcode.py: remove must reconcile every post-prepare failure"
-        )
+        errors.append("cli-tools/nddev_zcode.py: remove must reconcile every post-prepare failure")
     if '"root": str(cleanup_root_for(target))' in manager:
-        errors.append("cli-tools/nddev_zcode.py: status cleanup metadata must not expose cleanup deletion paths")
+        errors.append(
+            "cli-tools/nddev_zcode.py: status cleanup metadata must not expose cleanup deletion paths"
+        )
     if "rm -rf --" in common or "rm -f --" in common:
-        errors.append("cli-tools/scripts/lib/common.sh: cleanup must use identity-bound fd-safe deletion, not rm fallback")
+        errors.append(
+            "cli-tools/scripts/lib/common.sh: cleanup must use identity-bound fd-safe deletion, not rm fallback"
+        )
 
 
 def check_marketplaces(errors: list[str]) -> None:
@@ -688,9 +688,7 @@ def main() -> int:
             errors.append(
                 "nddev-builder core plugin version disagrees with build/version.json:build_version"
             )
-        marketplace = load_json(
-            "zcode_tools/marketplaces/nddev-builder/marketplace.json", errors
-        )
+        marketplace = load_json("zcode_tools/marketplaces/nddev-builder/marketplace.json", errors)
         if marketplace is not None:
             core_entries = [
                 entry
