@@ -1,11 +1,60 @@
-# Repository instructions
+<!--
+GENERATED FILE - DO NOT EDIT DIRECTLY
+generator: gds
+bundle: 0.1.0-dev
+source-commit: 97e8bbaa3a0734b156b03bad704503bc46d7575b
+input-digest: sha256:a6c05a0a47d07de2d4f5bbd450b70200278f5e9e26a9e5e8717e8a3b6050b801
+output-digest: sha256:472a81be668721003c8ff84d25bfc1b6a3676212654231f27240b2b5d066e6f6
+edit-source:
+  - .gds/repository.yaml
+  - policies/base/repository-default.yaml
+  - policies/owners/organization-default.yaml
+  - policies/roles/public-module.yaml
+  - templates/agents/repository.md.tmpl
+  - templates/github-actions/go.yml.tmpl
+  - templates/harnesses/claude.md.tmpl
+-->
+# GDS repository contract
 
-- Treat this clone as one independent Git mutation boundary.
+## Scope
+
+- Repository ID: `repo_01KX8PR71HN6XNJ3VN5SQCB0TF`.
+- Roles: `module`.
+- Canonical repository facts: `.gds/repository.yaml`.
+- Applied bundle: `.gds/bundle.lock.yaml` (`0.1.0-dev`).
+- Compiled policy: `.gds/compiled-policy.json`.
+
+## Boundaries
+
+- This Git repository is one independent mutation boundary.
 - Preserve unrelated branches, worktrees, submodules, and dirty changes.
-- Follow the repository's local documentation and source-owned contracts.
-- Keep secrets, credentials, runtime state, caches, logs, and generated evidence
-  out of version control.
+- Resolve cross-repository work with `gds context --json` before acting.
+- Generated files are projections; change their canonical inputs and regenerate.
 
-## Verification
+## Safety
+
+- External writes require explicit approval: `true`.
+- Generated projection edits: `forbidden`.
+- Private parent context persistence: `forbidden`.
+- Visibility contract: `public`; data classification: `public`.
+
+## Development
 
 - Test: `python3 cli-tools/validate_public_contracts.py`.
+
+## Agent routing
+
+- Start here: run `gds-orient` (or `gds context --json`) to resolve scope before
+  any cross-repository work. It is the orientation entry point.
+- Active skill profiles: `core, module`. Five profiles exist in total
+  (`core`, `estate-admin`, `module`, `device`, `portfolio`); only the listed ones
+  are active for this repository. The catalog is `skills/registry.yaml`, and each
+  skill lives under `skills/canonical/<name>/SKILL.md`.
+- Use on-demand skills for procedures; do not duplicate them here.
+- Treat docs and memories as derived evidence, not mutation authority.
+
+## Done
+
+- Required verification is complete or explicitly `NOT_PROVEN`.
+- Git state and every affected repository boundary are classified.
+- No private data, secret, or unapproved generated drift is introduced.
