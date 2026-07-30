@@ -3,20 +3,9 @@
 The `core` plugin is a reusable ZCode-native toolkit for creating and managing
 marketplaces, plugins, and convention-discovered components.
 
-- **22 skills**: `getting-started`, `add-marketplace`, `add-plugin`, `add-skill`,
-  `add-command`, `add-agent`, `add-hook`, `add-mcp-server`, `add-provider`,
-  `add-reference`, `add-tool`, `add-instructions`, `list-components`,
-  `remove-component`, `enable-plugin`, `nddev-builder-orientation`,
-  `validate-components`, `scaffold-plugin`, `devtest-plugin`, `release-review`,
-  `publish-marketplace`, and `orchestrate-subagents`.
-- **22 slash commands**: `/nddev-start`, `/nddev-add-marketplace`,
-  `/nddev-add-plugin`, `/nddev-add-skill`, `/nddev-add-command`,
-  `/nddev-add-agent`, `/nddev-add-hook`, `/nddev-add-mcp`, `/nddev-add-provider`,
-  `/nddev-add-reference`, `/nddev-add-tool`, `/nddev-add-instructions`,
-  `/nddev-list`, `/nddev-remove`, `/nddev-enable`, `/nddev-orient`,
-  `/nddev-validate`, `/nddev-scaffold`, `/nddev-devtest`,
-  `/nddev-release-review`, `/nddev-publish`, and `/nddev-orchestrate`.
-- **1 subagent**: `nddev-native-reviewer` (GLM-5.2).
+The exact skills, commands, agents, references, and tools are discovered from
+this plugin's convention directories. `.zcode-plugin/plugin.json` owns plugin
+identity and version.
 
 ## Capabilities
 
@@ -44,17 +33,15 @@ marketplaces, plugins, and convention-discovered components.
 | `nddev-native-reviewer` | Review ZCode-native format correctness |
 
 Development-only test, benchmark, release, and repository-doctor capabilities
-are intentionally not shipped in this public plugin. Maintainers run them from
-the private `nddev-harnesses` control plane.
+are intentionally not shipped in this public plugin.
 
 ## Install
 
 Install with the repository installer (`install.sh install --setup nddev-builder`).
 It places the marketplace under `~/.zcode/marketplaces/nddev-builder/` **and**
 flattens each plugin's `skills/`, `commands/`, and `agents/` into
-`~/.zcode/{skills,commands,agents}` — the flattened copy is what ZCode 3.5.3
-loads, because it never reads the `marketplaces/.../plugins/` tree on a headless
-install. Adding the marketplace through the ZCode UI (Plugin Management) is the
+`~/.zcode/{skills,commands,agents}` — the flattened copy is the headless
+runtime surface declared by `build/manifest.json`. Adding the marketplace through the ZCode UI (Plugin Management) is the
 alternative that registers it as a live plugin.
 
 Plugin manifests are metadata-only. `references/` and `tools/` are authoring

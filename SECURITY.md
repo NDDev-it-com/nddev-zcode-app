@@ -67,9 +67,8 @@ accepted report within 30 business days. These targets are best-effort.
   also be an ancestor of a freshly fetched `origin/main`.
 - Generic actionlint, pedantic zizmor SARIF, CodeQL, dependency-review,
   secret-scan, and Scorecard checks run in this public repository.
-- The maintainers' private `nddev-harnesses` control plane validates module
-  boundaries, JSON and shell contracts, plan-mode purity, lifecycle behavior,
-  restore safety, platform behavior, and release consistency.
+- `cli-tools/validate_public_contracts.py` validates the distributable contract
+  from repository-local machine owners without external state.
 - Secrets are rendered from a local, gitignored `build/.env`; only
   `build/.env.example` is tracked. The real file must be a current-user-owned
   regular non-symlink with mode `0600` or stricter. It is parsed without shell

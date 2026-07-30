@@ -69,11 +69,9 @@ def check_readme(version: dict, errors: list[str]) -> None:
         errors.append(f"README.md: unreadable: {exc}")
         return
     expected_lines = (
-        f"- **Build version:** {version.get('build_version')}",
-        "- **Verified ZCode runtime:** "
-        f"app {version.get('zcode_app_version')}, "
-        f"CLI {version.get('zcode_cli_version')}, "
-        f"model {version.get('zcode_runtime')}",
+        "- **Release metadata:** [`build/version.json`](build/version.json)",
+        "- **Verified runtime baseline:** "
+        "[`references/zcode-baseline.json`](references/zcode-baseline.json)",
     )
     for expected in expected_lines:
         if content.count(expected) != 1:

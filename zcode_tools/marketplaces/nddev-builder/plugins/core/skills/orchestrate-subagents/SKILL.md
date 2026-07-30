@@ -1,6 +1,6 @@
 ---
 name: orchestrate-subagents
-description: Designs multi-subagent workflows for a ZCode plugin within the 3.5.3 limits — user-scope agents, foreground, parallel-yes/background-no — using Explore for recon and critic panels with on-disk evidence. Use when a plugin needs several agents to cooperate rather than one.
+description: Designs multi-subagent workflows within the constraints declared by the public ZCode baseline, using Explore for recon and critic panels with on-disk evidence.
 ---
 
 # orchestrate-subagents
@@ -8,7 +8,7 @@ description: Designs multi-subagent workflows for a ZCode plugin within the 3.5.
 Compose ZCode subagents into a reliable workflow. Author each agent with
 `add-agent`; this skill is about how they cooperate given ZCode's real limits.
 
-## ZCode 3.5.3 subagent constraints (design around these)
+## Baseline-declared subagent constraints
 
 - Agents load from **user scope only** (`~/.zcode/agents/`) — the installer
   flattens `agents/`; a plugin-bundled agent is diagnostic-only until flattened.
@@ -16,7 +16,8 @@ Compose ZCode subagents into a reliable workflow. Author each agent with
   subagent runs to completion in the foreground; several can run in parallel.
 - Built-in agents: **General-Purpose** and **Explore** (read-only). Prefer
   `Explore` for recon before any write.
-- Model per agent: `GLM-5.2`, `GLM-5-Turbo`, or inherit. Invoke with `@`, or let a
+- Model per agent: use `inherit` or a model declared by the public runtime
+  baseline. Invoke with `@`, or let a
   focused `description` auto-select.
 
 ## Patterns
@@ -44,6 +45,7 @@ Compose ZCode subagents into a reliable workflow. Author each agent with
 
 ## Rules
 
-- Never design for background subagents on 3.5.3 — they run foreground.
+- Never design for background subagents when the public baseline declares
+  foreground-only execution.
 - Read-only recon (`Explore`) before writes; least-privilege tools per agent.
 - Reproducible gates write verdicts to disk, not only to chat.

@@ -10,7 +10,8 @@ Follow the `add-agent` skill exactly:
 2. Create the file:
    - plugin-scoped: `zcode_tools/marketplaces/<marketplace>/plugins/<plugin>/agents/<name>.md`
    - user-scoped: `zcode_tools/marketplaces/<marketplace>/agents/<name>.md`
-3. Write YAML frontmatter: `name` (matches filename), `model: GLM-5.2`, `description` (English, when to delegate).
+3. Write YAML frontmatter: `name` (matches filename), `model: inherit`, and
+   `description` (English, when to delegate).
 4. Write the body as a complete system prompt: role → checklist/constraints → output format.
 5. Confirm the frontmatter parses.
 6. Remind that the body IS the system prompt — be specific about constraints and output format.

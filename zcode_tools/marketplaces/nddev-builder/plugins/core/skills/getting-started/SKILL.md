@@ -10,8 +10,8 @@ Pick a path below; each step hands off to a focused skill.
 
 ## The one thing to understand first
 
-Read `nddev-builder-orientation` once. The fact that governs everything: ZCode
-3.5.3 loads extensions only from **user scope** (`~/.zcode/{skills,commands,agents}`),
+Read `nddev-builder-orientation` once. The fact that governs everything: the
+public baseline loads extensions only from **user scope** (`~/.zcode/{skills,commands,agents}`),
 and this repo's installer **flattens** each plugin's components there. You author
 inside a marketplace; the installer makes it live. There is no CLI `plugin add`.
 

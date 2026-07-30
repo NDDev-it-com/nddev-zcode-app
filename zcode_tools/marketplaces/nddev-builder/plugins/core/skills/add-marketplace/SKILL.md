@@ -46,7 +46,8 @@ the installer merges them into `cli/config.json` if present):
    - `AGENTS.md` → set the `<!-- <name>:begin -->` marker and describe this setup.
    - `cli-config.template.json` → keep an explicit `provider/model` main-model
      reference, the matching secret-free provider/base URL/model declaration,
-     and the plugins/hooks/MCP skeleton. ZCode CLI 0.15.2 will not create a
+     and the plugins/hooks/MCP skeleton. The CLI pin in `build/version.json`
+     will not create a
      desktop session without this bootstrap.
    - `v2-config.template.json` → define only optional explicit API-key
      providers under `custom:*` identities. Never reuse app-owned `builtin:*`
@@ -79,7 +80,7 @@ the installer merges them into `cli/config.json` if present):
 
 This repo installs a marketplace headlessly (`install.sh install --setup <name>`),
 which requires local `./plugins/<name>` sources on disk. To let others install it,
-ZCode 3.5.3 also supports UI distribution: a user adds the marketplace through
+The public baseline also supports UI distribution: a user adds the marketplace through
 Plugin Management → Marketplace from a **GitHub repo, Git URL, local path, or ZIP
 URL**, and a plugin `source` may be a remote object
 `{"source":"github","repo":"owner/repo"}` (npm is not a supported source). See the

@@ -1,5 +1,5 @@
 ---
-description: Design a multi-subagent workflow for a plugin within ZCode 3.5.3 limits (user-scope, foreground, parallel-yes/background-no).
+description: Design a multi-subagent workflow within the constraints declared by the public ZCode baseline.
 ---
 
 Design how several subagents cooperate in a plugin.
@@ -8,4 +8,4 @@ Follow the `orchestrate-subagents` skill exactly: choose a shape (recon→act wi
 `Explore`, parallel fan-out, or a critic panel with on-disk evidence receipts),
 author each agent with `add-agent` (focused description, least-privilege tools,
 unique basename), and validate. Never design for background subagents — they run
-foreground on 3.5.3.
+foreground under the verified runtime baseline.

@@ -8,8 +8,8 @@ changes.
 
 - **Author:** Danil Silantyev (github:rldyourmnd), CEO NDDev
 - **License:** AGPL-3.0-or-later
-- **Build version:** 0.1.1
-- **Verified ZCode runtime:** app 3.5.3, CLI 0.15.2, model GLM-5.2
+- **Release metadata:** [`build/version.json`](build/version.json)
+- **Verified runtime baseline:** [`references/zcode-baseline.json`](references/zcode-baseline.json)
 
 ## What this repository contains
 
@@ -24,10 +24,9 @@ references/    Public ZCode compatibility baseline
 docs/          Public architecture, installation, and secrets documentation
 ```
 
-Development-only agent context, validation code, tests, and benchmarks are kept
-outside this repository in the maintainers' private `nddev-harnesses` control
-plane. This boundary keeps the public module directly reusable and free of
-workspace-specific artifacts.
+Development-only context, validation code, tests, and benchmarks are not part
+of the public distribution. The tracked public surface is owned by
+[`build/manifest.json`](build/manifest.json).
 
 See [docs/architecture.md](docs/architecture.md) for the component and repository
 boundaries.
@@ -57,8 +56,8 @@ cli-tools/scripts/install.sh status --json
 
 Plan mode performs no writes and does not invoke a locally installed `zcode`
 binary. It still parses and merges config, setting, provider, MCP, and hook
-inputs, requires the explicit CLI model/provider bootstrap expected by ZCode
-0.15.2, rejects custom providers that reuse reserved `builtin:*` identities,
+inputs, requires the explicit CLI model/provider bootstrap declared by
+[`build/manifest.json`](build/manifest.json), rejects custom providers that reuse reserved `builtin:*` identities,
 and rejects unresolved active placeholders in keys or values. Setup installation
 in apply mode performs a bounded live runtime probe and rejects open
 task/session databases or SQLite recovery sidecars before it changes the target.
@@ -69,8 +68,10 @@ restore, remove, and custom-target usage.
 
 The public catalog installs one managed setup by default:
 
-- `nddev-builder` enables its reusable 22-skill, 22-command `core` toolkit for
-  creating and managing ZCode marketplaces, plugins, and components.
+- `nddev-builder` enables its reusable `core` toolkit for creating and managing
+  ZCode marketplaces, plugins, and components. Its exact component inventory is
+  the convention-discovered tree under
+  `zcode_tools/marketplaces/nddev-builder/plugins/core/`.
 
 `install` uses `nddev-builder` when no setup flag is supplied. `--setup
 nddev-builder` is still accepted, and `--marketplace nddev-builder` remains a

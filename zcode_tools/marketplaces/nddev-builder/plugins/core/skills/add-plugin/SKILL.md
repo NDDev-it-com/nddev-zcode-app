@@ -59,7 +59,7 @@ zcode_tools/marketplaces/<marketplace>/
 
 4. **Write the manifest** at `.zcode-plugin/plugin.json`. Metadata-only — do NOT add
    `commands`, `skills`, `hooks`, `mcpServers`, or `agents` arrays, nor the inert
-   `lspServers`, `outputStyles`, `channels`, or `settings` fields (ZCode 3.5.3
+   `lspServers`, `outputStyles`, `channels`, or `settings` fields (the public baseline
    records but never executes them; see `nddev-builder-orientation`). Use this shape:
    ```json
    {

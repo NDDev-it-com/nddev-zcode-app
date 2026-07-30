@@ -350,11 +350,9 @@ postcondition failures, but it cannot transactionally undo changes made inside
 a real dpkg transaction. Repair the system package-manager state before
 retrying; bootstrap never masks a failed DEB by falling through to AppImage.
 
-The current upstream ZCode `3.5.3` macOS install policy uses the official ZIP
-artifacts from `latest.yml`; the DMG bytes are not accepted evidence for this
-build. Both supported macOS ZIP artifacts are signed by Team ID `8A5X4JJ39T`,
-bundle `dev.zcode.app`, build `3.5.3.3911`, and assess as
-`source=Notarized Developer ID`. The installer pins the expected source per
-artifact in `build/version.json` and requires an exact match plus a successful
+The current macOS install policy is owned by `build/version.json` and
+`references/zcode-baseline.json`; the DMG bytes are not accepted evidence for
+the declared build. The installer requires the declared signing identity,
+bundle, build, and assessment source per artifact and requires an exact match plus a successful
 Gatekeeper assessment before installation. Any missing, changed, or unexpected
 source fails closed before installation.

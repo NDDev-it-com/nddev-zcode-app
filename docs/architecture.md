@@ -39,8 +39,8 @@ the current user.
 
 Every CLI template declares one explicit `provider/model` main-model reference,
 the matching provider kind and base URL, and the referenced model metadata.
-ZCode CLI 0.15.2 requires that bootstrap contract before it can create a
-desktop agent session. The bootstrap provider entry contains no credential;
+The pinned CLI contract in `build/version.json` requires that bootstrap
+contract before it can create a desktop agent session. The bootstrap provider entry contains no credential;
 ZCode mounts the restored OAuth credential through its runtime provider
 registry after the CLI adapter has initialized.
 
@@ -53,7 +53,7 @@ prefix.
 ### Managed Setup
 
 - `nddev-builder` enables `core@nddev-builder`, a native component-authoring
-  toolkit with 22 skills, 22 matching commands, and one reviewer agent.
+  toolkit whose exact inventory is the convention-discovered plugin tree.
 
 `install` uses `nddev-builder` when no setup flag is supplied. `--posture
 full-auto` is the default and keeps the full automatic builder posture; `--posture
@@ -230,8 +230,6 @@ This repository is the public implementation module. It intentionally excludes
 repository-local agent configuration, development memories, validation
 implementations, tests, and benchmarks.
 
-The private `nddev-harnesses` repository is the development control plane. It
-pins this module under `modules/nddev-zcode-app`, owns cross-platform and release
-gates, and validates a specific public commit before release. The dependency is
-one-way: the harness knows the public module; the module never requires the
-harness at runtime.
+The module is independently usable. Its public runtime, compatibility, and
+managed-surface contracts are owned by `cli-tools/`, `build/`,
+`config/nddev-contract.json`, and `references/zcode-baseline.json`.

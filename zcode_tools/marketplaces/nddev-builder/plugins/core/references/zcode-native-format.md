@@ -2,8 +2,8 @@
 
 A condensed reference for the rules every component in this repository must follow.
 Authoritative source: the `nddev-builder-orientation` skill and the built-in
-`zcode-configuration-guide` / `diagnosing-plugins` skills (the ZCode runtime's own
-guide), corroborated against the pinned ZCode 3.5.3 / CLI 0.15.2 engine.
+`zcode-configuration-guide` / `diagnosing-plugins` skills (the ZCode runtime's
+own guide), corroborated against `references/zcode-baseline.json`.
 
 ## Marketplaces and plugin bundles
 
@@ -53,9 +53,9 @@ make one bundle run in both tools, you may ship **both** `.zcode-plugin/plugin.j
 (ZCode-first) and an identical `.claude-plugin/plugin.json` (Claude Code fallback).
 ZCode-only bundles need only `.zcode-plugin`.
 
-## Component execution model (ZCode 3.5.3)
+## Component execution model
 
-The pinned ZCode 3.5.3 runtime **executes only four plugin-manifest component
+The verified runtime **executes only four plugin-manifest component
 fields** — `commands`, `skills`, `hooks`, `mcpServers` — plus `agents`, which
 execute only from user scope (which is why the installer flattens `agents/` into
 `~/.zcode/agents/` instead of trusting a plugin.json `agents` field).
@@ -99,7 +99,7 @@ lineage (`allowed-tools`, `disable-model-invocation`, `${…SKILL_DIR}`,
 `` !`cmd` `` injection) are not in ZCode's public docs — confirm with
 `devtest-plugin` before depending on them.
 
-**Loading reality (ZCode 3.5.3):** ZCode loads skills/commands/agents only from
+**Loading reality:** the verified runtime loads skills/commands/agents only from
 user scope (`~/.zcode/{skills,commands,agents}`, `~/.agents/skills`), never from
 `~/.zcode/marketplaces/.../plugins/`. The installer flattens each plugin's
 `skills/`, `commands/`, and `agents/` into user scope; basenames must be unique
@@ -125,10 +125,10 @@ which is moving commands into skills).
 agents/<name>.md
 ```
 
-Frontmatter: `name`, `model` (`GLM-5.2`, `GLM-5-Turbo`, or "inherit"),
+Frontmatter: `name`, `model` (`inherit` or a baseline-declared model),
 `description` (drives auto-selection). Built-in agents: **General-Purpose** and
 **Explore** (read-only — use it for recon before writes). Invoked automatically or
-explicitly with `@`. **Beta constraints (3.5.3):** user-level only, foreground,
+explicitly with `@`. **Verified beta constraints:** user-level only, foreground,
 **parallel supported but no background execution**. Plugin-bundled `agents/` are
 diagnostic-only until flattened to `~/.zcode/agents/`.
 
@@ -183,7 +183,7 @@ entry: `name`, `source`, `description`, `version`, `author`, `category`, `tags`,
 **`source` — local vs remote.** For this repo's **headless flatten install**, use a
 **local** relative `source` (`./plugins/<name>`) that exists on disk — the installer
 flattens local plugin dirs and cannot fetch remote ones. For **UI distribution**,
-ZCode 3.5.3 also accepts remote plugins: a `source` object `{"source":"github",
+The verified runtime also accepts remote plugins: a `source` object `{"source":"github",
 "repo":"owner/repo"}`, and users can add a whole marketplace from a **GitHub repo,
 Git URL, local path, or ZIP URL** through the Marketplace tab (npm is not a
 supported source). See `publish-marketplace` for the distribution story and
@@ -197,10 +197,10 @@ when the runtime pin advances.
 
 ## Providers (model configuration)
 
-Rendered into `~/.zcode/v2/config.json` (see `add-provider`). ZCode 3.5.3 documents
+Rendered into `~/.zcode/v2/config.json` (see `add-provider`). The public baseline documents
 **GLM Coding Plan (Z.ai / BigModel), Anthropic, OpenAI, OpenRouter, Moonshot,
 MiniMax, Xiaomi MiMo**, and custom Anthropic/OpenAI-compatible providers. Auth is
-account **OAuth** ("Continue with Z.ai / BigModel") or an **API key**. Models:
-`GLM-5.2` and `GLM-5-Turbo`; Z.ai Anthropic base `https://api.z.ai/api/anthropic`,
+account **OAuth** ("Continue with Z.ai / BigModel") or an **API key**. Exact
+models are owned by the setup templates and public baseline; Z.ai Anthropic base `https://api.z.ai/api/anthropic`,
 BigModel `https://open.bigmodel.cn/api/anthropic`. Custom API-key providers must
 never reuse ZCode-owned `builtin:*` identities.

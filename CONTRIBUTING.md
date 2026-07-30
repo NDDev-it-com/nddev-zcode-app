@@ -16,10 +16,8 @@ or distribute the module. Do not add repository-local agent instructions,
 development memories, test suites, validation implementations, benchmarks, or
 generated development artifacts.
 
-The maintainers keep those control-plane concerns in the private
-`nddev-harnesses` repository, where this module is pinned as a submodule. Public
-contributors are not expected to have access to that harness; maintainers run
-its full validation and platform matrix before merging or releasing changes.
+The public distribution contract is owned by `build/manifest.json`,
+`config/nddev-contract.json`, and `cli-tools/validate_public_contracts.py`.
 
 ## Local setup
 
@@ -62,7 +60,7 @@ use `--apply` against a real target merely to validate a pull request.
   The release workflow rejects drift.
 - Add a `CHANGELOG.md` entry for release behavior changes.
 - Treat backup, restore, remove, target resolution, and plan purity as safety
-  contracts. Changes to them require regression coverage in the private harness.
+  contracts. Changes to them require regression evidence before release.
 
 ## License
 

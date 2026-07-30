@@ -33,8 +33,9 @@ $EDITOR build/.env
 
 Z.ai account authentication and explicit provider API keys are separate:
 
-- `modelProviderFamilyModes.zai: oauth` in `v2/setting.json` is the verified
-  ZCode 3.5.3 default for account login. It does not require `ZAI_API_KEY`.
+- `modelProviderFamilyModes.zai: oauth` in `v2/setting.json` is the account
+  login mode verified by `references/zcode-baseline.json`. It does not require
+  `ZAI_API_KEY`.
 - `ZAI_API_KEY` configures the explicit custom Z.ai provider at
   `https://api.z.ai/api/anthropic` under `custom:zai-api-key`. That provider is
   disabled by default; set its `enabled` field to `true` only after supplying
@@ -45,7 +46,8 @@ Z.ai account authentication and explicit provider API keys are separate:
   be enabled deliberately after supplying the key.
 
 The secret-free `builtin:zai-coding-plan` entry in `cli/config.json` is only the
-explicit provider/model bootstrap required by CLI 0.15.2. It does not contain
+explicit provider/model bootstrap required by the CLI pin in
+`build/version.json`. It does not contain
 an API key and must not be repurposed as a custom provider. ZCode owns that
 identity and supplies the restored OAuth credential at runtime.
 
@@ -97,7 +99,6 @@ source `build/.env` may be stricter but may never grant group/world access.
 
 ## Repository guards
 
-Public secret scanning checks tracked content for exposed credentials. The
-maintainers' private harness additionally enforces the module boundary and
-rejects tracked local env files. Automated guards supplement, but do not
-replace, the handling rules above.
+Public secret scanning and `cli-tools/validate_public_contracts.py` check the
+tracked distribution. Automated guards supplement, but do not replace, the
+handling rules above.

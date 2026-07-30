@@ -10,7 +10,7 @@ state, never against the owner's live `~/.zcode`.
 
 ## What ZCode does and does NOT provide (read this first)
 
-ZCode 3.5.3 has **no** `zcode plugin add`, no plugin cache, no `/plugins`
+The public baseline records **no** `zcode plugin add`, plugin cache, or `/plugins`
 command, and no developer-mode hot reload. Headless activation is the installer
 **flattening** each plugin's `skills/`, `commands/`, and `agents/` into
 `~/.zcode/{skills,commands,agents}`; UI activation (Discover → +) is a separate,

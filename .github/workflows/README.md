@@ -1,14 +1,10 @@
 # GitHub workflows
 
-The public repository keeps release automation, repository labeling, and generic
-security checks. Implementation validation, platform matrices, tests, and
-benchmarks run from the maintainers' private `nddev-harnesses` control plane
-against a pinned submodule revision.
+The public repository keeps release automation, repository labeling, and
+generic security checks. Development-only validation and evidence are outside
+this distributable workflow surface.
 
-Reusable workflows are sourced from
-[`NDDev-it-com/ci-workflows`](https://github.com/NDDev-it-com/ci-workflows)
-release `0.12.0`, pinned to commit
-`2ccb80e96f5771b6a6b4eae63a4f47e232906dc7`.
+Each workflow file owns its immutable reusable-workflow reference.
 
 ## Workflows
 

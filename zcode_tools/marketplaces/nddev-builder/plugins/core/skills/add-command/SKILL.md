@@ -56,7 +56,8 @@ Recognized keys (all **hyphenated**, NOT snake_case):
 
 Only the five keys above are accepted by `validate-components`. ZCode is
 Claude-Code-lineage and may accept further keys (e.g. a headless-visibility
-toggle), but none is confirmed on 3.5.3 — probe with `devtest-plugin` before
+toggle), but none is confirmed by the public baseline — probe with
+`devtest-plugin` before
 authoring one, since an unrecognized key fails validation.
 
 **Do NOT use snake_case** (`allowed_tools`, `argument_hint`) — they are silently

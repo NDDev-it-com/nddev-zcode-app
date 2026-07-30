@@ -23,7 +23,7 @@ A subagent is a single `.md` file with YAML frontmatter:
 ```markdown
 ---
 name: <agent-name>
-model: GLM-5.2
+model: inherit
 description: <English. What this agent does and when to delegate to it.>
 ---
 
@@ -33,8 +33,8 @@ description: <English. What this agent does and when to delegate to it.>
 ## Frontmatter rules
 
 - `name` — must match the filename (without `.md`).
-- `model` — pin the model; this toolkit's house rule is `GLM-5.2` (the ZCode
-  runtime baseline). ZCode publishes no subagent file schema, so treat `model`
+- `model` — use `inherit` or a model declared by the public runtime baseline.
+  ZCode publishes no subagent file schema, so treat `model`
   as our convention, not a documented ZCode requirement.
 - `description` — English, trigger-rich. Explains WHEN to delegate; also drives
   automatic selection.
@@ -63,7 +63,7 @@ The body IS the subagent's system prompt. Write it as a complete role definition
 2. Pick the agent name (lowercase, hyphens). The filename must match the
    `name` field.
 3. Create `agents/<name>.md`.
-4. Write frontmatter: `name` (matches filename), `model: GLM-5.2`, `description`.
+4. Write frontmatter: `name` (matches filename), `model: inherit`, `description`.
 5. Write the body as a complete role definition (role → checklist → constraints
    → output format).
 6. Confirm the frontmatter parses as valid YAML.
@@ -73,7 +73,7 @@ The body IS the subagent's system prompt. Write it as a complete role definition
 ## Rules
 
 - English only — including the `description` and body.
-- `name` must match the filename; `model` must be `GLM-5.2` by default.
+- `name` must match the filename; `model` defaults to `inherit`.
 - The body is a system prompt — be specific about role, constraints, and output.
 - Convention-discovered: no `agents` array in `plugin.json`.
 
