@@ -28,8 +28,8 @@ jobs:
       package_name: nddev-zcode-app
       archive_paths: >-
         README.md LICENSE NOTICE VERSION CHANGELOG.md SECURITY.md SUPPORT.md
-        CODE_OF_CONDUCT.md CONTRIBUTING.md .gitignore .github build cli-tools
-        config docs references zcode_tools
+        CODE_OF_CONDUCT.md CONTRIBUTING.md AGENTS.md .claude .gitignore .github
+        build cli-tools config docs references zcode_tools
       runtime_paths: >-
-        VERSION LICENSE NOTICE README.md build cli-tools config references
-        zcode_tools
+        VERSION LICENSE NOTICE README.md AGENTS.md .claude build cli-tools
+        config references zcode_tools
