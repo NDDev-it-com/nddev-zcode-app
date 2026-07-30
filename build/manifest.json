@@ -13,12 +13,14 @@
     ".github/": "public security, release, and repository-automation workflows"
   },
   "runtime_bundle": {
-    "_comment": "Minimal runtime distribution closure: the tracked paths required to install ZCode from the managed setup, excluding governance, CI, and source-level documentation. A release may publish this as a second, attested bundle distinct from the full source archive.",
+    "_comment": "Minimal runtime distribution closure: the tracked paths required to install ZCode from the managed setup, including the canonical repository instructions and Claude bridge while excluding CI and source-level documentation. A release may publish this as a second, attested bundle distinct from the full source archive.",
     "paths": [
       "VERSION",
       "LICENSE",
       "NOTICE",
       "README.md",
+      "AGENTS.md",
+      ".claude",
       "build",
       "cli-tools",
       "config",
