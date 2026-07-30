@@ -189,6 +189,10 @@ def check_artifacts(version: dict, errors: list[str]) -> None:
 
 
 def check_baseline(version: dict, baseline: dict, errors: list[str]) -> None:
+    if "verified_date" in baseline:
+        errors.append(
+            "references/zcode-baseline.json: observation-only verified_date forbidden"
+        )
     zcode = baseline.get("zcode")
     if not isinstance(zcode, dict):
         errors.append("references/zcode-baseline.json: zcode must be an object")
@@ -390,7 +394,7 @@ def check_manifest(manifest: dict, errors: list[str]) -> None:
                 "payload",
             ],
             "installer_build": "canonical SemVer 2.0.0; restore accepts valid historical builds",
-            "created_at": "canonical UTC YYYY-MM-DDTHH:MM:SSZ with second precision",
+            "created_at_format": "canonical UTC YYYY-MM-DDTHH:MM:SSZ with second precision",
             "original_target": "ASCII C0/DEL-free canonical absolute non-root path",
             "validation_order": (
                 "the complete marker is validated before target binding or relocation authorization"

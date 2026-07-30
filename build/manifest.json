@@ -162,7 +162,7 @@
         "payload"
       ],
       "installer_build": "canonical SemVer 2.0.0; restore accepts valid historical builds",
-      "created_at": "canonical UTC YYYY-MM-DDTHH:MM:SSZ with second precision",
+      "created_at_format": "canonical UTC YYYY-MM-DDTHH:MM:SSZ with second precision",
       "original_target": "ASCII C0/DEL-free canonical absolute non-root path",
       "validation_order": "the complete marker is validated before target binding or relocation authorization"
     },
