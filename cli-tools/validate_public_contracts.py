@@ -12,6 +12,7 @@ import ast
 import datetime as dt
 import json
 import re
+import stat
 import sys
 from pathlib import Path
 
@@ -31,6 +32,44 @@ MACOS_GATEKEEPER_SOURCES = {
 }
 DEFAULT_SETUP = "nddev-builder"
 _SHA512 = re.compile(r"[0-9a-f]{128}")
+REQUIRED_PUBLIC_FILES = (
+    "VERSION",
+    "build/manifest.json",
+    "build/version.json",
+    "cli-tools/scripts/bootstrap.sh",
+    "cli-tools/scripts/install.sh",
+    "config/nddev-contract.json",
+    ".github/workflows/release.yml",
+    "zcode_tools/marketplaces/nddev-builder/marketplace.json",
+    "AGENTS.md",
+)
+
+
+def check_real_regular_file(relative: str, errors: list[str]) -> None:
+    path = ROOT / relative
+    try:
+        mode = path.lstat().st_mode
+    except OSError:
+        errors.append(f"missing required regular file: {relative}")
+        return
+    if not stat.S_ISREG(mode):
+        errors.append(f"{relative}: must be a real regular file")
+
+
+def check_context_closure(errors: list[str]) -> None:
+    directory = ROOT / ".claude"
+    try:
+        mode = directory.lstat().st_mode
+    except OSError:
+        errors.append("missing required directory: .claude")
+        return
+    if not stat.S_ISDIR(mode):
+        errors.append(".claude: must be a real directory")
+        return
+    entries = {entry.name for entry in directory.iterdir()}
+    if entries != {"CLAUDE.md"}:
+        errors.append(f".claude: entries must be exactly ['CLAUDE.md'], found {sorted(entries)}")
+    check_real_regular_file(".claude/CLAUDE.md", errors)
 
 
 def load_json(relative: str, errors: list[str]) -> dict | None:
@@ -614,6 +653,9 @@ def check_marketplaces(errors: list[str]) -> None:
 def main() -> int:
     errors: list[str] = []
 
+    for relative in REQUIRED_PUBLIC_FILES:
+        check_real_regular_file(relative, errors)
+    check_context_closure(errors)
     version = load_json("build/version.json", errors)
     baseline = load_json("references/zcode-baseline.json", errors)
     manifest = load_json("build/manifest.json", errors)
