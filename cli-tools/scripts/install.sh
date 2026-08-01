@@ -7,8 +7,14 @@ SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 MANAGER="$SCRIPT_DIR/../nddev_zcode.py"
 PYTHON="/usr/bin/python3"
 
-if [ ! -f "$PYTHON" ] || [ -L "$PYTHON" ] || [ ! -x "$PYTHON" ]; then
-  printf '[error] /usr/bin/python3 must be a regular executable file\n' >&2
+# Validate what the path resolves to, not the shape of the path. Every Linux
+# distribution ships /usr/bin/python3 as a symlink to python3.<minor> while
+# macOS ships a regular file, so rejecting symlinks outright rejects Ubuntu --
+# a platform this installer documents as supported. /usr/bin is root-owned and
+# not user-writable, so the link itself cannot be repointed by the caller; what
+# matters is that it lands on a real executable.
+if [ ! -x "$PYTHON" ]; then
+  printf '[error] %s must be an executable file\n' "$PYTHON" >&2
   exit 2
 fi
 if [ ! -f "$MANAGER" ] || [ -L "$MANAGER" ]; then
@@ -22,11 +28,14 @@ import stat
 import sys
 
 python = sys.argv[1]
-info = os.lstat(python)
-if not stat.S_ISREG(info.st_mode) or not os.access(python, os.X_OK):
-    raise SystemExit("/usr/bin/python3 must be a regular executable file")
+resolved = os.path.realpath(python)
+info = os.stat(resolved)
+if not stat.S_ISREG(info.st_mode) or not os.access(resolved, os.X_OK):
+    raise SystemExit(f"{python} must resolve to a regular executable file")
+if stat.S_IMODE(info.st_mode) & 0o022:
+    raise SystemExit(f"{python} must not resolve to a group- or world-writable interpreter")
 if sys.version_info < (3, 9):
-    raise SystemExit("/usr/bin/python3 must be Python 3.9 or newer")
+    raise SystemExit(f"{python} must be Python 3.9 or newer")
 PY
 
 unset PYTHONPATH PYTHONHOME PYTHONSTARTUP PYTHONUSERBASE PYTHONINSPECT
