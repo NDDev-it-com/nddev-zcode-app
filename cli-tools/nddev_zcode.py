@@ -191,6 +191,9 @@ class DirectoryAuthority:
     identity: FileIdentity
     label: str
     private: bool = False
+    #: Set for a shared temporary root such as /tmp, which is root-owned
+    #: everywhere and made safe by its sticky bit rather than by ownership.
+    shared_temp: bool = False
 
     def close(self) -> None:
         os.close(self.fd)
@@ -203,7 +206,9 @@ class DirectoryAuthority:
         identity = identity_from_stat(opened)
         if identity.kind != "directory":
             fail(f"{self.label} must remain a directory: {self.path}", 2)
-        if identity.uid != current_uid():
+        if identity.uid != current_uid() and not (
+            self.shared_temp and identity.uid == 0 and identity.mode & stat.S_ISVTX
+        ):
             fail(f"{self.label} must remain owned by the current user: {self.path}", 2)
         if self.private and identity.mode & 0o077:
             fail(f"{self.label} must remain private: {self.path}", 2)
@@ -545,16 +550,26 @@ def require_private_directory(path: Path, label: str) -> FileIdentity:
         os.close(fd)
 
 
-def validate_directory_identity(identity: FileIdentity, label: str, *, private: bool) -> None:
+def validate_directory_identity(
+    identity: FileIdentity, label: str, *, private: bool, shared_temp: bool = False
+) -> None:
     if identity.kind != "directory":
         fail(f"{label} must be a real non-symlink directory", 2)
     if identity.uid != current_uid():
-        fail(f"{label} must be owned by the current user", 2)
+        # A shared temporary root is root-owned everywhere by design, so
+        # demanding we own it rejects /tmp itself. The sticky bit is what makes
+        # it safe to create a per-uid namespace inside: it stops one user
+        # removing or replacing another's entries. Accept exactly that shape and
+        # nothing looser.
+        if not (shared_temp and identity.uid == 0 and identity.mode & stat.S_ISVTX):
+            fail(f"{label} must be owned by the current user", 2)
     if private and identity.mode & 0o077:
         fail(f"{label} must not grant group/world permissions", 2)
 
 
-def open_directory_authority(path: Path, label: str, *, private: bool) -> DirectoryAuthority:
+def open_directory_authority(
+    path: Path, label: str, *, private: bool, shared_temp: bool = False
+) -> DirectoryAuthority:
     flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0) | getattr(os, "O_NOFOLLOW", 0)
     try:
         fd = os.open(str(path), flags)
@@ -566,8 +581,15 @@ def open_directory_authority(path: Path, label: str, *, private: bool) -> Direct
         if (opened.st_dev, opened.st_ino) != (current.st_dev, current.st_ino):
             fail(f"{label} changed while opening: {path}", 2)
         identity = identity_from_stat(opened)
-        validate_directory_identity(identity, label, private=private)
-        return DirectoryAuthority(path=path, fd=fd, identity=identity, label=label, private=private)
+        validate_directory_identity(identity, label, private=private, shared_temp=shared_temp)
+        return DirectoryAuthority(
+            path=path,
+            fd=fd,
+            identity=identity,
+            label=label,
+            private=private,
+            shared_temp=shared_temp,
+        )
     except BaseException:
         os.close(fd)
         raise
@@ -813,7 +835,10 @@ def ensure_coordination_root() -> None:
         require_private_directory(root, "product coordination namespace")
         return
     parent = open_directory_authority(
-        root.parent, "product coordination namespace parent", private=False
+        root.parent,
+        "product coordination namespace parent",
+        private=False,
+        shared_temp=True,
     )
     created: DirectoryAuthority | None = None
     parent_before = parent.current()
