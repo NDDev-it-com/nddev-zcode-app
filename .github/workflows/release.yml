@@ -15,16 +15,26 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  promotion:
+    name: Verify exact private promotion
+    permissions:
+      contents: read
+    uses: NDDev-it-com/ci-workflows/.github/workflows/release-promotion-gate.yml@f6ea891f09653b8d449098817c8acfdb510731f6 # 0.14.0-dev
+    with:
+      version: ${{ github.ref_name }}
+      runner: amsterdam
   publish:
     name: Publish attested immutable release
+    needs: promotion
     permissions:
       contents: write # Create the immutable release and its exact assets.
       id-token: write # Exchange workflow identity for attestations.
       attestations: write # Publish provenance and SBOM attestations.
       artifact-metadata: write # Record the actions/attest artifact storage entry (required at v4.1.1).
-    uses: NDDev-it-com/ci-workflows/.github/workflows/release-supply-chain.yml@2ccb80e96f5771b6a6b4eae63a4f47e232906dc7 # 0.12.0
+    uses: NDDev-it-com/ci-workflows/.github/workflows/release-supply-chain.yml@f6ea891f09653b8d449098817c8acfdb510731f6 # 0.14.0-dev
     with:
       version: ${{ github.ref_name }}
+      runner: amsterdam
       package_name: nddev-zcode-app
       archive_paths: >-
         README.md LICENSE NOTICE VERSION CHANGELOG.md SECURITY.md SUPPORT.md
