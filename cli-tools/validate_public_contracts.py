@@ -39,7 +39,7 @@ REQUIRED_PUBLIC_FILES = (
     "cli-tools/scripts/bootstrap.sh",
     "cli-tools/scripts/install.sh",
     "config/nddev-contract.json",
-    ".github/workflows/release.yml",
+    "release/package.yml",
     "zcode_tools/marketplaces/nddev-builder/marketplace.json",
     "AGENTS.md",
 )

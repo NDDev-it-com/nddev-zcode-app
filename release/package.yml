@@ -1,0 +1,10 @@
+schema_version: 1
+package_name: nddev-zcode-app
+version_source: VERSION
+archive_paths: >-
+  README.md LICENSE NOTICE VERSION CHANGELOG.md SECURITY.md SUPPORT.md CODE_OF_CONDUCT.md
+  CONTRIBUTING.md AGENTS.md .claude .gitignore .github build cli-tools config docs references
+  zcode_tools release
+runtime_paths: >-
+  VERSION LICENSE NOTICE README.md AGENTS.md .claude build cli-tools config references
+  zcode_tools
