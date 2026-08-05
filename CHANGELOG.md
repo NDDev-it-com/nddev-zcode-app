@@ -4,6 +4,17 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-08-05
+
+### Changed
+
+- Runtime pins updated to official ZCode desktop app `3.6.5` (build
+  `3.6.5.4145`, Linux package `3.6.5-4145`) and embedded CLI `0.16.1`.
+- Refreshed all six canonical ZIP, AppImage, and Debian artifact sizes and
+  SHA-512 identities from the per-platform official `latest.yml` channels.
+- Recorded the CLI's native `--cwd`, `--settings`, and permission-mode surface
+  after validating the isolated `doctor` path with the managed config.
+
 ## [0.1.2] - 2026-07-30
 
 ### Changed

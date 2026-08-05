@@ -1,5 +1,5 @@
 {
-  "_comment": "ZCode CLI 0.15.2 requires an explicit model reference and matching provider bootstrap. The provider entry is secret-free: ZCode mounts the restored Z.ai OAuth credential at runtime. Config-file hook events live under hooks.events.<Event> and hooks.enabled must be true.",
+  "_comment": "ZCode CLI 0.16.1 is verified with an explicit model reference and matching provider bootstrap. The provider entry is secret-free: ZCode mounts the restored Z.ai OAuth credential at runtime. Config-file hook events live under hooks.events.<Event> and hooks.enabled must be true.",
   "model": "builtin:zai-coding-plan/GLM-5.2",
   "provider": {
     "builtin:zai-coding-plan": {
